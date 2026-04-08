@@ -1597,7 +1597,7 @@ Private Sub ApplyLayout()
     Dim deltaH As Single
     Dim newFileW As Single
     Dim rightX As Single
-    Dim label3Left As Single
+    Dim topBlockBottom As Single
 
     If mBaseInsideW = 0 Or mBaseInsideH = 0 Then Exit Sub
 
@@ -1606,10 +1606,20 @@ Private Sub ApplyLayout()
     ' --- Top row: Search stretches, Reload stays right
     rightX = Me.InsideWidth - mRightMargin
     Me.btnReload.Left = rightX - Me.btnReload.Width
-    label3Left = Me.btnReload.Left - mGap - Me.Label3.Width
-    Me.Label3.Left = label3Left
-    Me.Label3.TOP = Me.txtSearch.TOP + (Me.txtSearch.Height - Me.Label3.Height) / 2
-    Me.txtSearch.Width = (Me.Label3.Left - mGap) - Me.txtSearch.Left
+    Me.txtSearch.Width = (Me.btnReload.Left - mGap) - Me.txtSearch.Left
+
+    ' Label3: left-aligned to Reload, below it, between top row and list
+    Me.Label3.Left = Me.btnReload.Left
+    Me.Label3.TOP = Me.btnReload.TOP + Me.btnReload.Height + 2
+
+    ' Dynamic top block bottom so list stays below Label3
+    topBlockBottom = Me.txtSearch.TOP + Me.txtSearch.Height
+    If Me.btnReload.TOP + Me.btnReload.Height > topBlockBottom Then
+        topBlockBottom = Me.btnReload.TOP + Me.btnReload.Height
+    End If
+    If Me.Label3.TOP + Me.Label3.Height > topBlockBottom Then
+        topBlockBottom = Me.Label3.TOP + Me.Label3.Height
+    End If
 
     ' --- Shift bottom controls by deltaH (keep logical places)
     Me.tglBatchMode.TOP = mCtlTop(1) + deltaH
@@ -1636,7 +1646,7 @@ Private Sub ApplyLayout()
     ' --- ListBox: stretch to fill between top row and bottom block
     Me.lstWorkbooks.Left = Me.Label1.Left
     Me.lstWorkbooks.Width = Me.InsideWidth - Me.lstWorkbooks.Left - mRightMargin
-    Me.lstWorkbooks.TOP = mTopBlockBottom + mGap
+    Me.lstWorkbooks.TOP = topBlockBottom + mGap
     ' FullPath bar aligns with listbox width
 Me.txtFullPath.Left = Me.lstWorkbooks.Left
 Me.txtFullPath.Width = Me.lstWorkbooks.Width
