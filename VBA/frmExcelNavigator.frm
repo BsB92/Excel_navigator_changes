@@ -891,7 +891,23 @@ End Sub
 Private Sub btnReload_Click()
     ReloadListPreserveSelection
     RefreshVisuals
-    
+
+End Sub
+
+Private Sub btnMaximize_Click()
+    ApplyWindowAction 0
+End Sub
+
+Private Sub btnScreen1_Click()
+    ApplyWindowAction 1
+End Sub
+
+Private Sub btnScreen2_Click()
+    ApplyWindowAction 2
+End Sub
+
+Private Sub btnScreen3_Click()
+    ApplyWindowAction 3
 End Sub
 
 
@@ -942,6 +958,106 @@ End Sub
 Private Sub btnRefreshSave_Click()
     If Me.tglBatchMode.Value Then RunSelected True, True
 End Sub
+
+Private Sub ApplyWindowAction(ByVal targetScreen As Long)
+    Dim targets As Collection
+    Dim item As Variant
+    Dim wb As Workbook
+    Dim moved As Long
+    Dim info As String
+
+    On Error GoTo EH
+
+    Set targets = GetWorkbooksForWindowAction()
+    If targets.Count = 0 Then Exit Sub
+
+    For Each item In targets
+        Set wb = item
+        If targetScreen <= 0 Then
+            moved = moved + MaximizeWorkbookWindows(wb)
+        Else
+            moved = moved + MoveWorkbookToScreenAndMaximize(wb, targetScreen)
+        End If
+    Next item
+
+    If targetScreen <= 0 Then
+        info = "Maximized windows: " & CStr(moved)
+    Else
+        info = "Moved+maximized windows on screen " & CStr(targetScreen) & ": " & CStr(moved)
+    End If
+    SafeMsgBox info, vbInformation
+    Exit Sub
+
+EH:
+    SafeMsgBox "Window action error: " & Err.Description, vbCritical
+End Sub
+
+Private Function GetWorkbooksForWindowAction() As Collection
+    Dim col As Collection
+    Dim i As Long
+    Dim wb As Workbook
+    Dim wbName As String
+
+    Set col = New Collection
+
+    If Me.tglBatchMode.Value Then
+        For i = 1 To Me.lstWorkbooks.ListCount - 1
+            If Me.lstWorkbooks.Selected(i) Then
+                wbName = GetRawNameFromRow(i)
+                Set wb = GetWorkbookByName(wbName)
+                If Not wb Is Nothing Then
+                    If Not IsWorkbookSkippable(wb) Then col.Add wb
+                End If
+            End If
+        Next i
+
+        If col.Count = 0 Then
+            SafeMsgBox "Turn ON Selection mode and select at least one file.", vbExclamation
+        End If
+    Else
+        For Each wb In Application.Workbooks
+            If Not IsWorkbookSkippable(wb) Then col.Add wb
+        Next wb
+    End If
+
+    Set GetWorkbooksForWindowAction = col
+End Function
+
+Private Function MaximizeWorkbookWindows(ByVal wb As Workbook) As Long
+    Dim win As Window
+
+    On Error Resume Next
+    For Each win In wb.Windows
+        win.WindowState = xlMaximized
+        If Err.Number = 0 Then MaximizeWorkbookWindows = MaximizeWorkbookWindows + 1
+        Err.Clear
+    Next win
+    On Error GoTo 0
+End Function
+
+Private Function MoveWorkbookToScreenAndMaximize(ByVal wb As Workbook, ByVal targetScreen As Long) As Long
+    Dim workLeft As Long, workTop As Long
+    Dim workWidth As Long, workHeight As Long
+    Dim win As Window
+
+    If Not modWinAPI.TryGetMonitorWorkArea(targetScreen, workLeft, workTop, workWidth, workHeight) Then
+        SafeMsgBox "Screen " & CStr(targetScreen) & " not available.", vbExclamation
+        Exit Function
+    End If
+
+    On Error Resume Next
+    For Each win In wb.Windows
+        win.WindowState = xlNormal
+        win.Left = workLeft
+        win.TOP = workTop
+        win.Width = workWidth
+        win.Height = workHeight
+        win.WindowState = xlMaximized
+        If Err.Number = 0 Then MoveWorkbookToScreenAndMaximize = MoveWorkbookToScreenAndMaximize + 1
+        Err.Clear
+    Next win
+    On Error GoTo 0
+End Function
 
 Private Sub RunSelected(ByVal doSave As Boolean, ByVal doRefresh As Boolean)
     Dim selectedNames As Collection
@@ -1584,6 +1700,10 @@ Private Sub CacheLayout()
     mCtlTop(14) = Me.btnOpenFile.TOP
     mCtlTop(15) = Me.btnOpenAndRefresh.TOP
     mCtlTop(16) = Me.btnCopyWithSuffix.TOP
+    mCtlTop(17) = Me.btnMaximize.TOP
+    mCtlTop(18) = Me.btnScreen1.TOP
+    mCtlTop(19) = Me.btnScreen2.TOP
+    mCtlTop(20) = Me.btnScreen3.TOP
 
     
     mBottomBlockTop = Me.tglBatchMode.TOP
@@ -1637,6 +1757,10 @@ Private Sub ApplyLayout()
     Me.btnOpenFile.TOP = mCtlTop(14) + deltaH
     Me.btnOpenAndRefresh.TOP = mCtlTop(15) + deltaH
     Me.btnCopyWithSuffix.TOP = mCtlTop(16) + deltaH
+    Me.btnMaximize.TOP = mCtlTop(17) + deltaH
+    Me.btnScreen1.TOP = mCtlTop(18) + deltaH
+    Me.btnScreen2.TOP = mCtlTop(19) + deltaH
+    Me.btnScreen3.TOP = mCtlTop(20) + deltaH
 
 
 
