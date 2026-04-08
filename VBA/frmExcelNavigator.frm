@@ -1307,7 +1307,8 @@ Private Sub UpdateFileCounterLabel()
     If visibleCount < 0 Then visibleCount = 0
 
     Me.Label3.Caption = "Files: " & CStr(visibleCount) & " / " & CStr(mAllCount)
-   
+    If mBaseInsideW > 0 Then ApplyLayout
+
 End Sub
 
 Private Sub RefreshVisuals()
@@ -1596,6 +1597,7 @@ Private Sub ApplyLayout()
     Dim deltaH As Single
     Dim newFileW As Single
     Dim rightX As Single
+    Dim label3Left As Single
 
     If mBaseInsideW = 0 Or mBaseInsideH = 0 Then Exit Sub
 
@@ -1604,7 +1606,10 @@ Private Sub ApplyLayout()
     ' --- Top row: Search stretches, Reload stays right
     rightX = Me.InsideWidth - mRightMargin
     Me.btnReload.Left = rightX - Me.btnReload.Width
-    Me.txtSearch.Width = (Me.btnReload.Left - mGap) - Me.txtSearch.Left
+    label3Left = Me.btnReload.Left - mGap - Me.Label3.Width
+    Me.Label3.Left = label3Left
+    Me.Label3.TOP = Me.txtSearch.TOP + (Me.txtSearch.Height - Me.Label3.Height) / 2
+    Me.txtSearch.Width = (Me.Label3.Left - mGap) - Me.txtSearch.Left
 
     ' --- Shift bottom controls by deltaH (keep logical places)
     Me.tglBatchMode.TOP = mCtlTop(1) + deltaH
