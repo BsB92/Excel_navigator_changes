@@ -4,7 +4,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator
    ClientHeight    =   9240.001
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   5700
+   ClientWidth     =   7125
    OleObjectBlob   =   "frmExcelNavigator.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -720,6 +720,9 @@ h = GetSetting(REG_APP, REG_SEC, "H", 0)
 If w > 0 And h > 0 Then
     Me.Width = w
     Me.Height = h
+Else
+    Me.Width = Me.Width * 1.25
+    If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
 End If
 btnCancel.Visible = False
 btnCancel.enabled = True
@@ -815,9 +818,6 @@ Private Sub lstWorkbooks_Click()
     On Error Resume Next
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
-    modWinAPI.SetForegroundWindow Application.hWnd
-    DoEvents
-    RestoreNavigatorToFront
     On Error GoTo 0
 
     RefreshVisuals
