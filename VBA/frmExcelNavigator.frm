@@ -84,7 +84,7 @@ Public Sub RestoreNavigatorToFront()
     If Not Me.Visible Then Me.Show vbModeless
     modWinAPI.BringFormToFront Me.Caption
     modWinAPI.SetTopMostState Me.Caption, True
-    Me.SetFocus
+    If Me.lstWorkbooks.Visible And Me.lstWorkbooks.Enabled Then Me.lstWorkbooks.SetFocus
 End Sub
 
 Private Sub ActivateWorkbookThenRestoreNavigator(ByVal wb As Workbook)
