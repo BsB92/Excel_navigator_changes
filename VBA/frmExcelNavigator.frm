@@ -713,17 +713,20 @@ Private Sub UserForm_Initialize()
     
   
 Dim w As Variant, h As Variant
+Dim defaultW As Single
 
 w = GetSetting(REG_APP, REG_SEC, "W", 0)
 h = GetSetting(REG_APP, REG_SEC, "H", 0)
+defaultW = Me.Width
 
 If w > 0 And h > 0 Then
-    Me.Width = w
+    Me.Width = CSng(w)
+    If Me.Width < defaultW Then Me.Width = defaultW
     Me.Height = h
 Else
-    Me.Width = Me.Width * 1.25
-    If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
+    Me.Width = defaultW
 End If
+If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
 btnCancel.Visible = False
 btnCancel.enabled = True
 PositionTopButtons
