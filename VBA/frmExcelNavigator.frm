@@ -815,6 +815,9 @@ Private Sub lstWorkbooks_Click()
     On Error Resume Next
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
+    modWinAPI.SetForegroundWindow Application.hWnd
+    DoEvents
+    RestoreNavigatorToFront
     On Error GoTo 0
 
     RefreshVisuals
