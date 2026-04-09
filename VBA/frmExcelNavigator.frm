@@ -975,6 +975,8 @@ Private Sub ApplyWindowAction(ByVal targetScreen As Long)
     Dim workWidth As Long, workHeight As Long
     Dim prevScreenUpdating As Boolean
     Dim screenUpdatingCaptured As Boolean
+    Dim moved As Long
+    Dim info As String
 
     On Error GoTo EH
 
@@ -1013,6 +1015,24 @@ EH:
     Else
         Application.ScreenUpdating = True
     End If
+    For Each item In targets
+        Set wb = item
+        If targetScreen <= 0 Then
+            moved = moved + MaximizeWorkbookWindows(wb)
+        Else
+            moved = moved + MoveWorkbookToScreenAndMaximize(wb, targetScreen)
+        End If
+    Next item
+
+    If targetScreen <= 0 Then
+        info = "Maximized windows: " & CStr(moved)
+    Else
+        info = "Moved+maximized windows on screen " & CStr(targetScreen) & ": " & CStr(moved)
+    End If
+    SafeMsgBox info, vbInformation
+    Exit Sub
+
+EH:
     SafeMsgBox "Window action error: " & Err.Description, vbCritical
 End Sub
 
@@ -1066,11 +1086,23 @@ Private Function MoveWorkbookToScreenAndMaximize(ByVal wb As Workbook, _
                                                  ByVal workHeight As Long) As Long
     Dim win As Window
 
+Private Function MoveWorkbookToScreenAndMaximize(ByVal wb As Workbook, ByVal targetScreen As Long) As Long
+    Dim workLeft As Long, workTop As Long
+    Dim workWidth As Long, workHeight As Long
+    Dim win As Window
+
+    If Not modWinAPI.TryGetMonitorWorkArea(targetScreen, workLeft, workTop, workWidth, workHeight) Then
+        SafeMsgBox "Screen " & CStr(targetScreen) & " not available.", vbExclamation
+        Exit Function
+    End If
+
     On Error Resume Next
     For Each win In wb.Windows
         win.WindowState = xlNormal
         win.Left = workLeft
         win.TOP = workTop
+        win.Width = workWidth
+        win.Height = workHeight
         win.WindowState = xlMaximized
         If Err.Number = 0 Then MoveWorkbookToScreenAndMaximize = MoveWorkbookToScreenAndMaximize + 1
         Err.Clear
