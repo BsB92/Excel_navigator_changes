@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.0"
+   Caption         =   "ExcelNavigator v4.1"
    ClientHeight    =   9240.001
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   5700
+   ClientWidth     =   5996.25
    OleObjectBlob   =   "frmExcelNavigator.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -84,7 +84,7 @@ Public Sub RestoreNavigatorToFront()
     If Not Me.Visible Then Me.Show vbModeless
     modWinAPI.BringFormToFront Me.Caption
     modWinAPI.SetTopMostState Me.Caption, True
-    Me.SetFocus
+    If Me.lstWorkbooks.Visible And Me.lstWorkbooks.Enabled Then Me.lstWorkbooks.SetFocus
 End Sub
 
 Private Sub ActivateWorkbookThenRestoreNavigator(ByVal wb As Workbook)
@@ -712,15 +712,19 @@ Private Sub UserForm_Initialize()
 
     
   
-Dim w As Variant, h As Variant
+Dim w As Variant
+Dim defaultW As Single
 
 w = GetSetting(REG_APP, REG_SEC, "W", 0)
-h = GetSetting(REG_APP, REG_SEC, "H", 0)
+defaultW = Me.Width
 
-If w > 0 And h > 0 Then
-    Me.Width = w
-    Me.Height = h
+If w > 0 Then
+    Me.Width = CSng(w)
+    If Me.Width < defaultW Then Me.Width = defaultW
+Else
+    Me.Width = defaultW
 End If
+If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
 btnCancel.Visible = False
 btnCancel.enabled = True
 PositionTopButtons
@@ -1777,6 +1781,13 @@ Private Sub ApplyLayout()
     Dim newFileW As Single
     Dim rightX As Single
     Dim topBlockBottom As Single
+    Dim actionBottomMargin As Single
+    Dim actionGap As Single
+    Dim actionTop As Single
+    Dim ctlMax As Object
+    Dim ctlS1 As Object
+    Dim ctlS2 As Object
+    Dim ctlS3 As Object
 
     If mBaseInsideW = 0 Or mBaseInsideH = 0 Then Exit Sub
 
@@ -1849,8 +1860,48 @@ Private Sub ApplyLayout()
 
 
 
-    ' Keep Close button on the right edge
-    Me.btnClose.Left = rightX - Me.btnClose.Width
+    ' Keep bottom action buttons in one line:
+    ' btnMaximize btnScreen1 btnScreen2 btnScreen3 btnCancel btnClose
+    actionBottomMargin = 6
+    actionGap = 6
+    actionTop = Me.InsideHeight - actionBottomMargin - Me.btnClose.Height
+
+    Me.btnClose.Top = actionTop
+    Me.btnCancel.Top = actionTop
+
+    Me.btnClose.Left = Me.InsideWidth - actionBottomMargin - Me.btnClose.Width
+    Me.btnCancel.Left = Me.btnClose.Left - actionGap - Me.btnCancel.Width
+
+    Set ctlMax = GetControlIfExists("btnMaximize")
+    Set ctlS1 = GetControlIfExists("btnScreen1")
+    Set ctlS2 = GetControlIfExists("btnScreen2")
+    Set ctlS3 = GetControlIfExists("btnScreen3")
+
+    If Not ctlMax Is Nothing Then
+        ctlMax.Top = actionTop
+        ctlMax.Left = Me.btnCopyWithSuffix.Left
+    End If
+
+    If Not ctlS1 Is Nothing Then
+        ctlS1.Top = actionTop
+        If Not ctlMax Is Nothing Then
+            ctlS1.Left = ctlMax.Left + ctlMax.Width + actionGap
+        End If
+    End If
+
+    If Not ctlS2 Is Nothing Then
+        ctlS2.Top = actionTop
+        If Not ctlS1 Is Nothing Then
+            ctlS2.Left = ctlS1.Left + ctlS1.Width + actionGap
+        End If
+    End If
+
+    If Not ctlS3 Is Nothing Then
+        ctlS3.Top = actionTop
+        If Not ctlS2 Is Nothing Then
+            ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
+        End If
+    End If
 
     ' --- ListBox: stretch to fill between top row and bottom block
     Me.lstWorkbooks.Left = Me.Label1.Left
@@ -1953,9 +2004,13 @@ Private Function SafeMsgBox(ByVal Prompt As String, _
 End Function
 
 Private Sub PositionTopButtons()
-    Const MARGIN_R As Single = 10
-    Const MARGIN_B As Single = 10
+    Const MARGIN_R As Single = 6
+    Const MARGIN_B As Single = 6
     Const GAP As Single = 6
+    Dim ctlMax As Object
+    Dim ctlS1 As Object
+    Dim ctlS2 As Object
+    Dim ctlS3 As Object
 
     ' Close  kotwica: prawy dolny róg
     btnClose.Left = Me.InsideWidth - btnClose.Width - MARGIN_R
@@ -1964,6 +2019,37 @@ Private Sub PositionTopButtons()
     ' Cancel  zawsze obok Close (z lewej)
     btnCancel.TOP = btnClose.TOP
     btnCancel.Left = btnClose.Left - GAP - btnCancel.Width
+
+    Set ctlMax = GetControlIfExists("btnMaximize")
+    Set ctlS1 = GetControlIfExists("btnScreen1")
+    Set ctlS2 = GetControlIfExists("btnScreen2")
+    Set ctlS3 = GetControlIfExists("btnScreen3")
+
+    If Not ctlMax Is Nothing Then
+        ctlMax.TOP = btnClose.TOP
+        ctlMax.Left = Me.btnCopyWithSuffix.Left
+    End If
+
+    If Not ctlS1 Is Nothing Then
+        ctlS1.TOP = btnClose.TOP
+        If Not ctlMax Is Nothing Then
+            ctlS1.Left = ctlMax.Left + ctlMax.Width + GAP
+        End If
+    End If
+
+    If Not ctlS2 Is Nothing Then
+        ctlS2.TOP = btnClose.TOP
+        If Not ctlS1 Is Nothing Then
+            ctlS2.Left = ctlS1.Left + ctlS1.Width + GAP
+        End If
+    End If
+
+    If Not ctlS3 Is Nothing Then
+        ctlS3.TOP = btnClose.TOP
+        If Not ctlS2 Is Nothing Then
+            ctlS3.Left = ctlS2.Left + ctlS2.Width + GAP
+        End If
+    End If
 
     ' Na wierzch (jesli cos przykrywa)
     btnClose.ZOrder 0
