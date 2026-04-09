@@ -698,10 +698,10 @@ Private Sub UserForm_Initialize()
     Me.tglBatchMode.Caption = "Selection mode: OFF"
 
     SetActionButtonsEnabled False
-    Me.btnMaximize.enabled = True
-    Me.btnScreen1.enabled = True
-    Me.btnScreen2.enabled = True
-    Me.btnScreen3.enabled = True
+    SetOptionalControlEnabled "btnMaximize", True
+    SetOptionalControlEnabled "btnScreen1", True
+    SetOptionalControlEnabled "btnScreen2", True
+    SetOptionalControlEnabled "btnScreen3", True
     mLastCopyFolder = ""
     Me.btnOpenCopyFolder.enabled = False
     Me.txtSuffix.Value = "_without_formulas"
@@ -767,10 +767,10 @@ Private Sub SetActionButtonsEnabled(ByVal enabled As Boolean)
     Me.btnClearAll.enabled = enabled
     Me.btnCloseSelected.enabled = enabled
     Me.btnCopyWithSuffix.enabled = enabled
-    Me.btnMaximize.enabled = True
-    Me.btnScreen1.enabled = True
-    Me.btnScreen2.enabled = True
-    Me.btnScreen3.enabled = True
+    SetOptionalControlEnabled "btnMaximize", True
+    SetOptionalControlEnabled "btnScreen1", True
+    SetOptionalControlEnabled "btnScreen2", True
+    SetOptionalControlEnabled "btnScreen3", True
 
 
 End Sub
@@ -983,11 +983,15 @@ Private Sub ApplyWindowAction(ByVal targetScreen As Long)
     On Error GoTo EH
 
     Set targets = GetWorkbooksForWindowAction()
-    If targets.Count = 0 Then Exit Sub
+    If targets.Count = 0 Then
+        RestoreNavigatorToFront
+        Exit Sub
+    End If
 
     If targetScreen > 0 Then
         If Not modWinAPI.TryGetMonitorWorkArea(targetScreen, workLeft, workTop, workWidth, workHeight) Then
             SafeMsgBox "Screen " & CStr(targetScreen) & " not available.", vbExclamation
+            RestoreNavigatorToFront
             Exit Sub
         End If
     End If
@@ -1008,6 +1012,7 @@ Private Sub ApplyWindowAction(ByVal targetScreen As Long)
 
     modWinAPI.ResumeExcelWindowUpdates
     Application.ScreenUpdating = prevScreenUpdating
+    RestoreNavigatorToFront
     Exit Sub
 
 EH:
@@ -1018,6 +1023,7 @@ EH:
         Application.ScreenUpdating = True
     End If
     SafeMsgBox "Window action error: " & Err.Description, vbCritical
+    RestoreNavigatorToFront
 End Sub
 
 Private Function GetWorkbooksForWindowAction() As Collection
@@ -1753,10 +1759,10 @@ Private Sub CacheLayout()
     mCtlTop(14) = Me.btnOpenFile.TOP
     mCtlTop(15) = Me.btnOpenAndRefresh.TOP
     mCtlTop(16) = Me.btnCopyWithSuffix.TOP
-    mCtlTop(17) = Me.btnMaximize.TOP
-    mCtlTop(18) = Me.btnScreen1.TOP
-    mCtlTop(19) = Me.btnScreen2.TOP
-    mCtlTop(20) = Me.btnScreen3.TOP
+    mCtlTop(17) = GetOptionalControlTop("btnMaximize", mCtlTop(16))
+    mCtlTop(18) = GetOptionalControlTop("btnScreen1", mCtlTop(17))
+    mCtlTop(19) = GetOptionalControlTop("btnScreen2", mCtlTop(18))
+    mCtlTop(20) = GetOptionalControlTop("btnScreen3", mCtlTop(19))
 
     
     mBottomBlockTop = Me.tglBatchMode.TOP
@@ -1807,6 +1813,19 @@ Private Sub ApplyLayout()
         topBlockBottom = Me.Label3.TOP + Me.Label3.Height
     End If
 
+    ' Label3: left-aligned to Reload, below it, between top row and list
+    Me.Label3.Left = Me.btnReload.Left
+    Me.Label3.TOP = Me.btnReload.TOP + Me.btnReload.Height + 2
+
+    ' Dynamic top block bottom so list stays below Label3
+    topBlockBottom = Me.txtSearch.TOP + Me.txtSearch.Height
+    If Me.btnReload.TOP + Me.btnReload.Height > topBlockBottom Then
+        topBlockBottom = Me.btnReload.TOP + Me.btnReload.Height
+    End If
+    If Me.Label3.TOP + Me.Label3.Height > topBlockBottom Then
+        topBlockBottom = Me.Label3.TOP + Me.Label3.Height
+    End If
+
     ' --- Shift bottom controls by deltaH (keep logical places)
     Me.tglBatchMode.TOP = mCtlTop(1) + deltaH
     Me.btnSelectAll.TOP = mCtlTop(2) + deltaH
@@ -1823,10 +1842,10 @@ Private Sub ApplyLayout()
     Me.btnOpenFile.TOP = mCtlTop(14) + deltaH
     Me.btnOpenAndRefresh.TOP = mCtlTop(15) + deltaH
     Me.btnCopyWithSuffix.TOP = mCtlTop(16) + deltaH
-    Me.btnMaximize.TOP = mCtlTop(17) + deltaH
-    Me.btnScreen1.TOP = mCtlTop(18) + deltaH
-    Me.btnScreen2.TOP = mCtlTop(19) + deltaH
-    Me.btnScreen3.TOP = mCtlTop(20) + deltaH
+    SetOptionalControlTop "btnMaximize", mCtlTop(17) + deltaH
+    SetOptionalControlTop "btnScreen1", mCtlTop(18) + deltaH
+    SetOptionalControlTop "btnScreen2", mCtlTop(19) + deltaH
+    SetOptionalControlTop "btnScreen3", mCtlTop(20) + deltaH
 
 
 
