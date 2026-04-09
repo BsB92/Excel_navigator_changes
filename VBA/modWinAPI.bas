@@ -60,6 +60,33 @@ Private mFoundMonitor As Boolean
 Private mFoundWork As RECT
 Private mEnumMonitorIndex As Long
 
+Public Type RECT
+    Left As Long
+    TOP As Long
+    Right As Long
+    Bottom As Long
+End Type
+
+Public Type MONITORINFO
+    cbSize As Long
+    rcMonitor As RECT
+    rcWork As RECT
+    dwFlags As Long
+End Type
+
+#If VBA7 Then
+    Public Declare PtrSafe Function EnumDisplayMonitors Lib "user32" (ByVal hdc As LongPtr, ByVal lprcClip As LongPtr, ByVal lpfnEnum As LongPtr, ByVal dwData As LongPtr) As Long
+    Public Declare PtrSafe Function GetMonitorInfo Lib "user32" Alias "GetMonitorInfoA" (ByVal hMonitor As LongPtr, lpmi As MONITORINFO) As Long
+#Else
+    Public Declare Function EnumDisplayMonitors Lib "user32" (ByVal hdc As Long, ByVal lprcClip As Long, ByVal lpfnEnum As Long, ByVal dwData As Long) As Long
+    Public Declare Function GetMonitorInfo Lib "user32" Alias "GetMonitorInfoA" (ByVal hMonitor As Long, lpmi As MONITORINFO) As Long
+#End If
+
+Private mTargetMonitorIndex As Long
+Private mFoundMonitor As Boolean
+Private mFoundWork As RECT
+Private mEnumMonitorIndex As Long
+
 Public Function FindFormWindow(ByVal formCaption As String) As LongPtr
     Dim h As LongPtr
 

@@ -82,6 +82,9 @@ End Sub
 Public Sub RestoreNavigatorToFront()
     On Error Resume Next
     If Not Me.Visible Then Me.Show vbModeless
+    modWinAPI.BringFormToFront Me.Caption
+    modWinAPI.SetTopMostState Me.Caption, True
+    Me.SetFocus
 End Sub
 
 Private Sub ActivateWorkbookThenRestoreNavigator(ByVal wb As Workbook)
@@ -1676,6 +1679,36 @@ End Function
 ' =========================================================
 ' HELPERS
 ' =========================================================
+Private Function GetControlIfExists(ByVal controlName As String) As Object
+    On Error Resume Next
+    Set GetControlIfExists = Me.Controls(controlName)
+    On Error GoTo 0
+End Function
+
+Private Sub SetOptionalControlEnabled(ByVal controlName As String, ByVal enabled As Boolean)
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then Exit Sub
+    ctl.enabled = enabled
+End Sub
+
+Private Function GetOptionalControlTop(ByVal controlName As String, ByVal fallbackTop As Single) As Single
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then
+        GetOptionalControlTop = fallbackTop
+    Else
+        GetOptionalControlTop = ctl.TOP
+    End If
+End Function
+
+Private Sub SetOptionalControlTop(ByVal controlName As String, ByVal newTop As Single)
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then Exit Sub
+    ctl.TOP = newTop
+End Sub
+
 Private Function GetWorkbookByName(ByVal wbName As String) As Workbook
     On Error Resume Next
     Set GetWorkbookByName = Application.Workbooks(wbName)
@@ -1747,6 +1780,19 @@ Private Sub ApplyLayout()
     rightX = Me.InsideWidth - mRightMargin
     Me.btnReload.Left = rightX - Me.btnReload.Width
     Me.txtSearch.Width = (Me.btnReload.Left - mGap) - Me.txtSearch.Left
+
+    ' Label3: left-aligned to Reload, below it, between top row and list
+    Me.Label3.Left = Me.btnReload.Left
+    Me.Label3.TOP = Me.btnReload.TOP + Me.btnReload.Height + 2
+
+    ' Dynamic top block bottom so list stays below Label3
+    topBlockBottom = Me.txtSearch.TOP + Me.txtSearch.Height
+    If Me.btnReload.TOP + Me.btnReload.Height > topBlockBottom Then
+        topBlockBottom = Me.btnReload.TOP + Me.btnReload.Height
+    End If
+    If Me.Label3.TOP + Me.Label3.Height > topBlockBottom Then
+        topBlockBottom = Me.Label3.TOP + Me.Label3.Height
+    End If
 
     ' Label3: left-aligned to Reload, below it, between top row and list
     Me.Label3.Left = Me.btnReload.Left
