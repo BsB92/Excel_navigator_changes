@@ -712,17 +712,15 @@ Private Sub UserForm_Initialize()
 
     
   
-Dim w As Variant, h As Variant
+Dim w As Variant
 Dim defaultW As Single
 
 w = GetSetting(REG_APP, REG_SEC, "W", 0)
-h = GetSetting(REG_APP, REG_SEC, "H", 0)
 defaultW = Me.Width
 
-If w > 0 And h > 0 Then
+If w > 0 Then
     Me.Width = CSng(w)
     If Me.Width < defaultW Then Me.Width = defaultW
-    Me.Height = h
 Else
     Me.Width = defaultW
 End If
