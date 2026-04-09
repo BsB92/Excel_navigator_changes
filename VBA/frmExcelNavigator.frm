@@ -697,10 +697,10 @@ Private Sub UserForm_Initialize()
     Me.tglBatchMode.Caption = "Selection mode: OFF"
 
     SetActionButtonsEnabled False
-    Me.btnMaximize.enabled = True
-    Me.btnScreen1.enabled = True
-    Me.btnScreen2.enabled = True
-    Me.btnScreen3.enabled = True
+    SetOptionalControlEnabled "btnMaximize", True
+    SetOptionalControlEnabled "btnScreen1", True
+    SetOptionalControlEnabled "btnScreen2", True
+    SetOptionalControlEnabled "btnScreen3", True
     mLastCopyFolder = ""
     Me.btnOpenCopyFolder.enabled = False
     Me.txtSuffix.Value = "_without_formulas"
@@ -766,10 +766,10 @@ Private Sub SetActionButtonsEnabled(ByVal enabled As Boolean)
     Me.btnClearAll.enabled = enabled
     Me.btnCloseSelected.enabled = enabled
     Me.btnCopyWithSuffix.enabled = enabled
-    Me.btnMaximize.enabled = True
-    Me.btnScreen1.enabled = True
-    Me.btnScreen2.enabled = True
-    Me.btnScreen3.enabled = True
+    SetOptionalControlEnabled "btnMaximize", True
+    SetOptionalControlEnabled "btnScreen1", True
+    SetOptionalControlEnabled "btnScreen2", True
+    SetOptionalControlEnabled "btnScreen3", True
 
 
 End Sub
@@ -1684,6 +1684,36 @@ End Function
 ' =========================================================
 ' HELPERS
 ' =========================================================
+Private Function GetControlIfExists(ByVal controlName As String) As Object
+    On Error Resume Next
+    Set GetControlIfExists = Me.Controls(controlName)
+    On Error GoTo 0
+End Function
+
+Private Sub SetOptionalControlEnabled(ByVal controlName As String, ByVal enabled As Boolean)
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then Exit Sub
+    ctl.enabled = enabled
+End Sub
+
+Private Function GetOptionalControlTop(ByVal controlName As String, ByVal fallbackTop As Single) As Single
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then
+        GetOptionalControlTop = fallbackTop
+    Else
+        GetOptionalControlTop = ctl.TOP
+    End If
+End Function
+
+Private Sub SetOptionalControlTop(ByVal controlName As String, ByVal newTop As Single)
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then Exit Sub
+    ctl.TOP = newTop
+End Sub
+
 Private Function GetWorkbookByName(ByVal wbName As String) As Workbook
     On Error Resume Next
     Set GetWorkbookByName = Application.Workbooks(wbName)
@@ -1728,10 +1758,10 @@ Private Sub CacheLayout()
     mCtlTop(14) = Me.btnOpenFile.TOP
     mCtlTop(15) = Me.btnOpenAndRefresh.TOP
     mCtlTop(16) = Me.btnCopyWithSuffix.TOP
-    mCtlTop(17) = Me.btnMaximize.TOP
-    mCtlTop(18) = Me.btnScreen1.TOP
-    mCtlTop(19) = Me.btnScreen2.TOP
-    mCtlTop(20) = Me.btnScreen3.TOP
+    mCtlTop(17) = GetOptionalControlTop("btnMaximize", mCtlTop(16))
+    mCtlTop(18) = GetOptionalControlTop("btnScreen1", mCtlTop(17))
+    mCtlTop(19) = GetOptionalControlTop("btnScreen2", mCtlTop(18))
+    mCtlTop(20) = GetOptionalControlTop("btnScreen3", mCtlTop(19))
 
     
     mBottomBlockTop = Me.tglBatchMode.TOP
@@ -1785,10 +1815,10 @@ Private Sub ApplyLayout()
     Me.btnOpenFile.TOP = mCtlTop(14) + deltaH
     Me.btnOpenAndRefresh.TOP = mCtlTop(15) + deltaH
     Me.btnCopyWithSuffix.TOP = mCtlTop(16) + deltaH
-    Me.btnMaximize.TOP = mCtlTop(17) + deltaH
-    Me.btnScreen1.TOP = mCtlTop(18) + deltaH
-    Me.btnScreen2.TOP = mCtlTop(19) + deltaH
-    Me.btnScreen3.TOP = mCtlTop(20) + deltaH
+    SetOptionalControlTop "btnMaximize", mCtlTop(17) + deltaH
+    SetOptionalControlTop "btnScreen1", mCtlTop(18) + deltaH
+    SetOptionalControlTop "btnScreen2", mCtlTop(19) + deltaH
+    SetOptionalControlTop "btnScreen3", mCtlTop(20) + deltaH
 
 
 
