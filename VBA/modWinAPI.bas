@@ -9,6 +9,7 @@ Option Explicit
     Public Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hWnd As LongPtr, ByVal nCmdShow As Long) As Long
     Public Declare PtrSafe Function IsIconic Lib "user32" (ByVal hWnd As LongPtr) As Long
     Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+    Public Declare PtrSafe Function LockWindowUpdate Lib "user32" (ByVal hwndLock As LongPtr) As Long
 #Else
     Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
     Public Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal uFlags As Long) As Long
@@ -17,6 +18,7 @@ Option Explicit
     Public Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
     Public Declare Function IsIconic Lib "user32" (ByVal hWnd As Long) As Long
     Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+    Public Declare Function LockWindowUpdate Lib "user32" (ByVal hwndLock As Long) As Long
 #End If
 
 Public Const HWND_TOPMOST As LongPtr = -1
@@ -94,6 +96,18 @@ Public Sub BringFormToFront(ByVal formCaption As String)
 
     SetWindowPos h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_SHOWWINDOW
     SetForegroundWindow h
+End Sub
+
+Public Sub SuspendExcelWindowUpdates()
+    On Error Resume Next
+    LockWindowUpdate Application.hWnd
+    On Error GoTo 0
+End Sub
+
+Public Sub ResumeExcelWindowUpdates()
+    On Error Resume Next
+    LockWindowUpdate 0
+    On Error GoTo 0
 End Sub
 
 Public Function TryGetMonitorWorkArea(ByVal monitorIndex As Long, _

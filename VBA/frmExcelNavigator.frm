@@ -694,6 +694,10 @@ Private Sub UserForm_Initialize()
     Me.tglBatchMode.Caption = "Selection mode: OFF"
 
     SetActionButtonsEnabled False
+    Me.btnMaximize.enabled = True
+    Me.btnScreen1.enabled = True
+    Me.btnScreen2.enabled = True
+    Me.btnScreen3.enabled = True
     mLastCopyFolder = ""
     Me.btnOpenCopyFolder.enabled = False
     Me.txtSuffix.Value = "_without_formulas"
@@ -759,6 +763,10 @@ Private Sub SetActionButtonsEnabled(ByVal enabled As Boolean)
     Me.btnClearAll.enabled = enabled
     Me.btnCloseSelected.enabled = enabled
     Me.btnCopyWithSuffix.enabled = enabled
+    Me.btnMaximize.enabled = True
+    Me.btnScreen1.enabled = True
+    Me.btnScreen2.enabled = True
+    Me.btnScreen3.enabled = True
 
 
 End Sub
@@ -963,6 +971,10 @@ Private Sub ApplyWindowAction(ByVal targetScreen As Long)
     Dim targets As Collection
     Dim item As Variant
     Dim wb As Workbook
+    Dim workLeft As Long, workTop As Long
+    Dim workWidth As Long, workHeight As Long
+    Dim prevScreenUpdating As Boolean
+    Dim screenUpdatingCaptured As Boolean
     Dim moved As Long
     Dim info As String
 
@@ -971,6 +983,38 @@ Private Sub ApplyWindowAction(ByVal targetScreen As Long)
     Set targets = GetWorkbooksForWindowAction()
     If targets.Count = 0 Then Exit Sub
 
+    If targetScreen > 0 Then
+        If Not modWinAPI.TryGetMonitorWorkArea(targetScreen, workLeft, workTop, workWidth, workHeight) Then
+            SafeMsgBox "Screen " & CStr(targetScreen) & " not available.", vbExclamation
+            Exit Sub
+        End If
+    End If
+
+    prevScreenUpdating = Application.ScreenUpdating
+    screenUpdatingCaptured = True
+    Application.ScreenUpdating = False
+    modWinAPI.SuspendExcelWindowUpdates
+
+    For Each item In targets
+        Set wb = item
+        If targetScreen <= 0 Then
+            MaximizeWorkbookWindows wb
+        Else
+            MoveWorkbookToScreenAndMaximize wb, workLeft, workTop, workWidth, workHeight
+        End If
+    Next item
+
+    modWinAPI.ResumeExcelWindowUpdates
+    Application.ScreenUpdating = prevScreenUpdating
+    Exit Sub
+
+EH:
+    modWinAPI.ResumeExcelWindowUpdates
+    If screenUpdatingCaptured Then
+        Application.ScreenUpdating = prevScreenUpdating
+    Else
+        Application.ScreenUpdating = True
+    End If
     For Each item In targets
         Set wb = item
         If targetScreen <= 0 Then
@@ -1034,6 +1078,13 @@ Private Function MaximizeWorkbookWindows(ByVal wb As Workbook) As Long
     Next win
     On Error GoTo 0
 End Function
+
+Private Function MoveWorkbookToScreenAndMaximize(ByVal wb As Workbook, _
+                                                 ByVal workLeft As Long, _
+                                                 ByVal workTop As Long, _
+                                                 ByVal workWidth As Long, _
+                                                 ByVal workHeight As Long) As Long
+    Dim win As Window
 
 Private Function MoveWorkbookToScreenAndMaximize(ByVal wb As Workbook, ByVal targetScreen As Long) As Long
     Dim workLeft As Long, workTop As Long
