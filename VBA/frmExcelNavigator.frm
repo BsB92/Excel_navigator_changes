@@ -39,6 +39,8 @@ Private Const FORM_MAX_H As Long = 900
 Private Const REG_APP As String = "ExcelNavigator"
 Private Const REG_SEC As String = "FormState"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
+Private Const DYNAMIC_CHK_NAME As String = "chkCopyWithSuffixOption"
+Private Const BTN_STACK_GAP As Single = 6
 Private mCancelBatch As Boolean
 Private mBatchRunning As Boolean
 
@@ -771,6 +773,7 @@ Private Sub SetActionButtonsEnabled(ByVal enabled As Boolean)
     Me.btnClearAll.enabled = enabled
     Me.btnCloseSelected.enabled = enabled
     Me.btnCopyWithSuffix.enabled = enabled
+    SetOptionalControlEnabled DYNAMIC_CHK_NAME, True
     SetOptionalControlEnabled "btnMaximize", True
     SetOptionalControlEnabled "btnScreen1", True
     SetOptionalControlEnabled "btnScreen2", True
@@ -1695,6 +1698,29 @@ Private Function GetControlIfExists(ByVal controlName As String) As Object
     On Error GoTo 0
 End Function
 
+Private Function EnsureCopyWithSuffixCheckbox() As Object
+    Dim ctl As Object
+
+    Set ctl = GetControlIfExists(DYNAMIC_CHK_NAME)
+    If ctl Is Nothing Then
+        On Error Resume Next
+        Set ctl = Me.Controls.Add("Forms.CheckBox.1", DYNAMIC_CHK_NAME, True)
+        On Error GoTo 0
+    End If
+
+    If ctl Is Nothing Then Exit Function
+
+    On Error Resume Next
+    ctl.Caption = ""
+    ctl.Width = 12
+    ctl.Height = 12
+    ctl.Visible = True
+    ctl.enabled = True
+    On Error GoTo 0
+
+    Set EnsureCopyWithSuffixCheckbox = ctl
+End Function
+
 Private Sub SetOptionalControlEnabled(ByVal controlName As String, ByVal enabled As Boolean)
     Dim ctl As Object
     Set ctl = GetControlIfExists(controlName)
@@ -1784,6 +1810,8 @@ Private Sub ApplyLayout()
     Dim actionBottomMargin As Single
     Dim actionGap As Single
     Dim actionTop As Single
+    Dim actionButtonsTop As Single
+    Dim ctlChk As Object
     Dim ctlMax As Object
     Dim ctlS1 As Object
     Dim ctlS2 As Object
@@ -1872,32 +1900,44 @@ Private Sub ApplyLayout()
     Me.btnClose.Left = Me.InsideWidth - actionBottomMargin - Me.btnClose.Width
     Me.btnCancel.Left = Me.btnClose.Left - actionGap - Me.btnCancel.Width
 
+    Set ctlChk = EnsureCopyWithSuffixCheckbox()
     Set ctlMax = GetControlIfExists("btnMaximize")
     Set ctlS1 = GetControlIfExists("btnScreen1")
     Set ctlS2 = GetControlIfExists("btnScreen2")
     Set ctlS3 = GetControlIfExists("btnScreen3")
 
-    If Not ctlMax Is Nothing Then
-        ctlMax.Top = actionTop
-        ctlMax.Left = Me.btnCopyWithSuffix.Left
+    If Not ctlChk Is Nothing Then
+        ctlChk.Left = Me.btnCopyWithSuffix.Left
+        ctlChk.TOP = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + BTN_STACK_GAP
     End If
 
+    If Not ctlMax Is Nothing Then
+        If Not ctlChk Is Nothing Then
+            ctlMax.TOP = ctlChk.TOP + ctlChk.Height + BTN_STACK_GAP
+        Else
+            ctlMax.TOP = actionTop
+        End If
+        ctlMax.Left = Me.btnCopyWithSuffix.Left
+    End If
+    actionButtonsTop = actionTop
+    If Not ctlMax Is Nothing Then actionButtonsTop = ctlMax.TOP
+
     If Not ctlS1 Is Nothing Then
-        ctlS1.Top = actionTop
+        ctlS1.Top = actionButtonsTop
         If Not ctlMax Is Nothing Then
             ctlS1.Left = ctlMax.Left + ctlMax.Width + actionGap
         End If
     End If
 
     If Not ctlS2 Is Nothing Then
-        ctlS2.Top = actionTop
+        ctlS2.Top = actionButtonsTop
         If Not ctlS1 Is Nothing Then
             ctlS2.Left = ctlS1.Left + ctlS1.Width + actionGap
         End If
     End If
 
     If Not ctlS3 Is Nothing Then
-        ctlS3.Top = actionTop
+        ctlS3.Top = actionButtonsTop
         If Not ctlS2 Is Nothing Then
             ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
         End If
@@ -2007,6 +2047,8 @@ Private Sub PositionTopButtons()
     Const MARGIN_R As Single = 6
     Const MARGIN_B As Single = 6
     Const GAP As Single = 6
+    Dim actionButtonsTop As Single
+    Dim ctlChk As Object
     Dim ctlMax As Object
     Dim ctlS1 As Object
     Dim ctlS2 As Object
@@ -2020,32 +2062,44 @@ Private Sub PositionTopButtons()
     btnCancel.TOP = btnClose.TOP
     btnCancel.Left = btnClose.Left - GAP - btnCancel.Width
 
+    Set ctlChk = EnsureCopyWithSuffixCheckbox()
     Set ctlMax = GetControlIfExists("btnMaximize")
     Set ctlS1 = GetControlIfExists("btnScreen1")
     Set ctlS2 = GetControlIfExists("btnScreen2")
     Set ctlS3 = GetControlIfExists("btnScreen3")
 
-    If Not ctlMax Is Nothing Then
-        ctlMax.TOP = btnClose.TOP
-        ctlMax.Left = Me.btnCopyWithSuffix.Left
+    If Not ctlChk Is Nothing Then
+        ctlChk.Left = Me.btnCopyWithSuffix.Left
+        ctlChk.TOP = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + BTN_STACK_GAP
     End If
 
+    If Not ctlMax Is Nothing Then
+        If Not ctlChk Is Nothing Then
+            ctlMax.TOP = ctlChk.TOP + ctlChk.Height + BTN_STACK_GAP
+        Else
+            ctlMax.TOP = btnClose.TOP
+        End If
+        ctlMax.Left = Me.btnCopyWithSuffix.Left
+    End If
+    actionButtonsTop = btnClose.TOP
+    If Not ctlMax Is Nothing Then actionButtonsTop = ctlMax.TOP
+
     If Not ctlS1 Is Nothing Then
-        ctlS1.TOP = btnClose.TOP
+        ctlS1.TOP = actionButtonsTop
         If Not ctlMax Is Nothing Then
             ctlS1.Left = ctlMax.Left + ctlMax.Width + GAP
         End If
     End If
 
     If Not ctlS2 Is Nothing Then
-        ctlS2.TOP = btnClose.TOP
+        ctlS2.TOP = actionButtonsTop
         If Not ctlS1 Is Nothing Then
             ctlS2.Left = ctlS1.Left + ctlS1.Width + GAP
         End If
     End If
 
     If Not ctlS3 Is Nothing Then
-        ctlS3.TOP = btnClose.TOP
+        ctlS3.TOP = actionButtonsTop
         If Not ctlS2 Is Nothing Then
             ctlS3.Left = ctlS2.Left + ctlS2.Width + GAP
         End If
