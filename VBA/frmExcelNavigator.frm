@@ -742,24 +742,36 @@ End Sub
 ' SELECTION MODE
 ' =========================================================
 Private Sub tglBatchMode_Click()
+    On Error GoTo ModeSwitchError
+
+    mUIBusy = True
+
+    ' Najpierw zdejmij bieżące zaznaczenie i fokus, potem zmień MultiSelect.
+    ' W niektórych konfiguracjach Excela taka kolejność zapobiega runtime error.
+    Me.lstWorkbooks.ListIndex = -1
+    ClearAllSelections
+
     If Me.tglBatchMode.Value Then
         Me.tglBatchMode.Caption = "Selection mode: ON"
         Me.lstWorkbooks.MultiSelect = fmMultiSelectMulti
-        ClearAllSelections
-        Me.lstWorkbooks.ListIndex = -1
-        ShowFullPathForIndex -1
         SetActionButtonsEnabled True
     Else
         Me.tglBatchMode.Caption = "Selection mode: OFF"
         Me.lstWorkbooks.MultiSelect = fmMultiSelectSingle
-        ClearAllSelections
-        Me.lstWorkbooks.ListIndex = -1
-        ShowFullPathForIndex -1
         SetActionButtonsEnabled False
     End If
 
+    ShowFullPathForIndex -1
     Me.tglBatchMode.BackColor = IIf(Me.tglBatchMode.Value, RGB(0, 176, 80), vbButtonFace)
     RefreshVisuals
+
+SafeExit:
+    mUIBusy = False
+    Exit Sub
+
+ModeSwitchError:
+    mUIBusy = False
+    SafeMsgBox "Cannot switch Selection mode: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub SetActionButtonsEnabled(ByVal enabled As Boolean)
