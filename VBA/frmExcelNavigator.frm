@@ -689,7 +689,7 @@ Private Sub UserForm_Initialize()
     ' col2 = Status
     ' col3 = FullPath (hidden, for search)
     Me.lstWorkbooks.ColumnCount = 4
-    Me.lstWorkbooks.ColumnWidths = "185 pt;30 pt;55 pt;0 pt"
+    Me.lstWorkbooks.ColumnWidths = "240.5 pt;30 pt;55 pt;0 pt"
     Me.lstWorkbooks.MultiSelect = fmMultiSelectSingle
 
     Me.txtSearch.Value = ""
@@ -1785,7 +1785,7 @@ Private Sub CacheLayout()
     mTopBlockBottom = Me.txtSearch.TOP + Me.txtSearch.Height
 
     ' Start file column width from current setting
-    mBaseFileColW = 185
+    mBaseFileColW = 240.5
 End Sub
 
 Private Sub ApplyLayout()
