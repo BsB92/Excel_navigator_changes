@@ -1930,11 +1930,63 @@ Me.txtFullPath.TOP = Me.tglBatchMode.TOP - mGap - Me.txtFullPath.Height
 Me.lstWorkbooks.Height = (Me.txtFullPath.TOP - mGap) - Me.lstWorkbooks.TOP
 
 
-    ' --- ListBox columns: File grows
-    newFileW = Me.lstWorkbooks.Width - 30 - 55 - 18 ' Dir(30) + Sync(55) + scrollbar fudge
-    If newFileW < 80 Then newFileW = 80
+    ' --- ListBox columns: File width based on average display width of file names
+    newFileW = ResolveFileColumnWidthPt(Me.lstWorkbooks.Width)
     Me.lstWorkbooks.ColumnWidths = CStr(newFileW) & " pt;30 pt;55 pt;0 pt"
 End Sub
+
+Private Function ResolveFileColumnWidthPt(ByVal listWidthPt As Single) As Single
+    Const DIR_COL_W As Single = 30
+    Const SYNC_COL_W As Single = 55
+    Const SCROLLBAR_FUDGE As Single = 18
+    Const MIN_FILE_W As Single = 80
+
+    Dim maxFileW As Single
+    Dim avgNameW As Single
+
+    maxFileW = listWidthPt - DIR_COL_W - SYNC_COL_W - SCROLLBAR_FUDGE
+    If maxFileW < MIN_FILE_W Then
+        ResolveFileColumnWidthPt = MIN_FILE_W
+        Exit Function
+    End If
+
+    ' If there are no file rows, keep the previous behavior (wide default / layout-driven width).
+    If Me.lstWorkbooks.ListCount <= 1 Then
+        ResolveFileColumnWidthPt = maxFileW
+        Exit Function
+    End If
+
+    avgNameW = GetAverageFileNameDisplayWidthPt()
+    If avgNameW < MIN_FILE_W Then avgNameW = MIN_FILE_W
+    If avgNameW > maxFileW Then avgNameW = maxFileW
+
+    ResolveFileColumnWidthPt = avgNameW
+End Function
+
+Private Function GetAverageFileNameDisplayWidthPt() As Single
+    Dim i As Long
+    Dim cnt As Long
+    Dim nameText As String
+    Dim totalWidthTw As Double
+    Dim avgWidthPt As Single
+
+    For i = 1 To Me.lstWorkbooks.ListCount - 1
+        nameText = CStr(Me.lstWorkbooks.List(i, 0))
+        totalWidthTw = totalWidthTw + Me.TextWidth(nameText)
+        cnt = cnt + 1
+    Next i
+
+    If cnt = 0 Then
+        GetAverageFileNameDisplayWidthPt = 240.5
+        Exit Function
+    End If
+
+    avgWidthPt = CSng((totalWidthTw / cnt) / 20#)
+    ' left/right breathing room so average filename is not glued to cell borders
+    avgWidthPt = avgWidthPt + 12
+
+    GetAverageFileNameDisplayWidthPt = avgWidthPt
+End Function
 
 Private Sub UserForm_Resize()
     On Error Resume Next
