@@ -682,6 +682,7 @@ End Sub
 ' INIT
 ' =========================================================
 Private Sub UserForm_Initialize()
+    Dim ctlChk As Object
 
     Set mStatus = CreateObject("Scripting.Dictionary")
 
@@ -698,6 +699,7 @@ Private Sub UserForm_Initialize()
 
     Me.tglBatchMode.Value = False
     Me.tglBatchMode.Caption = "Selection mode: OFF"
+    Set ctlChk = EnsureCopyWithSuffixCheckbox()
 
     SetActionButtonsEnabled False
     SetOptionalControlEnabled "btnMaximize", True
@@ -735,6 +737,7 @@ PositionTopButtons
 mHookReady = False
 CacheLayout
 ApplyLayout
+If Not ctlChk Is Nothing Then ctlChk.ZOrder 0
 
 
 
@@ -1716,6 +1719,7 @@ Private Function EnsureCopyWithSuffixCheckbox() As Object
     ctl.Height = 12
     ctl.Visible = True
     ctl.enabled = True
+    ctl.BackStyle = fmBackStyleTransparent
     On Error GoTo 0
 
     Set EnsureCopyWithSuffixCheckbox = ctl
@@ -1908,19 +1912,18 @@ Private Sub ApplyLayout()
 
     If Not ctlChk Is Nothing Then
         ctlChk.Left = Me.btnCopyWithSuffix.Left
-        ctlChk.TOP = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + BTN_STACK_GAP
+        ctlChk.TOP = actionTop - BTN_STACK_GAP - ctlChk.Height
+        If ctlChk.TOP < (Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + BTN_STACK_GAP) Then
+            ctlChk.TOP = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + BTN_STACK_GAP
+        End If
+        ctlChk.ZOrder 0
     End If
 
     If Not ctlMax Is Nothing Then
-        If Not ctlChk Is Nothing Then
-            ctlMax.TOP = ctlChk.TOP + ctlChk.Height + BTN_STACK_GAP
-        Else
-            ctlMax.TOP = actionTop
-        End If
+        ctlMax.TOP = actionTop
         ctlMax.Left = Me.btnCopyWithSuffix.Left
     End If
     actionButtonsTop = actionTop
-    If Not ctlMax Is Nothing Then actionButtonsTop = ctlMax.TOP
 
     If Not ctlS1 Is Nothing Then
         ctlS1.Top = actionButtonsTop
@@ -2070,19 +2073,18 @@ Private Sub PositionTopButtons()
 
     If Not ctlChk Is Nothing Then
         ctlChk.Left = Me.btnCopyWithSuffix.Left
-        ctlChk.TOP = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + BTN_STACK_GAP
+        ctlChk.TOP = btnClose.TOP - BTN_STACK_GAP - ctlChk.Height
+        If ctlChk.TOP < (Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + BTN_STACK_GAP) Then
+            ctlChk.TOP = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + BTN_STACK_GAP
+        End If
+        ctlChk.ZOrder 0
     End If
 
     If Not ctlMax Is Nothing Then
-        If Not ctlChk Is Nothing Then
-            ctlMax.TOP = ctlChk.TOP + ctlChk.Height + BTN_STACK_GAP
-        Else
-            ctlMax.TOP = btnClose.TOP
-        End If
+        ctlMax.TOP = btnClose.TOP
         ctlMax.Left = Me.btnCopyWithSuffix.Left
     End If
     actionButtonsTop = btnClose.TOP
-    If Not ctlMax Is Nothing Then actionButtonsTop = ctlMax.TOP
 
     If Not ctlS1 Is Nothing Then
         ctlS1.TOP = actionButtonsTop
