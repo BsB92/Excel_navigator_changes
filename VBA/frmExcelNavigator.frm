@@ -1961,6 +1961,9 @@ Private Function ResolveFileColumnWidthPt(ByVal listWidthPt As Single) As Single
     If avgNameW < MIN_FILE_W Then avgNameW = MIN_FILE_W
     If avgNameW > maxFileW Then avgNameW = maxFileW
 
+    ' Always give remaining horizontal space to File so resizing widens File (not Sync).
+    If avgNameW < maxFileW Then avgNameW = maxFileW
+
     ResolveFileColumnWidthPt = avgNameW
 End Function
 
