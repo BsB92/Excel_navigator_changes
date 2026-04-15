@@ -919,6 +919,8 @@ End Sub
 
 Private Sub btnReload_Click()
     ReloadListPreserveSelection
+    AutoGrowFormWidthForFileColumn
+    ApplyLayout
     RefreshVisuals
 
 End Sub
@@ -1966,6 +1968,36 @@ Private Function ResolveFileColumnWidthPt(ByVal listWidthPt As Single) As Single
 
     ResolveFileColumnWidthPt = avgNameW
 End Function
+
+Private Sub AutoGrowFormWidthForFileColumn()
+    Const DIR_COL_W As Single = 30
+    Const SYNC_COL_W As Single = 55
+    Const SCROLLBAR_FUDGE As Single = 18
+    Const MIN_FILE_W As Single = 80
+
+    Dim desiredFileW As Single
+    Dim currentMaxFileW As Single
+    Dim extraNeeded As Single
+    Dim frameW As Single
+    Dim targetInsideW As Single
+    Dim targetFormW As Single
+
+    If Me.lstWorkbooks.ListCount <= 1 Then Exit Sub
+
+    desiredFileW = GetAverageFileNameDisplayWidthPt()
+    If desiredFileW < MIN_FILE_W Then desiredFileW = MIN_FILE_W
+
+    currentMaxFileW = Me.lstWorkbooks.Width - DIR_COL_W - SYNC_COL_W - SCROLLBAR_FUDGE
+    If desiredFileW <= currentMaxFileW Then Exit Sub
+
+    extraNeeded = desiredFileW - currentMaxFileW
+    frameW = Me.Width - Me.InsideWidth
+    targetInsideW = Me.InsideWidth + extraNeeded
+    targetFormW = targetInsideW + frameW
+
+    If targetFormW > FORM_MAX_W Then targetFormW = FORM_MAX_W
+    If targetFormW > Me.Width Then Me.Width = targetFormW
+End Sub
 
 Private Function GetAverageFileNameDisplayWidthPt() As Single
     Dim i As Long
