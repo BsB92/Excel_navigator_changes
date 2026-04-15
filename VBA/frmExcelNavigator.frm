@@ -57,6 +57,7 @@ Private mLastCopyFolder As String
 ' ========= RESIZE LAYOUT CACHE =========
 Private mBaseInsideW As Single, mBaseInsideH As Single
 Private mBaseFileColW As Single
+Private mTextMeasureLabel As Object
 
 Private mTopBlockBottom As Single   ' bottom of search row
 Private mBottomBlockTop As Single   ' top of bottom buttons row (before shifting)
@@ -1972,7 +1973,7 @@ Private Function GetAverageFileNameDisplayWidthPt() As Single
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         nameText = CStr(Me.lstWorkbooks.List(i, 0))
-        totalWidthTw = totalWidthTw + Me.TextWidth(nameText)
+        totalWidthTw = totalWidthTw + (MeasureTextWidthPt(nameText) * 20#)
         cnt = cnt + 1
     Next i
 
@@ -1986,6 +1987,40 @@ Private Function GetAverageFileNameDisplayWidthPt() As Single
     avgWidthPt = avgWidthPt + 12
 
     GetAverageFileNameDisplayWidthPt = avgWidthPt
+End Function
+
+Private Function MeasureTextWidthPt(ByVal valueText As String) As Single
+    On Error GoTo FALLBACK
+
+    If mTextMeasureLabel Is Nothing Then
+        Set mTextMeasureLabel = GetControlIfExists("lblMeasureTextHidden")
+    End If
+
+    If mTextMeasureLabel Is Nothing Then
+        Set mTextMeasureLabel = Me.Controls.Add("Forms.Label.1", "lblMeasureTextHidden", True)
+        With mTextMeasureLabel
+            .Visible = False
+            .AutoSize = True
+            .WordWrap = False
+            .Left = -10000
+            .Top = -10000
+        End With
+    End If
+
+    On Error Resume Next
+    mTextMeasureLabel.Font.Name = Me.lstWorkbooks.Font.Name
+    mTextMeasureLabel.Font.Size = Me.lstWorkbooks.Font.Size
+    mTextMeasureLabel.Font.Bold = Me.lstWorkbooks.Font.Bold
+    mTextMeasureLabel.Font.Italic = Me.lstWorkbooks.Font.Italic
+    On Error GoTo FALLBACK
+
+    mTextMeasureLabel.Caption = valueText
+    MeasureTextWidthPt = mTextMeasureLabel.Width
+    Exit Function
+
+FALLBACK:
+    ' Safe approximation if dynamic label/font sync is unavailable
+    MeasureTextWidthPt = Len(valueText) * 5.5
 End Function
 
 Private Sub UserForm_Resize()
