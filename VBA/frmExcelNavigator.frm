@@ -57,6 +57,7 @@ Private mLastCopyFolder As String
 ' ========= RESIZE LAYOUT CACHE =========
 Private mBaseInsideW As Single, mBaseInsideH As Single
 Private mBaseFileColW As Single
+Private mTextMeasureLabel As Object
 
 Private mTopBlockBottom As Single   ' bottom of search row
 Private mBottomBlockTop As Single   ' top of bottom buttons row (before shifting)
@@ -689,7 +690,7 @@ Private Sub UserForm_Initialize()
     ' col2 = Status
     ' col3 = FullPath (hidden, for search)
     Me.lstWorkbooks.ColumnCount = 4
-    Me.lstWorkbooks.ColumnWidths = "185 pt;30 pt;55 pt;0 pt"
+    Me.lstWorkbooks.ColumnWidths = "240.5 pt;30 pt;55 pt;0 pt"
     Me.lstWorkbooks.MultiSelect = fmMultiSelectSingle
 
     Me.txtSearch.Value = ""
@@ -1785,7 +1786,7 @@ Private Sub CacheLayout()
     mTopBlockBottom = Me.txtSearch.TOP + Me.txtSearch.Height
 
     ' Start file column width from current setting
-    mBaseFileColW = 185
+    mBaseFileColW = 240.5
 End Sub
 
 Private Sub ApplyLayout()
@@ -1930,11 +1931,100 @@ Me.txtFullPath.TOP = Me.tglBatchMode.TOP - mGap - Me.txtFullPath.Height
 Me.lstWorkbooks.Height = (Me.txtFullPath.TOP - mGap) - Me.lstWorkbooks.TOP
 
 
-    ' --- ListBox columns: File grows
-    newFileW = Me.lstWorkbooks.Width - 30 - 55 - 18 ' Dir(30) + Sync(55) + scrollbar fudge
-    If newFileW < 80 Then newFileW = 80
+    ' --- ListBox columns: File width based on average display width of file names
+    newFileW = ResolveFileColumnWidthPt(Me.lstWorkbooks.Width)
     Me.lstWorkbooks.ColumnWidths = CStr(newFileW) & " pt;30 pt;55 pt;0 pt"
 End Sub
+
+Private Function ResolveFileColumnWidthPt(ByVal listWidthPt As Single) As Single
+    Const DIR_COL_W As Single = 30
+    Const SYNC_COL_W As Single = 55
+    Const SCROLLBAR_FUDGE As Single = 18
+    Const MIN_FILE_W As Single = 80
+
+    Dim maxFileW As Single
+    Dim avgNameW As Single
+
+    maxFileW = listWidthPt - DIR_COL_W - SYNC_COL_W - SCROLLBAR_FUDGE
+    If maxFileW < MIN_FILE_W Then
+        ResolveFileColumnWidthPt = MIN_FILE_W
+        Exit Function
+    End If
+
+    ' If there are no file rows, keep the previous behavior (wide default / layout-driven width).
+    If Me.lstWorkbooks.ListCount <= 1 Then
+        ResolveFileColumnWidthPt = maxFileW
+        Exit Function
+    End If
+
+    avgNameW = GetAverageFileNameDisplayWidthPt()
+    If avgNameW < MIN_FILE_W Then avgNameW = MIN_FILE_W
+    If avgNameW > maxFileW Then avgNameW = maxFileW
+
+    ' Always give remaining horizontal space to File so resizing widens File (not Sync).
+    If avgNameW < maxFileW Then avgNameW = maxFileW
+
+    ResolveFileColumnWidthPt = avgNameW
+End Function
+
+Private Function GetAverageFileNameDisplayWidthPt() As Single
+    Dim i As Long
+    Dim cnt As Long
+    Dim nameText As String
+    Dim totalWidthTw As Double
+    Dim avgWidthPt As Single
+
+    For i = 1 To Me.lstWorkbooks.ListCount - 1
+        nameText = CStr(Me.lstWorkbooks.List(i, 0))
+        totalWidthTw = totalWidthTw + (MeasureTextWidthPt(nameText) * 20#)
+        cnt = cnt + 1
+    Next i
+
+    If cnt = 0 Then
+        GetAverageFileNameDisplayWidthPt = 240.5
+        Exit Function
+    End If
+
+    avgWidthPt = CSng((totalWidthTw / cnt) / 20#)
+    ' left/right breathing room so average filename is not glued to cell borders
+    avgWidthPt = avgWidthPt + 12
+
+    GetAverageFileNameDisplayWidthPt = avgWidthPt
+End Function
+
+Private Function MeasureTextWidthPt(ByVal valueText As String) As Single
+    On Error GoTo FALLBACK
+
+    If mTextMeasureLabel Is Nothing Then
+        Set mTextMeasureLabel = GetControlIfExists("lblMeasureTextHidden")
+    End If
+
+    If mTextMeasureLabel Is Nothing Then
+        Set mTextMeasureLabel = Me.Controls.Add("Forms.Label.1", "lblMeasureTextHidden", True)
+        With mTextMeasureLabel
+            .Visible = False
+            .AutoSize = True
+            .WordWrap = False
+            .Left = -10000
+            .Top = -10000
+        End With
+    End If
+
+    On Error Resume Next
+    mTextMeasureLabel.Font.Name = Me.lstWorkbooks.Font.Name
+    mTextMeasureLabel.Font.Size = Me.lstWorkbooks.Font.Size
+    mTextMeasureLabel.Font.Bold = Me.lstWorkbooks.Font.Bold
+    mTextMeasureLabel.Font.Italic = Me.lstWorkbooks.Font.Italic
+    On Error GoTo FALLBACK
+
+    mTextMeasureLabel.Caption = valueText
+    MeasureTextWidthPt = mTextMeasureLabel.Width
+    Exit Function
+
+FALLBACK:
+    ' Safe approximation if dynamic label/font sync is unavailable
+    MeasureTextWidthPt = Len(valueText) * 5.5
+End Function
 
 Private Sub UserForm_Resize()
     On Error Resume Next
