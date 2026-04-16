@@ -65,7 +65,7 @@ Private mBottomBlockTop As Single   ' top of bottom buttons row (before shifting
 Private mRightMargin As Single
 Private mGap As Single
 
-Private mCtlTop(1 To 20) As Single
+Private mCtlTop(1 To 21) As Single
 Private mHookReady As Boolean
 
 
@@ -188,6 +188,8 @@ Private Sub btnCopyBreakLinks_Click()
     Dim i As Long, wbName As String
     Dim srcWb As Workbook
     Dim copiedCount As Long
+    Dim copiedPaths As Collection
+    Dim outPath As String
 
     suffix = Trim$(CStr(Me.txtSuffix.Value))
     If Len(suffix) = 0 Then
@@ -203,6 +205,7 @@ Private Sub btnCopyBreakLinks_Click()
     If Len(targetFolder) = 0 Then Exit Sub
 
     copiedCount = 0
+    Set copiedPaths = New Collection
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         If Me.lstWorkbooks.Selected(i) Then
@@ -215,8 +218,10 @@ Private Sub btnCopyBreakLinks_Click()
             ElseIf Len(srcWb.Path) = 0 Then
                 SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
             Else
+                outPath = BuildOutputPath(targetFolder, srcWb.Name, suffix)
                 If CopyAndBreakLinks(srcWb, targetFolder, suffix) Then
                     copiedCount = copiedCount + 1
+                    copiedPaths.Add outPath
                 End If
             End If
 
@@ -226,6 +231,7 @@ Private Sub btnCopyBreakLinks_Click()
     If copiedCount > 0 Then
         mLastCopyFolder = targetFolder
         Me.btnOpenCopyFolder.enabled = True
+        If ShouldOpenCopiedFiles() Then OpenCopiedFiles copiedPaths
     End If
 
     SafeMsgBox "Done. Copied and processed: " & copiedCount & " file(s).", vbInformation
@@ -271,6 +277,37 @@ EH:
     CopyAndBreakLinks = False
 End Function
 
+Private Function ShouldOpenCopiedFiles() As Boolean
+    Dim ctl As Object
+
+    Set ctl = GetControlIfExists("ChckBox1")
+    If ctl Is Nothing Then Exit Function
+
+    On Error Resume Next
+    ShouldOpenCopiedFiles = CBool(ctl.Value)
+    On Error GoTo 0
+End Function
+
+Private Sub OpenCopiedFiles(ByVal copiedPaths As Collection)
+    Dim i As Long
+    Dim openedCount As Long
+    Dim filePath As String
+
+    If copiedPaths Is Nothing Then Exit Sub
+    If copiedPaths.Count = 0 Then Exit Sub
+
+    For i = 1 To copiedPaths.Count
+        filePath = CStr(copiedPaths(i))
+        If Not OpenWorkbookSafe(filePath) Is Nothing Then
+            openedCount = openedCount + 1
+        End If
+    Next i
+
+    If openedCount < copiedPaths.Count Then
+        SafeMsgBox "Opened copied files: " & openedCount & " / " & copiedPaths.Count & ".", vbExclamation
+    End If
+End Sub
+
 Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As String, ByVal suffix As String) As String
     Dim baseName As String, ext As String
     Dim dotPos As Long
@@ -311,6 +348,8 @@ Private Sub btnCopyWithSuffix_Click()
     Dim i As Long, wbName As String
     Dim srcWb As Workbook
     Dim copiedCount As Long
+    Dim copiedPaths As Collection
+    Dim outPath As String
 
     suffix = Trim$(CStr(Me.txtSuffix.Value))
     If Len(suffix) = 0 Then
@@ -326,6 +365,7 @@ Private Sub btnCopyWithSuffix_Click()
     If Len(targetFolder) = 0 Then Exit Sub
 
     copiedCount = 0
+    Set copiedPaths = New Collection
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         If Me.lstWorkbooks.Selected(i) Then
@@ -337,8 +377,10 @@ Private Sub btnCopyWithSuffix_Click()
             ElseIf Len(srcWb.Path) = 0 Then
                 SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
             Else
+                outPath = BuildOutputPath(targetFolder, srcWb.Name, suffix)
                 If CopyWithSuffixOnly(srcWb, targetFolder, suffix) Then
                     copiedCount = copiedCount + 1
+                    copiedPaths.Add outPath
                 End If
             End If
         End If
@@ -347,6 +389,7 @@ Private Sub btnCopyWithSuffix_Click()
     If copiedCount > 0 Then
         mLastCopyFolder = targetFolder
         Me.btnOpenCopyFolder.enabled = True
+        If ShouldOpenCopiedFiles() Then OpenCopiedFiles copiedPaths
     End If
 
     SafeMsgBox "Done. Copied: " & copiedCount & " file(s).", vbInformation
@@ -1734,6 +1777,13 @@ Private Sub SetOptionalControlTop(ByVal controlName As String, ByVal newTop As S
     ctl.TOP = newTop
 End Sub
 
+Private Sub SetOptionalControlLeft(ByVal controlName As String, ByVal newLeft As Single)
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then Exit Sub
+    ctl.Left = newLeft
+End Sub
+
 Private Function GetWorkbookByName(ByVal wbName As String) As Workbook
     On Error Resume Next
     Set GetWorkbookByName = Application.Workbooks(wbName)
@@ -1782,6 +1832,7 @@ Private Sub CacheLayout()
     mCtlTop(18) = GetOptionalControlTop("btnScreen1", mCtlTop(17))
     mCtlTop(19) = GetOptionalControlTop("btnScreen2", mCtlTop(18))
     mCtlTop(20) = GetOptionalControlTop("btnScreen3", mCtlTop(19))
+    mCtlTop(21) = GetOptionalControlTop("ChckBox1", mCtlTop(16))
 
     
     mBottomBlockTop = Me.tglBatchMode.TOP
@@ -1872,6 +1923,8 @@ Private Sub ApplyLayout()
     SetOptionalControlTop "btnScreen1", mCtlTop(18) + deltaH
     SetOptionalControlTop "btnScreen2", mCtlTop(19) + deltaH
     SetOptionalControlTop "btnScreen3", mCtlTop(20) + deltaH
+    SetOptionalControlTop "ChckBox1", mCtlTop(21) + deltaH
+    SetOptionalControlLeft "ChckBox1", Me.btnCopyWithSuffix.Left
 
 
 
@@ -2275,4 +2328,3 @@ EH:
     SafeMsgBox "Open file error:" & vbCrLf & filePath & vbCrLf & Err.Description, vbExclamation
     Set OpenWorkbookSafe = Nothing
 End Function
-
