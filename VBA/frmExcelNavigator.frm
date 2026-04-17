@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v5.0"
+   Caption         =   "ExcelNavigator v5.01"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -55,6 +55,7 @@ Private mUIBusy As Boolean
 Private mLastCopyFolder As String
 Private mSelected As Object
 Private mCtrlTogglePending As Boolean
+Private mRightTogglePending As Boolean
 ' ========= RESIZE LAYOUT CACHE =========
 Private mBaseInsideW As Single, mBaseInsideH As Single
 Private mBaseFileColW As Single
@@ -761,7 +762,9 @@ Private Sub UserForm_Initialize()
     Me.lstWorkbooks.MultiSelect = fmMultiSelectMulti
     Me.txtSearch.Value = ""
 
-    Me.tglBatchMode.Visible = False
+    Me.tglBatchMode.Visible = True
+    Me.tglBatchMode.Value = False
+    UpdateSelectionModeVisual
 
     SetActionButtonsEnabled True
     SetOptionalControlEnabled "btnMaximize", True
@@ -829,6 +832,7 @@ End Sub
 ' =========================================================
 Private Sub lstWorkbooks_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     mCtrlTogglePending = ((Shift And FM_CTRL_MASK) <> 0)
+    mRightTogglePending = (Button = 2)
 End Sub
 
 Private Sub lstWorkbooks_Click()
@@ -850,6 +854,7 @@ Private Sub lstWorkbooks_Click()
         On Error GoTo 0
         mUIBusy = False
         mCtrlTogglePending = False
+        mRightTogglePending = False
         Exit Sub
     End If
 
@@ -857,13 +862,14 @@ Private Sub lstWorkbooks_Click()
 
     wbName = GetRawNameFromRow(idx)
 
-    If mCtrlTogglePending Then
+    If mCtrlTogglePending Or mRightTogglePending Or Me.tglBatchMode.Value Then
         If mSelected.Exists(wbName) Then
             mSelected.Remove wbName
         Else
             mSelected(wbName) = True
         End If
         mCtrlTogglePending = False
+        mRightTogglePending = False
         RefreshVisuals
         Exit Sub
     End If
@@ -876,6 +882,8 @@ Private Sub lstWorkbooks_Click()
     wb.Activate
     On Error GoTo 0
 
+    mCtrlTogglePending = False
+    mRightTogglePending = False
     RefreshVisuals
 End Sub
 
@@ -1002,6 +1010,10 @@ Private Sub btnClearAll_Click()
     mSelected.RemoveAll
     RefreshVisuals
 
+End Sub
+
+Private Sub tglBatchMode_Click()
+    UpdateSelectionModeVisual
 End Sub
 
 Private Sub ClearAllSelections()
@@ -1526,6 +1538,7 @@ Private Sub RefreshVisuals()
     Next i
 
     SyncListSelectionFromModel
+    UpdateBatchActionButtonsState
 End Sub
 
 Private Sub SyncListSelectionFromModel()
@@ -1555,6 +1568,26 @@ Private Sub SyncListSelectionFromModel()
 
 SafeExit:
     mUIBusy = prevBusy
+End Sub
+
+Private Sub UpdateBatchActionButtonsState()
+    Dim hasSelection As Boolean
+
+    hasSelection = (GetSelectedWorkbookNames().Count > 0)
+    Me.btnRefresh.enabled = hasSelection
+    Me.btnSave.enabled = hasSelection
+    Me.btnRefreshSave.enabled = hasSelection
+    Me.btnCopyBreakLinks.enabled = hasSelection
+    Me.btnCloseSelected.enabled = hasSelection
+    Me.btnCopyWithSuffix.enabled = hasSelection
+End Sub
+
+Private Sub UpdateSelectionModeVisual()
+    If Me.tglBatchMode.Value Then
+        Me.tglBatchMode.BackColor = RGB(146, 208, 80)
+    Else
+        Me.tglBatchMode.BackColor = RGB(240, 240, 240)
+    End If
 End Sub
 
 Private Function BuildDisplayName(ByVal rawName As String) As String
