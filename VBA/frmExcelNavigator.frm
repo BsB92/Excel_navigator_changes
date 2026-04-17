@@ -729,12 +729,7 @@ Private Sub UserForm_Activate()
 
     On Error GoTo FINALLY
 
-    If TryHookResize() Then
-        mHookReady = True
-        If mMinTrackW <= 0 Then mMinTrackW = CLng(Me.Width)
-        If mMinTrackH <= 0 Then mMinTrackH = CLng(Me.Height)
-        modFormSizeHook.HookMinMax Me.Caption, mMinTrackW, mMinTrackH, FORM_MAX_W, FORM_MAX_H
-    End If
+    If TryHookResize() Then mHookReady = True
 
     ApplyLayout
     PositionTopButtons
@@ -1819,7 +1814,6 @@ End Function
 
 Private Sub UserForm_Terminate()
     On Error Resume Next
-    modFormSizeHook.UnhookMinMax Me.Caption
     SaveSetting REG_APP, REG_SEC, "W", Me.Width
     SaveSetting REG_APP, REG_SEC, "H", Me.Height
 End Sub
@@ -2142,6 +2136,10 @@ End Function
 
 Private Sub UserForm_Resize()
     On Error Resume Next
+    If mMinTrackW > 0 And Me.Width < mMinTrackW Then Me.Width = mMinTrackW
+    If mMinTrackH > 0 And Me.Height < mMinTrackH Then Me.Height = mMinTrackH
+    If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
+    If Me.Height > FORM_MAX_H Then Me.Height = FORM_MAX_H
     ApplyLayout
     On Error GoTo 0
     PositionTopButtons
