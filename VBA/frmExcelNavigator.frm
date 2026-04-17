@@ -33,8 +33,6 @@ Option Explicit
 
 ' ========= FORM SIZE LIMITS =========
 Private mHooked As Boolean
-Private Const FORM_MIN_W As Long = 420
-Private Const FORM_MIN_H As Long = 520
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
 Private Const REG_APP As String = "ExcelNavigator"
@@ -66,7 +64,9 @@ Private mBottomBlockTop As Single   ' top of bottom buttons row (before shifting
 Private mRightMargin As Single
 Private mGap As Single
 
-Private mCtlTop(1 To 20) As Single
+Private mCtlTop(1 To 21) As Single
+Private mMinTrackW As Long
+Private mMinTrackH As Long
 Private mHookReady As Boolean
 
 
@@ -189,6 +189,8 @@ Private Sub btnCopyBreakLinks_Click()
     Dim i As Long, wbName As String
     Dim srcWb As Workbook
     Dim copiedCount As Long
+    Dim copiedPaths As Collection
+    Dim outPath As String
 
     suffix = Trim$(CStr(Me.txtSuffix.Value))
     If Len(suffix) = 0 Then
@@ -204,6 +206,7 @@ Private Sub btnCopyBreakLinks_Click()
     If Len(targetFolder) = 0 Then Exit Sub
 
     copiedCount = 0
+    Set copiedPaths = New Collection
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         If Me.lstWorkbooks.Selected(i) Then
@@ -216,8 +219,9 @@ Private Sub btnCopyBreakLinks_Click()
             ElseIf Len(srcWb.Path) = 0 Then
                 SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
             Else
-                If CopyAndBreakLinks(srcWb, targetFolder, suffix) Then
+                If CopyAndBreakLinks(srcWb, targetFolder, suffix, outPath) Then
                     copiedCount = copiedCount + 1
+                    copiedPaths.Add outPath
                 End If
             End If
 
@@ -227,6 +231,9 @@ Private Sub btnCopyBreakLinks_Click()
     If copiedCount > 0 Then
         mLastCopyFolder = targetFolder
         Me.btnOpenCopyFolder.enabled = True
+        If ShouldOpenCopiedFiles() Then
+            OpenCopiedFiles copiedPaths
+        End If
     End If
 
     SafeMsgBox "Done. Copied and processed: " & copiedCount & " file(s).", vbInformation
@@ -246,8 +253,7 @@ Private Function PickFolder(ByVal titleText As String) As String
     End With
 End Function
 
-Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String) As Boolean
-    Dim outPath As String
+Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String, ByRef outPath As String) As Boolean
     Dim copiedWb As Workbook
 
     On Error GoTo EH
@@ -312,6 +318,8 @@ Private Sub btnCopyWithSuffix_Click()
     Dim i As Long, wbName As String
     Dim srcWb As Workbook
     Dim copiedCount As Long
+    Dim copiedPaths As Collection
+    Dim outPath As String
 
     suffix = Trim$(CStr(Me.txtSuffix.Value))
     If Len(suffix) = 0 Then
@@ -327,6 +335,7 @@ Private Sub btnCopyWithSuffix_Click()
     If Len(targetFolder) = 0 Then Exit Sub
 
     copiedCount = 0
+    Set copiedPaths = New Collection
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         If Me.lstWorkbooks.Selected(i) Then
@@ -338,8 +347,9 @@ Private Sub btnCopyWithSuffix_Click()
             ElseIf Len(srcWb.Path) = 0 Then
                 SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
             Else
-                If CopyWithSuffixOnly(srcWb, targetFolder, suffix) Then
+                If CopyWithSuffixOnly(srcWb, targetFolder, suffix, outPath) Then
                     copiedCount = copiedCount + 1
+                    copiedPaths.Add outPath
                 End If
             End If
         End If
@@ -348,6 +358,9 @@ Private Sub btnCopyWithSuffix_Click()
     If copiedCount > 0 Then
         mLastCopyFolder = targetFolder
         Me.btnOpenCopyFolder.enabled = True
+        If ShouldOpenCopiedFiles() Then
+            OpenCopiedFiles copiedPaths
+        End If
     End If
 
     SafeMsgBox "Done. Copied: " & copiedCount & " file(s).", vbInformation
@@ -619,6 +632,53 @@ Private Sub CheckBox1_Click()
 
 End Sub
 
+Private Function ShouldOpenCopiedFiles() As Boolean
+    Dim ctl As Object
+
+    Set ctl = GetControlIfExists("ChckBox1")
+    If ctl Is Nothing Then Set ctl = GetControlIfExists("CheckBox1")
+    If ctl Is Nothing Then Exit Function
+
+    On Error Resume Next
+    ShouldOpenCopiedFiles = CBool(ctl.Value)
+    On Error GoTo 0
+End Function
+
+Private Sub OpenCopiedFiles(ByVal copiedPaths As Collection)
+    Dim fp As Variant
+    Dim wb As Workbook
+    Dim openedCount As Long
+    Dim failedCount As Long
+
+    If copiedPaths Is Nothing Then Exit Sub
+    If copiedPaths.Count = 0 Then Exit Sub
+
+    On Error Resume Next
+    modWinAPI.SetTopMostState Me.Caption, False
+    On Error GoTo 0
+
+    For Each fp In copiedPaths
+        Set wb = Nothing
+        On Error Resume Next
+        Set wb = Workbooks.Open(fileName:=CStr(fp), UpdateLinks:=0, ReadOnly:=False)
+        If wb Is Nothing Then
+            failedCount = failedCount + 1
+        Else
+            openedCount = openedCount + 1
+        End If
+        On Error GoTo 0
+    Next fp
+
+    On Error Resume Next
+    modWinAPI.SetTopMostState Me.Caption, True
+    On Error GoTo 0
+
+    If failedCount > 0 Then
+        SafeMsgBox "Opened " & openedCount & " copied file(s)." & vbCrLf & _
+                   "Could not open " & failedCount & " file(s).", vbExclamation
+    End If
+End Sub
+
 Private Sub Label3_Click()
 
 End Sub
@@ -671,6 +731,9 @@ Private Sub UserForm_Activate()
 
     If TryHookResize() Then
         mHookReady = True
+        If mMinTrackW <= 0 Then mMinTrackW = CLng(Me.Width)
+        If mMinTrackH <= 0 Then mMinTrackH = CLng(Me.Height)
+        modFormSizeHook.HookMinMax Me.Caption, mMinTrackW, mMinTrackH, FORM_MAX_W, FORM_MAX_H
     End If
 
     ApplyLayout
@@ -731,6 +794,9 @@ Else
     Me.Width = defaultW
 End If
 If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
+
+If mMinTrackW = 0 Then mMinTrackW = CLng(Me.Width)
+If mMinTrackH = 0 Then mMinTrackH = CLng(Me.Height)
 btnCancel.Visible = False
 btnCancel.enabled = True
 PositionTopButtons
@@ -1753,6 +1819,7 @@ End Function
 
 Private Sub UserForm_Terminate()
     On Error Resume Next
+    modFormSizeHook.UnhookMinMax Me.Caption
     SaveSetting REG_APP, REG_SEC, "W", Me.Width
     SaveSetting REG_APP, REG_SEC, "H", Me.Height
 End Sub
@@ -1787,6 +1854,7 @@ Private Sub CacheLayout()
     mCtlTop(18) = GetOptionalControlTop("btnScreen1", mCtlTop(17))
     mCtlTop(19) = GetOptionalControlTop("btnScreen2", mCtlTop(18))
     mCtlTop(20) = GetOptionalControlTop("btnScreen3", mCtlTop(19))
+    mCtlTop(21) = GetOptionalControlTop("ChckBox1", GetOptionalControlTop("CheckBox1", mCtlTop(16)))
 
     
     mBottomBlockTop = Me.tglBatchMode.TOP
@@ -1808,6 +1876,7 @@ Private Sub ApplyLayout()
     Dim ctlS1 As Object
     Dim ctlS2 As Object
     Dim ctlS3 As Object
+    Dim ctlOpenCopied As Object
 
     If mBaseInsideW = 0 Or mBaseInsideH = 0 Then Exit Sub
 
@@ -1877,6 +1946,8 @@ Private Sub ApplyLayout()
     SetOptionalControlTop "btnScreen1", mCtlTop(18) + deltaH
     SetOptionalControlTop "btnScreen2", mCtlTop(19) + deltaH
     SetOptionalControlTop "btnScreen3", mCtlTop(20) + deltaH
+    SetOptionalControlTop "ChckBox1", mCtlTop(21) + deltaH
+    SetOptionalControlTop "CheckBox1", mCtlTop(21) + deltaH
 
 
 
@@ -1896,6 +1967,8 @@ Private Sub ApplyLayout()
     Set ctlS1 = GetControlIfExists("btnScreen1")
     Set ctlS2 = GetControlIfExists("btnScreen2")
     Set ctlS3 = GetControlIfExists("btnScreen3")
+    Set ctlOpenCopied = GetControlIfExists("ChckBox1")
+    If ctlOpenCopied Is Nothing Then Set ctlOpenCopied = GetControlIfExists("CheckBox1")
 
     If Not ctlMax Is Nothing Then
         ctlMax.TOP = actionTop
@@ -1921,6 +1994,10 @@ Private Sub ApplyLayout()
         If Not ctlS2 Is Nothing Then
             ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
         End If
+    End If
+
+    If Not ctlOpenCopied Is Nothing Then
+        ctlOpenCopied.Left = Me.btnCopyWithSuffix.Left
     End If
 
     ' --- ListBox: stretch to fill between top row and bottom block
@@ -2225,8 +2302,7 @@ End Sub
 ' COPY WITH SUFFIX (NO LINK BREAK) + FILE OPENERS
 ' =========================================================
 
-Private Function CopyWithSuffixOnly(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String) As Boolean
-    Dim outPath As String
+Private Function CopyWithSuffixOnly(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String, ByRef outPath As String) As Boolean
     On Error GoTo EH
 
     outPath = BuildOutputPath(targetFolder, srcWb.Name, suffix)
