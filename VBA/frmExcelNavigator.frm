@@ -68,6 +68,8 @@ Private mCtlTop(1 To 21) As Single
 Private mMinTrackW As Long
 Private mMinTrackH As Long
 Private mHookReady As Boolean
+Private mOpenCopiedOffsetTop As Single
+Private mOpenCopiedOffsetLeft As Single
 
 
 ' ========= CONSTANTS =========
@@ -1793,6 +1795,16 @@ Private Function GetOptionalControlTop(ByVal controlName As String, ByVal fallba
     End If
 End Function
 
+Private Function GetOptionalControlLeft(ByVal controlName As String, ByVal fallbackLeft As Single) As Single
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then
+        GetOptionalControlLeft = fallbackLeft
+    Else
+        GetOptionalControlLeft = ctl.Left
+    End If
+End Function
+
 Private Sub SetOptionalControlTop(ByVal controlName As String, ByVal newTop As Single)
     Dim ctl As Object
     Set ctl = GetControlIfExists(controlName)
@@ -1849,6 +1861,8 @@ Private Sub CacheLayout()
     mCtlTop(19) = GetOptionalControlTop("btnScreen2", mCtlTop(18))
     mCtlTop(20) = GetOptionalControlTop("btnScreen3", mCtlTop(19))
     mCtlTop(21) = GetOptionalControlTop("ChckBox1", GetOptionalControlTop("CheckBox1", mCtlTop(16)))
+    mOpenCopiedOffsetTop = mCtlTop(21) - mCtlTop(16)
+    mOpenCopiedOffsetLeft = GetOptionalControlLeft("ChckBox1", GetOptionalControlLeft("CheckBox1", Me.btnCopyWithSuffix.Left)) - Me.btnCopyWithSuffix.Left
 
     
     mBottomBlockTop = Me.tglBatchMode.TOP
@@ -1940,11 +1954,6 @@ Private Sub ApplyLayout()
     SetOptionalControlTop "btnScreen1", mCtlTop(18) + deltaH
     SetOptionalControlTop "btnScreen2", mCtlTop(19) + deltaH
     SetOptionalControlTop "btnScreen3", mCtlTop(20) + deltaH
-    SetOptionalControlTop "ChckBox1", mCtlTop(21) + deltaH
-    SetOptionalControlTop "CheckBox1", mCtlTop(21) + deltaH
-
-
-
     ' Keep bottom action buttons in one line:
     ' btnMaximize btnScreen1 btnScreen2 btnScreen3 btnCancel btnClose
     actionBottomMargin = 6
@@ -1991,7 +2000,23 @@ Private Sub ApplyLayout()
     End If
 
     If Not ctlOpenCopied Is Nothing Then
-        ctlOpenCopied.Left = Me.btnCopyWithSuffix.Left
+        Dim gapTop As Single
+        Dim gapHeight As Single
+
+        ctlOpenCopied.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
+
+        If Not ctlMax Is Nothing Then
+            gapTop = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height
+            gapHeight = ctlMax.TOP - gapTop
+
+            If gapHeight > ctlOpenCopied.Height Then
+                ctlOpenCopied.TOP = gapTop + ((gapHeight - ctlOpenCopied.Height) / 2)
+            Else
+                ctlOpenCopied.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
+            End If
+        Else
+            ctlOpenCopied.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
+        End If
     End If
 
     ' --- ListBox: stretch to fill between top row and bottom block
