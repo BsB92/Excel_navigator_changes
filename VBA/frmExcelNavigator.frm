@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.1"
-   ClientHeight    =   9240.001
+   Caption         =   "ExcelNavigator v4.3"
+   ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   5996.25
+   ClientWidth     =   5715
    OleObjectBlob   =   "frmExcelNavigator.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 
 
 Option Explicit
@@ -85,7 +86,7 @@ Public Sub RestoreNavigatorToFront()
     If Not Me.Visible Then Me.Show vbModeless
     modWinAPI.BringFormToFront Me.Caption
     modWinAPI.SetTopMostState Me.Caption, True
-    If Me.lstWorkbooks.Visible And Me.lstWorkbooks.Enabled Then Me.lstWorkbooks.SetFocus
+    If Me.lstWorkbooks.Visible And Me.lstWorkbooks.enabled Then Me.lstWorkbooks.SetFocus
 End Sub
 
 Private Sub ActivateWorkbookThenRestoreNavigator(ByVal wb As Workbook)
@@ -613,6 +614,10 @@ Private Function WorkbookIsOpen(ByVal wbName As String) As Boolean
     WorkbookIsOpen = Not (w Is Nothing)
     On Error GoTo 0
 End Function
+
+Private Sub CheckBox1_Click()
+
+End Sub
 
 Private Sub Label3_Click()
 
@@ -1881,8 +1886,8 @@ Private Sub ApplyLayout()
     actionGap = 6
     actionTop = Me.InsideHeight - actionBottomMargin - Me.btnClose.Height
 
-    Me.btnClose.Top = actionTop
-    Me.btnCancel.Top = actionTop
+    Me.btnClose.TOP = actionTop
+    Me.btnCancel.TOP = actionTop
 
     Me.btnClose.Left = Me.InsideWidth - actionBottomMargin - Me.btnClose.Width
     Me.btnCancel.Left = Me.btnClose.Left - actionGap - Me.btnCancel.Width
@@ -1893,26 +1898,26 @@ Private Sub ApplyLayout()
     Set ctlS3 = GetControlIfExists("btnScreen3")
 
     If Not ctlMax Is Nothing Then
-        ctlMax.Top = actionTop
+        ctlMax.TOP = actionTop
         ctlMax.Left = Me.btnCopyWithSuffix.Left
     End If
 
     If Not ctlS1 Is Nothing Then
-        ctlS1.Top = actionTop
+        ctlS1.TOP = actionTop
         If Not ctlMax Is Nothing Then
             ctlS1.Left = ctlMax.Left + ctlMax.Width + actionGap
         End If
     End If
 
     If Not ctlS2 Is Nothing Then
-        ctlS2.Top = actionTop
+        ctlS2.TOP = actionTop
         If Not ctlS1 Is Nothing Then
             ctlS2.Left = ctlS1.Left + ctlS1.Width + actionGap
         End If
     End If
 
     If Not ctlS3 Is Nothing Then
-        ctlS3.Top = actionTop
+        ctlS3.TOP = actionTop
         If Not ctlS2 Is Nothing Then
             ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
         End If
@@ -2038,7 +2043,7 @@ Private Function MeasureTextWidthPt(ByVal valueText As String) As Single
             .AutoSize = True
             .WordWrap = False
             .Left = -10000
-            .Top = -10000
+            .TOP = -10000
         End With
     End If
 
