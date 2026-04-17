@@ -758,6 +758,7 @@ Private Sub UserForm_Initialize()
     ' col3 = FullPath (hidden, for search)
     Me.lstWorkbooks.ColumnCount = 4
     Me.lstWorkbooks.ColumnWidths = "240.5 pt;30 pt;55 pt;0 pt"
+    Me.lstWorkbooks.MultiSelect = fmMultiSelectMulti
     Me.txtSearch.Value = ""
 
     Me.tglBatchMode.Visible = False
@@ -1523,6 +1524,37 @@ Private Sub RefreshVisuals()
         Me.lstWorkbooks.List(i, 0) = BuildDisplayName(rawName)
         Me.lstWorkbooks.List(i, 2) = GetStatusText(rawName)
     Next i
+
+    SyncListSelectionFromModel
+End Sub
+
+Private Sub SyncListSelectionFromModel()
+    Dim i As Long
+    Dim rawName As String
+    Dim shouldSelect As Boolean
+    Dim prevBusy As Boolean
+
+    prevBusy = mUIBusy
+    mUIBusy = True
+
+    On Error GoTo SafeExit
+
+    If Me.lstWorkbooks.ListCount <= 0 Then GoTo SafeExit
+
+    On Error Resume Next
+    Me.lstWorkbooks.Selected(0) = False
+    On Error GoTo SafeExit
+
+    For i = 1 To Me.lstWorkbooks.ListCount - 1
+        rawName = GetRawNameFromRow(i)
+        shouldSelect = mSelected.Exists(rawName)
+        If Me.lstWorkbooks.Selected(i) <> shouldSelect Then
+            Me.lstWorkbooks.Selected(i) = shouldSelect
+        End If
+    Next i
+
+SafeExit:
+    mUIBusy = prevBusy
 End Sub
 
 Private Function BuildDisplayName(ByVal rawName As String) As String
