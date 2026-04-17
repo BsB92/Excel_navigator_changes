@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.3"
+   Caption         =   "ExcelNavigator v5.0"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -53,6 +53,8 @@ Private mLastReload As Date
 Private mFixingHeader As Boolean
 Private mUIBusy As Boolean
 Private mLastCopyFolder As String
+Private mSelected As Object
+Private mCtrlTogglePending As Boolean
 ' ========= RESIZE LAYOUT CACHE =========
 Private mBaseInsideW As Single, mBaseInsideH As Single
 Private mBaseFileColW As Single
@@ -74,6 +76,8 @@ Private mOpenCopiedOffsetLeft As Single
 
 ' ========= CONSTANTS =========
 Private Const ACTIVE_PREFIX As String = "> "
+Private Const SELECTED_PREFIX As String = "+"
+Private Const FM_CTRL_MASK As Integer = 2
 Private Const CLOSEMODE_ASK_EACH As Long = 0
 Private Const CLOSEMODE_SAVE_ALL As Long = 1
 Private Const CLOSEMODE_DONT_SAVE_ALL As Long = 2
@@ -101,51 +105,49 @@ End Sub
 
 Private Function GetSelectedWorkbookNames() As Collection
     Dim col As Collection
-    Dim i As Long
-    Dim wbName As String
+    Dim item As Variant
 
     Set col = New Collection
 
-    For i = 1 To Me.lstWorkbooks.ListCount - 1
-        If Me.lstWorkbooks.Selected(i) Then
-            wbName = GetRawNameFromRow(i)
-            col.Add wbName
+    For Each item In mSelected.Keys
+        If Not GetWorkbookByName(CStr(item)) Is Nothing Then
+            col.Add CStr(item)
         End If
-    Next i
+    Next item
 
     Set GetSelectedWorkbookNames = col
 End Function
 
 Private Function CountUnsavedSelectedClosableWorkbooks() As Long
-    Dim i As Long
+    Dim selectedNames As Collection
+    Dim item As Variant
     Dim wb As Workbook
     Dim wbName As String
     Dim cnt As Long
 
     cnt = 0
+    Set selectedNames = GetSelectedWorkbookNames()
 
-    For i = 1 To Me.lstWorkbooks.ListCount - 1
-        If Me.lstWorkbooks.Selected(i) Then
-            wbName = GetRawNameFromRow(i)
-            Set wb = GetWorkbookByName(wbName)
+    For Each item In selectedNames
+        wbName = CStr(item)
+        Set wb = GetWorkbookByName(wbName)
 
-            If Not wb Is Nothing Then
-                If Not wb.IsAddin Then
-                    If UCase$(wb.Name) <> "PERSONAL.XLSB" Then
-                        If Not wb.Saved Then
-                            If AnyWorkbookRefreshing(wb) Then
-                                If LCase$(Left$(wb.Path, 4)) = "http" Then
-                                    cnt = cnt + 1
-                                End If
-                            Else
+        If Not wb Is Nothing Then
+            If Not wb.IsAddin Then
+                If UCase$(wb.Name) <> "PERSONAL.XLSB" Then
+                    If Not wb.Saved Then
+                        If AnyWorkbookRefreshing(wb) Then
+                            If LCase$(Left$(wb.Path, 4)) = "http" Then
                                 cnt = cnt + 1
                             End If
+                        Else
+                            cnt = cnt + 1
                         End If
                     End If
                 End If
             End If
         End If
-    Next i
+    Next item
 
     CountUnsavedSelectedClosableWorkbooks = cnt
 End Function
@@ -180,19 +182,23 @@ End Function
 
 Private Sub btnCopyBreakLinks_Click()
 
-    If mUIBusy Then Exit Sub
-    If Not Me.tglBatchMode.Value Then
-        SafeMsgBox "Turn ON Selection mode and select at least one file.", vbExclamation
-        Exit Sub
-    End If
-
     Dim suffix As String
     Dim targetFolder As String
-    Dim i As Long, wbName As String
+    Dim selectedNames As Collection
+    Dim item As Variant
+    Dim wbName As String
     Dim srcWb As Workbook
     Dim copiedCount As Long
     Dim copiedPaths As Collection
     Dim outPath As String
+
+    If mUIBusy Then Exit Sub
+
+    Set selectedNames = GetSelectedWorkbookNames()
+    If selectedNames.Count = 0 Then
+        SafeMsgBox "Nothing selected.", vbExclamation
+        Exit Sub
+    End If
 
     suffix = Trim$(CStr(Me.txtSuffix.Value))
     If Len(suffix) = 0 Then
@@ -210,25 +216,21 @@ Private Sub btnCopyBreakLinks_Click()
     copiedCount = 0
     Set copiedPaths = New Collection
 
-    For i = 1 To Me.lstWorkbooks.ListCount - 1
-        If Me.lstWorkbooks.Selected(i) Then
+    For Each item In selectedNames
+        wbName = CStr(item)
+        Set srcWb = GetWorkbookByName(wbName)
 
-            wbName = GetRawNameFromRow(i)
-            Set srcWb = GetWorkbookByName(wbName)
-
-            If srcWb Is Nothing Then
-                SafeMsgBox "Workbook not found: " & wbName, vbExclamation
-            ElseIf Len(srcWb.Path) = 0 Then
-                SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
-            Else
-                If CopyAndBreakLinks(srcWb, targetFolder, suffix, outPath) Then
-                    copiedCount = copiedCount + 1
-                    copiedPaths.Add outPath
-                End If
+        If srcWb Is Nothing Then
+            SafeMsgBox "Workbook not found: " & wbName, vbExclamation
+        ElseIf Len(srcWb.Path) = 0 Then
+            SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
+        Else
+            If CopyAndBreakLinks(srcWb, targetFolder, suffix, outPath) Then
+                copiedCount = copiedCount + 1
+                copiedPaths.Add outPath
             End If
-
         End If
-    Next i
+    Next item
 
     If copiedCount > 0 Then
         mLastCopyFolder = targetFolder
@@ -309,19 +311,23 @@ Private Sub BreakExternalLinks(ByVal wb As Workbook)
 End Sub
 
 Private Sub btnCopyWithSuffix_Click()
-    If mUIBusy Then Exit Sub
-    If Not Me.tglBatchMode.Value Then
-        SafeMsgBox "Turn ON Selection mode and select at least one file.", vbExclamation
-        Exit Sub
-    End If
-
     Dim suffix As String
     Dim targetFolder As String
-    Dim i As Long, wbName As String
+    Dim selectedNames As Collection
+    Dim item As Variant
+    Dim wbName As String
     Dim srcWb As Workbook
     Dim copiedCount As Long
     Dim copiedPaths As Collection
     Dim outPath As String
+
+    If mUIBusy Then Exit Sub
+
+    Set selectedNames = GetSelectedWorkbookNames()
+    If selectedNames.Count = 0 Then
+        SafeMsgBox "Nothing selected.", vbExclamation
+        Exit Sub
+    End If
 
     suffix = Trim$(CStr(Me.txtSuffix.Value))
     If Len(suffix) = 0 Then
@@ -339,23 +345,21 @@ Private Sub btnCopyWithSuffix_Click()
     copiedCount = 0
     Set copiedPaths = New Collection
 
-    For i = 1 To Me.lstWorkbooks.ListCount - 1
-        If Me.lstWorkbooks.Selected(i) Then
-            wbName = GetRawNameFromRow(i)
-            Set srcWb = GetWorkbookByName(wbName)
+    For Each item In selectedNames
+        wbName = CStr(item)
+        Set srcWb = GetWorkbookByName(wbName)
 
-            If srcWb Is Nothing Then
-                SafeMsgBox "Workbook not found: " & wbName, vbExclamation
-            ElseIf Len(srcWb.Path) = 0 Then
-                SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
-            Else
-                If CopyWithSuffixOnly(srcWb, targetFolder, suffix, outPath) Then
-                    copiedCount = copiedCount + 1
-                    copiedPaths.Add outPath
-                End If
+        If srcWb Is Nothing Then
+            SafeMsgBox "Workbook not found: " & wbName, vbExclamation
+        ElseIf Len(srcWb.Path) = 0 Then
+            SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
+        Else
+            If CopyWithSuffixOnly(srcWb, targetFolder, suffix, outPath) Then
+                copiedCount = copiedCount + 1
+                copiedPaths.Add outPath
             End If
         End If
-    Next i
+    Next item
 
     If copiedCount > 0 Then
         mLastCopyFolder = targetFolder
@@ -466,7 +470,8 @@ Private Sub btnCloseSelected_Click()
 End Sub
 
 Private Sub CloseSelectedWorkbooks()
-    Dim i As Long
+    Dim selectedNames As Collection
+    Dim selectedItem As Variant
     Dim wb As Workbook
     Dim wbName As String
     Dim cntSel As Long
@@ -486,11 +491,6 @@ Private Sub CloseSelectedWorkbooks()
         Exit Sub
     End If
 
-    If Not Me.tglBatchMode.Value Then
-        SafeMsgBox "Turn ON Selection mode and select at least one file.", vbExclamation
-        Exit Sub
-    End If
-
     resp = SafeMsgBox( _
         "Close selected workbooks?", _
         vbOKCancel Or vbQuestion, _
@@ -501,45 +501,46 @@ Private Sub CloseSelectedWorkbooks()
     unsavedCount = CountUnsavedSelectedClosableWorkbooks()
     closeMode = ResolveCloseMode(unsavedCount)
 
-    For i = 1 To Me.lstWorkbooks.ListCount - 1
-        If Me.lstWorkbooks.Selected(i) Then
-            cntSel = cntSel + 1
-            wbName = GetRawNameFromRow(i)
-            Set wb = GetWorkbookByName(wbName)
+    Set selectedNames = GetSelectedWorkbookNames()
 
-            If wb Is Nothing Then GoTo NEXT_I
+    For Each selectedItem In selectedNames
+        wbName = CStr(selectedItem)
+        cntSel = cntSel + 1
+        Set wb = GetWorkbookByName(wbName)
 
-            If wb.IsAddin Then
-                cntSkippedProtected = cntSkippedProtected + 1
+        If wb Is Nothing Then GoTo NEXT_I
+
+        If wb.IsAddin Then
+            cntSkippedProtected = cntSkippedProtected + 1
+            GoTo NEXT_I
+        End If
+
+        If UCase$(wb.Name) = "PERSONAL.XLSB" Then
+            cntSkippedProtected = cntSkippedProtected + 1
+            GoTo NEXT_I
+        End If
+
+        If AnyWorkbookRefreshing(wb) Then
+            If LCase$(Left$(wb.Path, 4)) <> "http" Then
+                cntSkippedRefreshing = cntSkippedRefreshing + 1
                 GoTo NEXT_I
             End If
+        End If
 
-            If UCase$(wb.Name) = "PERSONAL.XLSB" Then
-                cntSkippedProtected = cntSkippedProtected + 1
-                GoTo NEXT_I
-            End If
+        okContinue = CloseOneWorkbookWithPrompt(wb, closeMode)
+        If Not okContinue Then Exit For
 
-            If AnyWorkbookRefreshing(wb) Then
-                If LCase$(Left$(wb.Path, 4)) <> "http" Then
-                    cntSkippedRefreshing = cntSkippedRefreshing + 1
-                    GoTo NEXT_I
-                End If
-            End If
+        If Not WorkbookIsOpen(wbName) Then
+            cntClosed = cntClosed + 1
 
-            okContinue = CloseOneWorkbookWithPrompt(wb, closeMode)
-            If Not okContinue Then Exit For
-
-            If Not WorkbookIsOpen(wbName) Then
-                cntClosed = cntClosed + 1
-
-                On Error Resume Next
-                If mStatus.Exists(wbName) Then mStatus.Remove wbName
-                On Error GoTo 0
-            End If
+            On Error Resume Next
+            If mStatus.Exists(wbName) Then mStatus.Remove wbName
+            If mSelected.Exists(wbName) Then mSelected.Remove wbName
+            On Error GoTo 0
+        End If
 
 NEXT_I:
-        End If
-    Next i
+    Next selectedItem
 
     ReloadListPreserveSelection
     RefreshVisuals
@@ -748,6 +749,7 @@ End Sub
 Private Sub UserForm_Initialize()
 
     Set mStatus = CreateObject("Scripting.Dictionary")
+    Set mSelected = CreateObject("Scripting.Dictionary")
 
     ' ListBox:
     ' col0 = File (display)
@@ -756,14 +758,11 @@ Private Sub UserForm_Initialize()
     ' col3 = FullPath (hidden, for search)
     Me.lstWorkbooks.ColumnCount = 4
     Me.lstWorkbooks.ColumnWidths = "240.5 pt;30 pt;55 pt;0 pt"
-    Me.lstWorkbooks.MultiSelect = fmMultiSelectSingle
-
     Me.txtSearch.Value = ""
 
-    Me.tglBatchMode.Value = False
-    Me.tglBatchMode.Caption = "Selection mode: OFF"
+    Me.tglBatchMode.Visible = False
 
-    SetActionButtonsEnabled False
+    SetActionButtonsEnabled True
     SetOptionalControlEnabled "btnMaximize", True
     SetOptionalControlEnabled "btnScreen1", True
     SetOptionalControlEnabled "btnScreen2", True
@@ -807,42 +806,6 @@ ApplyLayout
 
 End Sub
 
-' =========================================================
-' SELECTION MODE
-' =========================================================
-Private Sub tglBatchMode_Click()
-    On Error GoTo ModeSwitchError
-
-    mUIBusy = True
-
-    ' Najpierw zdejmij bieżące zaznaczenie i fokus, potem zmień MultiSelect.
-    ' W niektórych konfiguracjach Excela taka kolejność zapobiega runtime error.
-    Me.lstWorkbooks.ListIndex = -1
-    ClearAllSelections
-
-    If Me.tglBatchMode.Value Then
-        Me.tglBatchMode.Caption = "Selection mode: ON"
-        Me.lstWorkbooks.MultiSelect = fmMultiSelectMulti
-        SetActionButtonsEnabled True
-    Else
-        Me.tglBatchMode.Caption = "Selection mode: OFF"
-        Me.lstWorkbooks.MultiSelect = fmMultiSelectSingle
-        SetActionButtonsEnabled False
-    End If
-
-    ShowFullPathForIndex -1
-    Me.tglBatchMode.BackColor = IIf(Me.tglBatchMode.Value, RGB(0, 176, 80), vbButtonFace)
-    RefreshVisuals
-
-SafeExit:
-    mUIBusy = False
-    Exit Sub
-
-ModeSwitchError:
-    mUIBusy = False
-    SafeMsgBox "Cannot switch Selection mode: " & Err.Description, vbExclamation
-End Sub
-
 Private Sub SetActionButtonsEnabled(ByVal enabled As Boolean)
     Me.btnRefresh.enabled = enabled
     Me.btnSave.enabled = enabled
@@ -863,6 +826,10 @@ End Sub
 ' =========================================================
 ' LIST EVENTS (header block)
 ' =========================================================
+Private Sub lstWorkbooks_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    mCtrlTogglePending = ((Shift And FM_CTRL_MASK) <> 0)
+End Sub
+
 Private Sub lstWorkbooks_Click()
 
     Dim idx As Long
@@ -873,7 +840,6 @@ Private Sub lstWorkbooks_Click()
 
     idx = Me.lstWorkbooks.ListIndex
 
-    ' Klik w naglówek albo puste miejsce = nic nie rób
     If idx <= 0 Then
         mUIBusy = True
         On Error Resume Next
@@ -882,18 +848,25 @@ Private Sub lstWorkbooks_Click()
         Me.txtFullPath.Value = ""
         On Error GoTo 0
         mUIBusy = False
+        mCtrlTogglePending = False
         Exit Sub
     End If
 
     ShowFullPathForIndex idx
 
-    ' Selection mode: tylko zaznaczanie, bez aktywacji
-    If Me.tglBatchMode.Value Then
+    wbName = GetRawNameFromRow(idx)
+
+    If mCtrlTogglePending Then
+        If mSelected.Exists(wbName) Then
+            mSelected.Remove wbName
+        Else
+            mSelected(wbName) = True
+        End If
+        mCtrlTogglePending = False
         RefreshVisuals
         Exit Sub
     End If
 
-    wbName = GetRawNameFromRow(idx)
     Set wb = GetWorkbookByName(wbName)
     If wb Is Nothing Then Exit Sub
 
@@ -904,8 +877,6 @@ Private Sub lstWorkbooks_Click()
 
     RefreshVisuals
 End Sub
-
-
 
 Private Sub lstWorkbooks_Change()
 
@@ -1015,28 +986,25 @@ End Sub
 ' =========================================================
 Private Sub btnSelectAll_Click()
     Dim i As Long
-    If Not Me.tglBatchMode.Value Then Exit Sub
+    Dim wbName As String
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
-        Me.lstWorkbooks.Selected(i) = True
+        wbName = GetRawNameFromRow(i)
+        If Len(wbName) > 0 Then mSelected(wbName) = True
     Next i
 
     RefreshVisuals
-    
+
 End Sub
 
 Private Sub btnClearAll_Click()
-    If Not Me.tglBatchMode.Value Then Exit Sub
-    ClearAllSelections
+    mSelected.RemoveAll
     RefreshVisuals
-    
+
 End Sub
 
 Private Sub ClearAllSelections()
-    Dim i As Long
-    For i = 1 To Me.lstWorkbooks.ListCount - 1
-        Me.lstWorkbooks.Selected(i) = False
-    Next i
+    mSelected.RemoveAll
 End Sub
 
 Private Sub btnClose_Click()
@@ -1047,15 +1015,15 @@ End Sub
 ' ACTIONS
 ' =========================================================
 Private Sub btnRefresh_Click()
-    If Me.tglBatchMode.Value Then RunSelected False, True
+    RunSelected False, True
 End Sub
 
 Private Sub btnSave_Click()
-    If Me.tglBatchMode.Value Then RunSelected True, False
+    RunSelected True, False
 End Sub
 
 Private Sub btnRefreshSave_Click()
-    If Me.tglBatchMode.Value Then RunSelected True, True
+    RunSelected True, True
 End Sub
 
 Private Sub ApplyWindowAction(ByVal targetScreen As Long)
@@ -1115,27 +1083,22 @@ End Sub
 
 Private Function GetWorkbooksForWindowAction() As Collection
     Dim col As Collection
-    Dim i As Long
+    Dim selectedNames As Collection
+    Dim item As Variant
     Dim wb As Workbook
-    Dim wbName As String
 
     Set col = New Collection
 
-    If Me.tglBatchMode.Value Then
-        For i = 1 To Me.lstWorkbooks.ListCount - 1
-            If Me.lstWorkbooks.Selected(i) Then
-                wbName = GetRawNameFromRow(i)
-                Set wb = GetWorkbookByName(wbName)
-                If Not wb Is Nothing Then
-                    If Not IsWorkbookSkippable(wb) Then col.Add wb
-                End If
-            End If
-        Next i
+    Set selectedNames = GetSelectedWorkbookNames()
 
-        If col.Count = 0 Then
-            SafeMsgBox "Turn ON Selection mode and select at least one file.", vbExclamation
+    For Each item In selectedNames
+        Set wb = GetWorkbookByName(CStr(item))
+        If Not wb Is Nothing Then
+            If Not IsWorkbookSkippable(wb) Then col.Add wb
         End If
-    Else
+    Next item
+
+    If col.Count = 0 Then
         For Each wb In Application.Workbooks
             If Not IsWorkbookSkippable(wb) Then col.Add wb
         Next wb
@@ -1393,30 +1356,35 @@ End Function
 ' LIST BUILD
 ' =========================================================
 Private Sub ReloadListPreserveSelection(Optional ByVal selectFirstDataRow As Boolean = True)
-    Dim dict As Object
     Dim i As Long
     Dim nm As String
+    Dim toRemove As Collection
+    Dim item As Variant
 
     If mUIBusy Then Exit Sub
     mUIBusy = True
 
     On Error GoTo SafeExit
 
-    Set dict = CreateObject("Scripting.Dictionary")
-
-    For i = 1 To Me.lstWorkbooks.ListCount - 1
-        If Me.lstWorkbooks.Selected(i) Then
-            dict(GetRawNameFromRow(i)) = True
-        End If
-    Next i
+    Set toRemove = New Collection
 
     LoadWorkbookCache
     ApplyFilterAndFillList selectFirstDataRow
 
+    For Each item In mSelected.Keys
+        If GetWorkbookByName(CStr(item)) Is Nothing Then
+            toRemove.Add CStr(item)
+        End If
+    Next item
+
+    For i = 1 To toRemove.Count
+        mSelected.Remove CStr(toRemove(i))
+    Next i
+
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         nm = GetRawNameFromRow(i)
-        If dict.Exists(nm) Then
-            Me.lstWorkbooks.Selected(i) = True
+        If mSelected.Exists(nm) Then
+            Me.lstWorkbooks.List(i, 0) = BuildDisplayName(nm)
         End If
     Next i
 
@@ -1546,39 +1514,55 @@ End Sub
 Private Sub RefreshVisuals()
 
     Dim i As Long
-    Dim activeName As String
     Dim rawName As String
+
+    For i = 1 To Me.lstWorkbooks.ListCount - 1
+
+        rawName = GetRawNameFromRow(i)
+
+        Me.lstWorkbooks.List(i, 0) = BuildDisplayName(rawName)
+        Me.lstWorkbooks.List(i, 2) = GetStatusText(rawName)
+    Next i
+End Sub
+
+Private Function BuildDisplayName(ByVal rawName As String) As String
+    Dim activeName As String
+    Dim isActive As Boolean
+    Dim isSelected As Boolean
 
     activeName = ""
     On Error Resume Next
     If Not Application.ActiveWorkbook Is Nothing Then activeName = Application.ActiveWorkbook.Name
     On Error GoTo 0
 
-    ' Skip header (0)
-    For i = 1 To Me.lstWorkbooks.ListCount - 1
+    isActive = (rawName = activeName)
+    isSelected = mSelected.Exists(rawName)
 
-        rawName = GetRawNameFromRow(i)
-
-        ' File column: show prefix only for active workbook, but never modify stored raw name
-        If rawName = activeName Then
-            Me.lstWorkbooks.List(i, 0) = ACTIVE_PREFIX & rawName
-        Else
-            Me.lstWorkbooks.List(i, 0) = rawName
-        End If
-
-        ' Status column based on RAW name
-        Me.lstWorkbooks.List(i, 2) = GetStatusText(rawName)
-    Next i
-End Sub
+    If isSelected And isActive Then
+        BuildDisplayName = SELECTED_PREFIX & ACTIVE_PREFIX & rawName
+    ElseIf isSelected Then
+        BuildDisplayName = SELECTED_PREFIX & rawName
+    ElseIf isActive Then
+        BuildDisplayName = ACTIVE_PREFIX & rawName
+    Else
+        BuildDisplayName = rawName
+    End If
+End Function
 
 Private Function GetRawNameFromRow(ByVal rowIndex As Long) As String
     Dim s As String
+
     s = CStr(Me.lstWorkbooks.List(rowIndex, 0))
-    If Left$(s, Len(ACTIVE_PREFIX)) = ACTIVE_PREFIX Then
-        GetRawNameFromRow = Mid$(s, Len(ACTIVE_PREFIX) + 1)
-    Else
-        GetRawNameFromRow = s
+
+    If Left$(s, Len(SELECTED_PREFIX & ACTIVE_PREFIX)) = (SELECTED_PREFIX & ACTIVE_PREFIX) Then
+        s = Mid$(s, Len(SELECTED_PREFIX & ACTIVE_PREFIX) + 1)
+    ElseIf Left$(s, Len(SELECTED_PREFIX)) = SELECTED_PREFIX Then
+        s = Mid$(s, Len(SELECTED_PREFIX) + 1)
+    ElseIf Left$(s, Len(ACTIVE_PREFIX)) = ACTIVE_PREFIX Then
+        s = Mid$(s, Len(ACTIVE_PREFIX) + 1)
     End If
+
+    GetRawNameFromRow = s
 End Function
 
 ' =========================================================
@@ -1840,7 +1824,7 @@ Private Sub CacheLayout()
     mGap = 8
 
     ' Bottom block anchor (we shift these by deltaH)
-    mCtlTop(1) = Me.tglBatchMode.TOP
+    mCtlTop(1) = Me.btnSelectAll.TOP
     mCtlTop(2) = Me.btnSelectAll.TOP
     mCtlTop(3) = Me.btnClearAll.TOP
     mCtlTop(4) = Me.btnRefresh.TOP
@@ -1865,7 +1849,7 @@ Private Sub CacheLayout()
     mOpenCopiedOffsetLeft = GetOptionalControlLeft("ChckBox1", GetOptionalControlLeft("CheckBox1", Me.btnCopyWithSuffix.Left)) - Me.btnCopyWithSuffix.Left
 
     
-    mBottomBlockTop = Me.tglBatchMode.TOP
+    mBottomBlockTop = Me.btnSelectAll.TOP
     mTopBlockBottom = Me.txtSearch.TOP + Me.txtSearch.Height
 
     ' Start file column width from current setting
@@ -1935,7 +1919,6 @@ Private Sub ApplyLayout()
     End If
 
     ' --- Shift bottom controls by deltaH (keep logical places)
-    Me.tglBatchMode.TOP = mCtlTop(1) + deltaH
     Me.btnSelectAll.TOP = mCtlTop(2) + deltaH
     Me.btnClearAll.TOP = mCtlTop(3) + deltaH
     Me.btnRefresh.TOP = mCtlTop(4) + deltaH
@@ -2028,7 +2011,7 @@ Me.txtFullPath.Left = Me.lstWorkbooks.Left
 Me.txtFullPath.Width = Me.lstWorkbooks.Width
 
 ' Place FullPath bar just above the bottom block
-Me.txtFullPath.TOP = Me.tglBatchMode.TOP - mGap - Me.txtFullPath.Height
+Me.txtFullPath.TOP = Me.btnSelectAll.TOP - mGap - Me.txtFullPath.Height
 
 ' ListBox ends above FullPath bar (leave gap)
 Me.lstWorkbooks.Height = (Me.txtFullPath.TOP - mGap) - Me.lstWorkbooks.TOP
@@ -2379,4 +2362,3 @@ EH:
     SafeMsgBox "Open file error:" & vbCrLf & filePath & vbCrLf & Err.Description, vbExclamation
     Set OpenWorkbookSafe = Nothing
 End Function
-
