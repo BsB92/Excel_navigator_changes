@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.1"
-   ClientHeight    =   9240.001
+   Caption         =   "ExcelNavigator v4.3"
+   ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   5996.25
+   ClientWidth     =   5715
    OleObjectBlob   =   "frmExcelNavigator.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 
 
 Option Explicit
@@ -65,7 +66,7 @@ Private mBottomBlockTop As Single   ' top of bottom buttons row (before shifting
 Private mRightMargin As Single
 Private mGap As Single
 
-Private mCtlTop(1 To 21) As Single
+Private mCtlTop(1 To 20) As Single
 Private mHookReady As Boolean
 
 
@@ -85,7 +86,7 @@ Public Sub RestoreNavigatorToFront()
     If Not Me.Visible Then Me.Show vbModeless
     modWinAPI.BringFormToFront Me.Caption
     modWinAPI.SetTopMostState Me.Caption, True
-    If Me.lstWorkbooks.Visible And Me.lstWorkbooks.Enabled Then Me.lstWorkbooks.SetFocus
+    If Me.lstWorkbooks.Visible And Me.lstWorkbooks.enabled Then Me.lstWorkbooks.SetFocus
 End Sub
 
 Private Sub ActivateWorkbookThenRestoreNavigator(ByVal wb As Workbook)
@@ -188,8 +189,6 @@ Private Sub btnCopyBreakLinks_Click()
     Dim i As Long, wbName As String
     Dim srcWb As Workbook
     Dim copiedCount As Long
-    Dim copiedPaths As Collection
-    Dim outPath As String
 
     suffix = Trim$(CStr(Me.txtSuffix.Value))
     If Len(suffix) = 0 Then
@@ -205,7 +204,6 @@ Private Sub btnCopyBreakLinks_Click()
     If Len(targetFolder) = 0 Then Exit Sub
 
     copiedCount = 0
-    Set copiedPaths = New Collection
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         If Me.lstWorkbooks.Selected(i) Then
@@ -218,10 +216,8 @@ Private Sub btnCopyBreakLinks_Click()
             ElseIf Len(srcWb.Path) = 0 Then
                 SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
             Else
-                outPath = BuildOutputPath(targetFolder, srcWb.Name, suffix)
                 If CopyAndBreakLinks(srcWb, targetFolder, suffix) Then
                     copiedCount = copiedCount + 1
-                    copiedPaths.Add outPath
                 End If
             End If
 
@@ -231,7 +227,6 @@ Private Sub btnCopyBreakLinks_Click()
     If copiedCount > 0 Then
         mLastCopyFolder = targetFolder
         Me.btnOpenCopyFolder.enabled = True
-        If ShouldOpenCopiedFiles() Then OpenCopiedFiles copiedPaths
     End If
 
     SafeMsgBox "Done. Copied and processed: " & copiedCount & " file(s).", vbInformation
@@ -277,37 +272,6 @@ EH:
     CopyAndBreakLinks = False
 End Function
 
-Private Function ShouldOpenCopiedFiles() As Boolean
-    Dim ctl As Object
-
-    Set ctl = GetControlIfExists("ChckBox1")
-    If ctl Is Nothing Then Exit Function
-
-    On Error Resume Next
-    ShouldOpenCopiedFiles = CBool(ctl.Value)
-    On Error GoTo 0
-End Function
-
-Private Sub OpenCopiedFiles(ByVal copiedPaths As Collection)
-    Dim i As Long
-    Dim openedCount As Long
-    Dim filePath As String
-
-    If copiedPaths Is Nothing Then Exit Sub
-    If copiedPaths.Count = 0 Then Exit Sub
-
-    For i = 1 To copiedPaths.Count
-        filePath = CStr(copiedPaths(i))
-        If Not OpenWorkbookSafe(filePath) Is Nothing Then
-            openedCount = openedCount + 1
-        End If
-    Next i
-
-    If openedCount < copiedPaths.Count Then
-        SafeMsgBox "Opened copied files: " & openedCount & " / " & copiedPaths.Count & ".", vbExclamation
-    End If
-End Sub
-
 Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As String, ByVal suffix As String) As String
     Dim baseName As String, ext As String
     Dim dotPos As Long
@@ -348,8 +312,6 @@ Private Sub btnCopyWithSuffix_Click()
     Dim i As Long, wbName As String
     Dim srcWb As Workbook
     Dim copiedCount As Long
-    Dim copiedPaths As Collection
-    Dim outPath As String
 
     suffix = Trim$(CStr(Me.txtSuffix.Value))
     If Len(suffix) = 0 Then
@@ -365,7 +327,6 @@ Private Sub btnCopyWithSuffix_Click()
     If Len(targetFolder) = 0 Then Exit Sub
 
     copiedCount = 0
-    Set copiedPaths = New Collection
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         If Me.lstWorkbooks.Selected(i) Then
@@ -377,10 +338,8 @@ Private Sub btnCopyWithSuffix_Click()
             ElseIf Len(srcWb.Path) = 0 Then
                 SafeMsgBox "Workbook must be saved first: " & srcWb.Name, vbExclamation
             Else
-                outPath = BuildOutputPath(targetFolder, srcWb.Name, suffix)
                 If CopyWithSuffixOnly(srcWb, targetFolder, suffix) Then
                     copiedCount = copiedCount + 1
-                    copiedPaths.Add outPath
                 End If
             End If
         End If
@@ -389,7 +348,6 @@ Private Sub btnCopyWithSuffix_Click()
     If copiedCount > 0 Then
         mLastCopyFolder = targetFolder
         Me.btnOpenCopyFolder.enabled = True
-        If ShouldOpenCopiedFiles() Then OpenCopiedFiles copiedPaths
     End If
 
     SafeMsgBox "Done. Copied: " & copiedCount & " file(s).", vbInformation
@@ -656,6 +614,10 @@ Private Function WorkbookIsOpen(ByVal wbName As String) As Boolean
     WorkbookIsOpen = Not (w Is Nothing)
     On Error GoTo 0
 End Function
+
+Private Sub CheckBox1_Click()
+
+End Sub
 
 Private Sub Label3_Click()
 
@@ -1777,13 +1739,6 @@ Private Sub SetOptionalControlTop(ByVal controlName As String, ByVal newTop As S
     ctl.TOP = newTop
 End Sub
 
-Private Sub SetOptionalControlLeft(ByVal controlName As String, ByVal newLeft As Single)
-    Dim ctl As Object
-    Set ctl = GetControlIfExists(controlName)
-    If ctl Is Nothing Then Exit Sub
-    ctl.Left = newLeft
-End Sub
-
 Private Function GetWorkbookByName(ByVal wbName As String) As Workbook
     On Error Resume Next
     Set GetWorkbookByName = Application.Workbooks(wbName)
@@ -1832,7 +1787,6 @@ Private Sub CacheLayout()
     mCtlTop(18) = GetOptionalControlTop("btnScreen1", mCtlTop(17))
     mCtlTop(19) = GetOptionalControlTop("btnScreen2", mCtlTop(18))
     mCtlTop(20) = GetOptionalControlTop("btnScreen3", mCtlTop(19))
-    mCtlTop(21) = GetOptionalControlTop("ChckBox1", mCtlTop(16))
 
     
     mBottomBlockTop = Me.tglBatchMode.TOP
@@ -1923,8 +1877,6 @@ Private Sub ApplyLayout()
     SetOptionalControlTop "btnScreen1", mCtlTop(18) + deltaH
     SetOptionalControlTop "btnScreen2", mCtlTop(19) + deltaH
     SetOptionalControlTop "btnScreen3", mCtlTop(20) + deltaH
-    SetOptionalControlTop "ChckBox1", mCtlTop(21) + deltaH
-    SetOptionalControlLeft "ChckBox1", Me.btnCopyWithSuffix.Left
 
 
 
@@ -1934,8 +1886,8 @@ Private Sub ApplyLayout()
     actionGap = 6
     actionTop = Me.InsideHeight - actionBottomMargin - Me.btnClose.Height
 
-    Me.btnClose.Top = actionTop
-    Me.btnCancel.Top = actionTop
+    Me.btnClose.TOP = actionTop
+    Me.btnCancel.TOP = actionTop
 
     Me.btnClose.Left = Me.InsideWidth - actionBottomMargin - Me.btnClose.Width
     Me.btnCancel.Left = Me.btnClose.Left - actionGap - Me.btnCancel.Width
@@ -1946,26 +1898,26 @@ Private Sub ApplyLayout()
     Set ctlS3 = GetControlIfExists("btnScreen3")
 
     If Not ctlMax Is Nothing Then
-        ctlMax.Top = actionTop
+        ctlMax.TOP = actionTop
         ctlMax.Left = Me.btnCopyWithSuffix.Left
     End If
 
     If Not ctlS1 Is Nothing Then
-        ctlS1.Top = actionTop
+        ctlS1.TOP = actionTop
         If Not ctlMax Is Nothing Then
             ctlS1.Left = ctlMax.Left + ctlMax.Width + actionGap
         End If
     End If
 
     If Not ctlS2 Is Nothing Then
-        ctlS2.Top = actionTop
+        ctlS2.TOP = actionTop
         If Not ctlS1 Is Nothing Then
             ctlS2.Left = ctlS1.Left + ctlS1.Width + actionGap
         End If
     End If
 
     If Not ctlS3 Is Nothing Then
-        ctlS3.Top = actionTop
+        ctlS3.TOP = actionTop
         If Not ctlS2 Is Nothing Then
             ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
         End If
@@ -2091,7 +2043,7 @@ Private Function MeasureTextWidthPt(ByVal valueText As String) As Single
             .AutoSize = True
             .WordWrap = False
             .Left = -10000
-            .Top = -10000
+            .TOP = -10000
         End With
     End If
 
@@ -2328,3 +2280,4 @@ EH:
     SafeMsgBox "Open file error:" & vbCrLf & filePath & vbCrLf & Err.Description, vbExclamation
     Set OpenWorkbookSafe = Nothing
 End Function
+
