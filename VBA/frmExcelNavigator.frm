@@ -762,7 +762,7 @@ Private Sub UserForm_Initialize()
     Me.lstWorkbooks.MultiSelect = fmMultiSelectMulti
     Me.txtSearch.Value = ""
 
-    Me.tglBatchMode.Visible = True
+    Me.tglBatchMode.Visible = False
     Me.tglBatchMode.Value = False
     UpdateSelectionModeVisual
 
@@ -862,7 +862,7 @@ Private Sub lstWorkbooks_Click()
 
     wbName = GetRawNameFromRow(idx)
 
-    If mCtrlTogglePending Or mRightTogglePending Or Me.tglBatchMode.Value Then
+    If mCtrlTogglePending Or mRightTogglePending Then
         If mSelected.Exists(wbName) Then
             mSelected.Remove wbName
         Else
@@ -1002,17 +1002,22 @@ Private Sub btnSelectAll_Click()
         If Len(wbName) > 0 Then mSelected(wbName) = True
     Next i
 
+    Me.tglBatchMode.Value = False
+    UpdateSelectionModeVisual
     RefreshVisuals
 
 End Sub
 
 Private Sub btnClearAll_Click()
     mSelected.RemoveAll
+    Me.tglBatchMode.Value = False
+    UpdateSelectionModeVisual
     RefreshVisuals
 
 End Sub
 
 Private Sub tglBatchMode_Click()
+    Me.tglBatchMode.Value = False
     UpdateSelectionModeVisual
 End Sub
 
