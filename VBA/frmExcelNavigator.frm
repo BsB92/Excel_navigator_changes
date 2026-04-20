@@ -56,6 +56,8 @@ Private mLastCopyFolder As String
 Private mSelected As Object
 Private mCtrlTogglePending As Boolean
 Private mRightTogglePending As Boolean
+Private mLastActivatedWorkbook As String
+Private mLastActivateTs As Double
 ' ========= RESIZE LAYOUT CACHE =========
 Private mBaseInsideW As Single, mBaseInsideH As Single
 Private mBaseFileColW As Single
@@ -884,15 +886,37 @@ Private Sub lstWorkbooks_Click()
     Set wb = GetWorkbookByName(wbName)
     If wb Is Nothing Then Exit Sub
 
+    If ShouldSkipRapidReactivation(wbName) Then
+        mCtrlTogglePending = False
+        mRightTogglePending = False
+        RefreshVisuals
+        Exit Sub
+    End If
+
     On Error Resume Next
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
     On Error GoTo 0
 
+    mLastActivatedWorkbook = wbName
+    mLastActivateTs = Timer
+
     mCtrlTogglePending = False
     mRightTogglePending = False
     RefreshVisuals
 End Sub
+
+Private Function ShouldSkipRapidReactivation(ByVal wbName As String) As Boolean
+    Dim dt As Double
+
+    If Len(mLastActivatedWorkbook) = 0 Then Exit Function
+    If StrComp(mLastActivatedWorkbook, wbName, vbTextCompare) <> 0 Then Exit Function
+
+    dt = Timer - mLastActivateTs
+    If dt < 0 Then dt = dt + 86400#
+
+    ShouldSkipRapidReactivation = (dt <= 0.35)
+End Function
 
 Private Sub lstWorkbooks_Change()
 
