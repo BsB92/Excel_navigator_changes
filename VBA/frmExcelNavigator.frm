@@ -79,6 +79,7 @@ Private mOpenCopiedOffsetLeft As Single
 Private Const ACTIVE_PREFIX As String = "> "
 Private Const SELECTED_PREFIX As String = "+"
 Private Const FM_CTRL_MASK As Integer = 2
+Private Const VB_TEXT_COMPARE As Long = 1
 Private Const CLOSEMODE_ASK_EACH As Long = 0
 Private Const CLOSEMODE_SAVE_ALL As Long = 1
 Private Const CLOSEMODE_DONT_SAVE_ALL As Long = 2
@@ -751,6 +752,7 @@ Private Sub UserForm_Initialize()
 
     Set mStatus = CreateObject("Scripting.Dictionary")
     Set mSelected = CreateObject("Scripting.Dictionary")
+    mSelected.CompareMode = VB_TEXT_COMPARE
 
     ' ListBox:
     ' col0 = File (display)
@@ -833,6 +835,11 @@ End Sub
 Private Sub lstWorkbooks_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     mCtrlTogglePending = ((Shift And FM_CTRL_MASK) <> 0)
     mRightTogglePending = (Button = 2)
+End Sub
+
+Private Sub lstWorkbooks_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    mCtrlTogglePending = False
+    mRightTogglePending = False
 End Sub
 
 Private Sub lstWorkbooks_Click()
@@ -1577,7 +1584,7 @@ End Sub
 Private Sub UpdateBatchActionButtonsState()
     Dim hasSelection As Boolean
 
-    hasSelection = (GetSelectedWorkbookNames().Count > 0)
+    hasSelection = (mSelected.Count > 0)
     Me.btnRefresh.enabled = hasSelection
     Me.btnSave.enabled = hasSelection
     Me.btnRefreshSave.enabled = hasSelection
