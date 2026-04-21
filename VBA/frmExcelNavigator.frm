@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.3"
+   Caption         =   "ExcelNavigator v4.5"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -35,7 +35,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator"
+Private Const REG_APP As String = "ExcelNavigator45"
 Private Const REG_SEC As String = "FormState"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
@@ -77,6 +77,7 @@ Private Const ACTIVE_PREFIX As String = "> "
 Private Const CLOSEMODE_ASK_EACH As Long = 0
 Private Const CLOSEMODE_SAVE_ALL As Long = 1
 Private Const CLOSEMODE_DONT_SAVE_ALL As Long = 2
+Private Const MOUSE_BUTTON_RIGHT As Integer = 2
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -811,6 +812,10 @@ End Sub
 ' SELECTION MODE
 ' =========================================================
 Private Sub tglBatchMode_Click()
+    ApplySelectionModeState
+End Sub
+
+Private Sub ApplySelectionModeState()
     On Error GoTo ModeSwitchError
 
     mUIBusy = True
@@ -932,6 +937,15 @@ End Sub
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     FixHeaderSelection
+End Sub
+
+Private Sub lstWorkbooks_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    If mUIBusy Then Exit Sub
+
+    If Button = MOUSE_BUTTON_RIGHT Then
+        Me.tglBatchMode.Value = Not Me.tglBatchMode.Value
+        ApplySelectionModeState
+    End If
 End Sub
 
 Private Sub FixHeaderSelection()
