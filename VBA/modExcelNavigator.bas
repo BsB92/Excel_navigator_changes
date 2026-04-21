@@ -1,7 +1,7 @@
 Attribute VB_Name = "modExcelNavigator"
 Option Explicit
 
-Public Sub ExcelNavigator()
+Public Sub ExcelNavigatorV45Alpha()
     Dim uf As Object
 
     On Error Resume Next
@@ -14,4 +14,8 @@ Public Sub ExcelNavigator()
     Next uf
 
     frmExcelNavigator.Show vbModeless
+End Sub
+
+Public Sub ExcelNavigator()
+    ExcelNavigatorV45Alpha
 End Sub
