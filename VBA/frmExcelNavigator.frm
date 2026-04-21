@@ -77,6 +77,7 @@ Private Const ACTIVE_PREFIX As String = "> "
 Private Const CLOSEMODE_ASK_EACH As Long = 0
 Private Const CLOSEMODE_SAVE_ALL As Long = 1
 Private Const CLOSEMODE_DONT_SAVE_ALL As Long = 2
+Private Const MOUSE_BUTTON_RIGHT As Integer = 2
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -811,6 +812,10 @@ End Sub
 ' SELECTION MODE
 ' =========================================================
 Private Sub tglBatchMode_Click()
+    ApplySelectionModeState
+End Sub
+
+Private Sub ApplySelectionModeState()
     On Error GoTo ModeSwitchError
 
     mUIBusy = True
@@ -932,6 +937,15 @@ End Sub
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     FixHeaderSelection
+End Sub
+
+Private Sub lstWorkbooks_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    If mUIBusy Then Exit Sub
+
+    If Button = MOUSE_BUTTON_RIGHT Then
+        Me.tglBatchMode.Value = Not Me.tglBatchMode.Value
+        ApplySelectionModeState
+    End If
 End Sub
 
 Private Sub FixHeaderSelection()
