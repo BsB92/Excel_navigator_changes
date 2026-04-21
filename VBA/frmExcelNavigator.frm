@@ -811,6 +811,10 @@ End Sub
 ' SELECTION MODE
 ' =========================================================
 Private Sub tglBatchMode_Click()
+    ApplySelectionModeState
+End Sub
+
+Private Sub ApplySelectionModeState()
     On Error GoTo ModeSwitchError
 
     mUIBusy = True
@@ -932,6 +936,15 @@ End Sub
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     FixHeaderSelection
+End Sub
+
+Private Sub lstWorkbooks_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    If mUIBusy Then Exit Sub
+
+    If Button = vbRightButton Then
+        Me.tglBatchMode.Value = Not Me.tglBatchMode.Value
+        ApplySelectionModeState
+    End If
 End Sub
 
 Private Sub FixHeaderSelection()
