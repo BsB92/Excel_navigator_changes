@@ -84,9 +84,12 @@ Private WithEvents mBtnTogglePanel As MSForms.CommandButton
 Attribute mBtnTogglePanel.VB_VarHelpID = -1
 Private WithEvents mLstSheets As MSForms.ListBox
 Attribute mLstSheets.VB_VarHelpID = -1
+Private mLblSheetsWorkbook As MSForms.Label
 Private mIsExpandedView As Boolean
 Private mCollapsedInsideW As Single
 Private mPanelWidth As Single
+Private mBaseListLeft As Single
+Private mUpdatingSheets As Boolean
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -1862,6 +1865,7 @@ End Function
 Private Sub EnsureRightPanelControls()
     Dim ctlBtn As Object
     Dim ctlList As Object
+    Dim ctlLbl As Object
 
     Set ctlBtn = GetControlIfExists("btnTogglePanel")
     If ctlBtn Is Nothing Then
@@ -1885,6 +1889,17 @@ Private Sub EnsureRightPanelControls()
         .IntegralHeight = False
         .ColumnCount = 1
         .BoundColumn = 1
+    End With
+
+    Set ctlLbl = GetControlIfExists("lblSheetsWorkbook")
+    If ctlLbl Is Nothing Then
+        Set ctlLbl = Me.Controls.Add("Forms.Label.1", "lblSheetsWorkbook", True)
+    End If
+    Set mLblSheetsWorkbook = ctlLbl
+    With mLblSheetsWorkbook
+        .Caption = ""
+        .Visible = False
+        .WordWrap = False
     End With
 End Sub
 
@@ -1916,6 +1931,7 @@ Private Sub SetExpandedView(ByVal expanded As Boolean)
     If mBtnTogglePanel Is Nothing Then EnsureRightPanelControls
     mBtnTogglePanel.Caption = IIf(expanded, PANEL_TOGGLE_EXPANDED, PANEL_TOGGLE_COLLAPSED)
     mLstSheets.Visible = expanded
+    If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Visible = expanded
 
     ApplyLayout
     PositionTopButtons
@@ -1941,9 +1957,17 @@ Private Sub RefreshSheetList()
 
     If mLstSheets Is Nothing Then Exit Sub
 
+    On Error GoTo SafeExit
+    mUpdatingSheets = True
     mLstSheets.Clear
+    If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Caption = ""
     Set wb = GetCurrentWorkbookForSheets()
-    If wb Is Nothing Then Exit Sub
+    If wb Is Nothing Then
+        mUpdatingSheets = False
+        Exit Sub
+    End If
+
+    If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Caption = wb.Name
 
     On Error Resume Next
     activeSheetName = CStr(wb.ActiveSheet.Name)
@@ -1954,6 +1978,9 @@ Private Sub RefreshSheetList()
         If ws.Name = activeSheetName Then rowText = ACTIVE_PREFIX & rowText
         mLstSheets.AddItem rowText
     Next ws
+
+SafeExit:
+    mUpdatingSheets = False
 End Sub
 
 Private Function GetRawSheetNameFromRow(ByVal rowIndex As Long) As String
@@ -1974,11 +2001,12 @@ Private Sub mBtnTogglePanel_Click()
     SetExpandedView Not mIsExpandedView
 End Sub
 
-Private Sub mLstSheets_Click()
+Private Sub ActivateSheetFromSheetList()
     Dim wb As Workbook
     Dim ws As Worksheet
     Dim sheetName As String
 
+    If mUpdatingSheets Then Exit Sub
     If mUIBusy Then Exit Sub
     If mLstSheets.ListIndex < 0 Then Exit Sub
 
@@ -2002,6 +2030,14 @@ Private Sub mLstSheets_Click()
     RefreshVisuals
 End Sub
 
+Private Sub mLstSheets_Click()
+    ActivateSheetFromSheetList
+End Sub
+
+Private Sub mLstSheets_Change()
+    ActivateSheetFromSheetList
+End Sub
+
 Private Sub UserForm_Terminate()
     On Error Resume Next
     SaveSetting REG_APP, REG_SEC, "W", IIf(mIsExpandedView, Me.Width - (mGap + mPanelWidth), Me.Width)
@@ -2016,6 +2052,7 @@ Private Sub CacheLayout()
 
     mRightMargin = 8
     mGap = 8
+    mBaseListLeft = Me.lstWorkbooks.Left
 
     ' Bottom block anchor (we shift these by deltaH)
     mCtlTop(1) = Me.tglBatchMode.TOP
@@ -2208,7 +2245,7 @@ Private Sub ApplyLayout()
     End If
 
     ' --- ListBox: stretch to fill between top row and bottom block
-    Me.lstWorkbooks.Left = Me.Label1.Left
+    Me.lstWorkbooks.Left = mBaseListLeft
     If mIsExpandedView Then
         reservedRight = mRightMargin + mGap + mPanelWidth
     Else
@@ -2226,11 +2263,25 @@ Me.txtFullPath.TOP = Me.tglBatchMode.TOP - mGap - Me.txtFullPath.Height
 ' ListBox ends above FullPath bar (leave gap)
 Me.lstWorkbooks.Height = (Me.txtFullPath.TOP - mGap) - Me.lstWorkbooks.TOP
 
+Me.Label1.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width - Me.Label1.Width
+
 If Not mLstSheets Is Nothing Then
     mLstSheets.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width + mGap
-    mLstSheets.TOP = Me.lstWorkbooks.TOP
+    If Not mLblSheetsWorkbook Is Nothing Then
+        mLblSheetsWorkbook.Left = mLstSheets.Left
+        mLblSheetsWorkbook.TOP = Me.lstWorkbooks.TOP
+        mLblSheetsWorkbook.Width = mPanelWidth
+        mLblSheetsWorkbook.Visible = mIsExpandedView
+        mLstSheets.TOP = mLblSheetsWorkbook.TOP + mLblSheetsWorkbook.Height + 2
+    Else
+        mLstSheets.TOP = Me.lstWorkbooks.TOP
+    End If
     mLstSheets.Width = mPanelWidth
     sheetBottom = Me.btnOpenFile.TOP + Me.btnOpenFile.Height
+    If Not mBtnTogglePanel Is Nothing Then
+        If mBtnTogglePanel.TOP - mGap < sheetBottom Then sheetBottom = mBtnTogglePanel.TOP - mGap
+    End If
+    If sheetBottom < mLstSheets.TOP + 24 Then sheetBottom = mLstSheets.TOP + 24
     mLstSheets.Height = sheetBottom - mLstSheets.TOP
     mLstSheets.Visible = mIsExpandedView
 End If
