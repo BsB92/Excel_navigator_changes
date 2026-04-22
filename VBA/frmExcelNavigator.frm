@@ -1873,7 +1873,6 @@ Private Sub EnsureRightPanelControls()
         .Width = Me.btnClose.Width
         .Height = Me.btnClose.Height
         .Visible = True
-        .TakeFocusOnClick = False
     End With
 
     Set ctlList = GetControlIfExists("lstSheets")
@@ -1885,7 +1884,7 @@ Private Sub EnsureRightPanelControls()
         .Visible = False
         .IntegralHeight = False
         .ColumnCount = 1
-        .BoundColumn = 0
+        .BoundColumn = 1
     End With
 End Sub
 
