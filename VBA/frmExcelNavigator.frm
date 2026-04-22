@@ -926,8 +926,6 @@ Private Sub lstWorkbooks_Click()
     On Error Resume Next
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
-    modWinAPI.BringFormToFront Me.Caption
-    Me.lstWorkbooks.SetFocus
     On Error GoTo 0
 
     RefreshVisuals
@@ -939,8 +937,6 @@ End Sub
 Private Sub lstWorkbooks_Change()
 
     Dim idx As Long
-    Dim wbName As String
-    Dim wb As Workbook
 
     If mUIBusy Then Exit Sub
 
@@ -960,23 +956,43 @@ Private Sub lstWorkbooks_Change()
     ShowFullPathForIndex idx
     RefreshSheetList
 
-    If (Not Me.tglBatchMode.Value) And ControlHasFocus("lstWorkbooks") Then
-        wbName = GetRawNameFromRow(idx)
-        Set wb = GetWorkbookByName(wbName)
-        If Not wb Is Nothing Then
-            On Error Resume Next
-            If wb.Windows.Count > 0 Then wb.Windows(1).Activate
-            wb.Activate
-            modWinAPI.BringFormToFront Me.Caption
-            Me.lstWorkbooks.SetFocus
-            On Error GoTo 0
-            RefreshVisuals
-        End If
-    End If
 End Sub
 
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    Dim idx As Long
+    Dim wb As Workbook
+
+    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
+        idx = Me.lstWorkbooks.ListIndex
+        If idx < 1 Then idx = 1
+
+        If KeyCode = vbKeyUp Then idx = idx - 1
+        If KeyCode = vbKeyDown Then idx = idx + 1
+
+        If idx < 1 Then idx = 1
+        If idx > Me.lstWorkbooks.ListCount - 1 Then idx = Me.lstWorkbooks.ListCount - 1
+
+        If idx >= 1 And idx < Me.lstWorkbooks.ListCount Then
+            Me.lstWorkbooks.ListIndex = idx
+            ShowFullPathForIndex idx
+            RefreshSheetList
+
+            If Not Me.tglBatchMode.Value Then
+                Set wb = GetWorkbookByName(GetRawNameFromRow(idx))
+                If Not wb Is Nothing Then
+                    On Error Resume Next
+                    If wb.Windows.Count > 0 Then wb.Windows(1).Activate
+                    wb.Activate
+                    Me.lstWorkbooks.SetFocus
+                    On Error GoTo 0
+                    RefreshVisuals
+                End If
+            End If
+        End If
+        KeyCode = 0
+    End If
+
     FixHeaderSelection
 End Sub
 
@@ -1835,18 +1851,13 @@ Private Function GetControlIfExists(ByVal controlName As String) As Object
     On Error GoTo 0
 End Function
 
-Private Function ControlHasFocus(ByVal controlName As String) As Boolean
-    On Error Resume Next
-    ControlHasFocus = (Not Me.ActiveControl Is Nothing) And (Me.ActiveControl.Name = controlName)
-    On Error GoTo 0
-End Function
-
 Private Sub AlignSearchLabelToSearchBox()
     Dim ctl As Object
 
     For Each ctl In Me.Controls
         If TypeName(ctl) = "Label" Then
             If InStr(1, LCase$(CStr(ctl.Caption)), "search", vbTextCompare) > 0 Then
+                ctl.TextAlign = fmTextAlignRight
                 ctl.Left = Me.txtSearch.Left - ctl.Width
                 Exit For
             End If
@@ -2044,12 +2055,9 @@ Private Sub ActivateSheetFromSheetList()
     Dim ws As Worksheet
     Dim sheetName As String
 
-    Dim keepFocus As Boolean
-
     If mUpdatingSheets Then Exit Sub
     If mUIBusy Then Exit Sub
     If mLstSheets.ListIndex < 0 Then Exit Sub
-    keepFocus = ControlHasFocus("lstSheets")
 
     Set wb = GetCurrentWorkbookForSheets()
     If wb Is Nothing Then Exit Sub
@@ -2069,12 +2077,6 @@ Private Sub ActivateSheetFromSheetList()
     On Error GoTo 0
 
     RefreshVisuals
-    If keepFocus Then
-        On Error Resume Next
-        modWinAPI.BringFormToFront Me.Caption
-        mLstSheets.SetFocus
-        On Error GoTo 0
-    End If
 End Sub
 
 Private Sub mLstSheets_Click()
@@ -2085,7 +2087,29 @@ Private Sub mLstSheets_Click()
 End Sub
 
 Private Sub mLstSheets_Change()
-    If ControlHasFocus("lstSheets") Then ActivateSheetFromSheetList
+End Sub
+
+Private Sub mLstSheets_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    Dim idx As Long
+
+    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
+        idx = mLstSheets.ListIndex
+        If idx < 0 Then idx = 0
+        If KeyCode = vbKeyUp Then idx = idx - 1
+        If KeyCode = vbKeyDown Then idx = idx + 1
+        If idx < 0 Then idx = 0
+        If idx > mLstSheets.ListCount - 1 Then idx = mLstSheets.ListCount - 1
+
+        If idx >= 0 And idx < mLstSheets.ListCount Then
+            mLstSheets.ListIndex = idx
+            ActivateSheetFromSheetList
+            On Error Resume Next
+            mLstSheets.SetFocus
+            On Error GoTo 0
+        End If
+
+        KeyCode = 0
+    End If
 End Sub
 
 Private Sub UserForm_Terminate()
