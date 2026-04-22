@@ -90,6 +90,7 @@ Private mCollapsedInsideW As Single
 Private mPanelWidth As Single
 Private mBaseListLeft As Single
 Private mUpdatingSheets As Boolean
+Private Const SELECTION_OFF_COLOR As Long = &H8080FF
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -775,7 +776,7 @@ Private Sub UserForm_Initialize()
 
     Me.tglBatchMode.Value = False
     Me.tglBatchMode.Caption = "Selection mode: OFF"
-    Me.tglBatchMode.BackColor = RGB(192, 0, 0)
+    Me.tglBatchMode.BackColor = SELECTION_OFF_COLOR
 
     SetActionButtonsEnabled False
     SetOptionalControlEnabled "btnMaximize", True
@@ -854,7 +855,7 @@ Private Sub ApplySelectionModeState()
     End If
 
     ShowFullPathForIndex -1
-    Me.tglBatchMode.BackColor = IIf(Me.tglBatchMode.Value, RGB(0, 176, 80), RGB(192, 0, 0))
+    Me.tglBatchMode.BackColor = IIf(Me.tglBatchMode.Value, RGB(0, 176, 80), SELECTION_OFF_COLOR)
     RefreshVisuals
     RefreshSheetList
 
@@ -925,6 +926,8 @@ Private Sub lstWorkbooks_Click()
     On Error Resume Next
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
+    modWinAPI.BringFormToFront Me.Caption
+    Me.lstWorkbooks.SetFocus
     On Error GoTo 0
 
     RefreshVisuals
@@ -936,6 +939,8 @@ End Sub
 Private Sub lstWorkbooks_Change()
 
     Dim idx As Long
+    Dim wbName As String
+    Dim wb As Workbook
 
     If mUIBusy Then Exit Sub
 
@@ -954,6 +959,20 @@ Private Sub lstWorkbooks_Change()
 
     ShowFullPathForIndex idx
     RefreshSheetList
+
+    If (Not Me.tglBatchMode.Value) And ControlHasFocus("lstWorkbooks") Then
+        wbName = GetRawNameFromRow(idx)
+        Set wb = GetWorkbookByName(wbName)
+        If Not wb Is Nothing Then
+            On Error Resume Next
+            If wb.Windows.Count > 0 Then wb.Windows(1).Activate
+            wb.Activate
+            modWinAPI.BringFormToFront Me.Caption
+            Me.lstWorkbooks.SetFocus
+            On Error GoTo 0
+            RefreshVisuals
+        End If
+    End If
 End Sub
 
 
@@ -1816,6 +1835,25 @@ Private Function GetControlIfExists(ByVal controlName As String) As Object
     On Error GoTo 0
 End Function
 
+Private Function ControlHasFocus(ByVal controlName As String) As Boolean
+    On Error Resume Next
+    ControlHasFocus = (Not Me.ActiveControl Is Nothing) And (Me.ActiveControl.Name = controlName)
+    On Error GoTo 0
+End Function
+
+Private Sub AlignSearchLabelToSearchBox()
+    Dim ctl As Object
+
+    For Each ctl In Me.Controls
+        If TypeName(ctl) = "Label" Then
+            If InStr(1, LCase$(CStr(ctl.Caption)), "search", vbTextCompare) > 0 Then
+                ctl.Left = Me.txtSearch.Left - ctl.Width
+                Exit For
+            End If
+        End If
+    Next ctl
+End Sub
+
 Private Sub SetOptionalControlEnabled(ByVal controlName As String, ByVal enabled As Boolean)
     Dim ctl As Object
     Set ctl = GetControlIfExists(controlName)
@@ -1906,8 +1944,8 @@ End Sub
 Private Function GetSheetPanelWidthPt() As Single
     Dim charWidth As Single
     charWidth = MeasureTextWidthPt(String$(33, "W"))
-    GetSheetPanelWidthPt = charWidth + 20
-    If GetSheetPanelWidthPt < Me.btnClose.Width Then GetSheetPanelWidthPt = Me.btnClose.Width
+    GetSheetPanelWidthPt = (charWidth + 20) * 0.45
+    If GetSheetPanelWidthPt < 90 Then GetSheetPanelWidthPt = 90
 End Function
 
 Private Sub SetExpandedView(ByVal expanded As Boolean)
@@ -2006,9 +2044,12 @@ Private Sub ActivateSheetFromSheetList()
     Dim ws As Worksheet
     Dim sheetName As String
 
+    Dim keepFocus As Boolean
+
     If mUpdatingSheets Then Exit Sub
     If mUIBusy Then Exit Sub
     If mLstSheets.ListIndex < 0 Then Exit Sub
+    keepFocus = ControlHasFocus("lstSheets")
 
     Set wb = GetCurrentWorkbookForSheets()
     If wb Is Nothing Then Exit Sub
@@ -2028,14 +2069,23 @@ Private Sub ActivateSheetFromSheetList()
     On Error GoTo 0
 
     RefreshVisuals
+    If keepFocus Then
+        On Error Resume Next
+        modWinAPI.BringFormToFront Me.Caption
+        mLstSheets.SetFocus
+        On Error GoTo 0
+    End If
 End Sub
 
 Private Sub mLstSheets_Click()
+    On Error Resume Next
+    mLstSheets.SetFocus
+    On Error GoTo 0
     ActivateSheetFromSheetList
 End Sub
 
 Private Sub mLstSheets_Change()
-    ActivateSheetFromSheetList
+    If ControlHasFocus("lstSheets") Then ActivateSheetFromSheetList
 End Sub
 
 Private Sub UserForm_Terminate()
@@ -2111,6 +2161,7 @@ Private Sub ApplyLayout()
     rightX = Me.InsideWidth - mRightMargin
     Me.btnReload.Left = rightX - Me.btnReload.Width
     Me.txtSearch.Width = (Me.btnReload.Left - mGap) - Me.txtSearch.Left
+    AlignSearchLabelToSearchBox
 
     ' Label3: left-aligned to Reload, below it, between top row and list
     Me.Label3.Left = Me.btnReload.Left
@@ -2264,15 +2315,17 @@ Me.txtFullPath.TOP = Me.tglBatchMode.TOP - mGap - Me.txtFullPath.Height
 Me.lstWorkbooks.Height = (Me.txtFullPath.TOP - mGap) - Me.lstWorkbooks.TOP
 
 Me.Label1.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width - Me.Label1.Width
+Me.Label3.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width - Me.Label3.Width
 
 If Not mLstSheets Is Nothing Then
     mLstSheets.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width + mGap
     If Not mLblSheetsWorkbook Is Nothing Then
         mLblSheetsWorkbook.Left = mLstSheets.Left
-        mLblSheetsWorkbook.TOP = Me.lstWorkbooks.TOP
+        mLstSheets.TOP = Me.lstWorkbooks.TOP
+        mLblSheetsWorkbook.TOP = mLstSheets.TOP - mLblSheetsWorkbook.Height
         mLblSheetsWorkbook.Width = mPanelWidth
         mLblSheetsWorkbook.Visible = mIsExpandedView
-        mLstSheets.TOP = mLblSheetsWorkbook.TOP + mLblSheetsWorkbook.Height + 2
+        mLblSheetsWorkbook.TextAlign = fmTextAlignLeft
     Else
         mLstSheets.TOP = Me.lstWorkbooks.TOP
     End If
