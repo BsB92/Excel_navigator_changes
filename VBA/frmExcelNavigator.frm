@@ -92,6 +92,7 @@ Private mBaseListLeft As Single
 Private mUpdatingSheets As Boolean
 Private Const SELECTION_OFF_COLOR As Long = &H8080FF
 Private mActivatingSheetFromList As Boolean
+Private mActivatingWorkbookFromList As Boolean
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -892,8 +893,6 @@ End Sub
 Private Sub lstWorkbooks_Click()
 
     Dim idx As Long
-    Dim wbName As String
-    Dim wb As Workbook
 
     If mUIBusy Then Exit Sub
 
@@ -920,17 +919,7 @@ Private Sub lstWorkbooks_Click()
         Exit Sub
     End If
 
-    wbName = GetRawNameFromRow(idx)
-    Set wb = GetWorkbookByName(wbName)
-    If wb Is Nothing Then Exit Sub
-
-    On Error Resume Next
-    If wb.Windows.Count > 0 Then wb.Windows(1).Activate
-    wb.Activate
-    On Error GoTo 0
-
-    RefreshVisuals
-    RefreshSheetList
+    ActivateWorkbookFromListIndex idx
 End Sub
 
 
@@ -961,40 +950,43 @@ End Sub
 
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
-    Dim idx As Long
+    FixHeaderSelection
+End Sub
+
+Private Sub lstWorkbooks_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
+        If Me.lstWorkbooks.ListIndex > 0 Then ActivateWorkbookFromListIndex Me.lstWorkbooks.ListIndex
+    End If
+End Sub
+
+Private Sub ActivateWorkbookFromListIndex(ByVal idx As Long)
+    Dim wbName As String
     Dim wb As Workbook
 
-    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
-        idx = Me.lstWorkbooks.ListIndex
-        If idx < 1 Then idx = 1
-
-        If KeyCode = vbKeyUp Then idx = idx - 1
-        If KeyCode = vbKeyDown Then idx = idx + 1
-
-        If idx < 1 Then idx = 1
-        If idx > Me.lstWorkbooks.ListCount - 1 Then idx = Me.lstWorkbooks.ListCount - 1
-
-        If idx >= 1 And idx < Me.lstWorkbooks.ListCount Then
-            Me.lstWorkbooks.ListIndex = idx
-            ShowFullPathForIndex idx
-            RefreshSheetList
-
-            If Not Me.tglBatchMode.Value Then
-                Set wb = GetWorkbookByName(GetRawNameFromRow(idx))
-                If Not wb Is Nothing Then
-                    On Error Resume Next
-                    If wb.Windows.Count > 0 Then wb.Windows(1).Activate
-                    wb.Activate
-                    Me.lstWorkbooks.SetFocus
-                    On Error GoTo 0
-                    RefreshVisuals
-                End If
-            End If
-        End If
-        KeyCode = 0
+    If idx <= 0 Then Exit Sub
+    If Me.tglBatchMode.Value Then
+        RefreshVisuals
+        RefreshSheetList
+        Exit Sub
     End If
 
-    FixHeaderSelection
+    If mActivatingWorkbookFromList Then Exit Sub
+    mActivatingWorkbookFromList = True
+
+    wbName = GetRawNameFromRow(idx)
+    Set wb = GetWorkbookByName(wbName)
+    If wb Is Nothing Then GoTo SafeExit
+
+    On Error Resume Next
+    If wb.Windows.Count > 0 Then wb.Windows(1).Activate
+    wb.Activate
+    Me.lstWorkbooks.SetFocus
+    On Error GoTo 0
+
+SafeExit:
+    RefreshVisuals
+    RefreshSheetList
+    mActivatingWorkbookFromList = False
 End Sub
 
 Private Sub lstWorkbooks_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
