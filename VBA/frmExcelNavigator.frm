@@ -1851,20 +1851,6 @@ Private Function GetControlIfExists(ByVal controlName As String) As Object
     On Error GoTo 0
 End Function
 
-Private Sub AlignSearchLabelToSearchBox()
-    Dim ctl As Object
-
-    For Each ctl In Me.Controls
-        If TypeName(ctl) = "Label" Then
-            If InStr(1, LCase$(CStr(ctl.Caption)), "search", vbTextCompare) > 0 Then
-                ctl.TextAlign = fmTextAlignRight
-                ctl.Left = Me.txtSearch.Left - ctl.Width
-                Exit For
-            End If
-        End If
-    Next ctl
-End Sub
-
 Private Sub SetOptionalControlEnabled(ByVal controlName As String, ByVal enabled As Boolean)
     Dim ctl As Object
     Set ctl = GetControlIfExists(controlName)
@@ -2185,7 +2171,8 @@ Private Sub ApplyLayout()
     rightX = Me.InsideWidth - mRightMargin
     Me.btnReload.Left = rightX - Me.btnReload.Width
     Me.txtSearch.Width = (Me.btnReload.Left - mGap) - Me.txtSearch.Left
-    AlignSearchLabelToSearchBox
+    Me.Label1.TextAlign = fmTextAlignRight
+    Me.Label1.Left = Me.txtSearch.Left - Me.Label1.Width
 
     ' Label3: left-aligned to Reload, below it, between top row and list
     Me.Label3.Left = Me.btnReload.Left
@@ -2338,7 +2325,6 @@ Me.txtFullPath.TOP = Me.tglBatchMode.TOP - mGap - Me.txtFullPath.Height
 ' ListBox ends above FullPath bar (leave gap)
 Me.lstWorkbooks.Height = (Me.txtFullPath.TOP - mGap) - Me.lstWorkbooks.TOP
 
-Me.Label1.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width - Me.Label1.Width
 Me.Label3.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width - Me.Label3.Width
 
 If Not mLstSheets Is Nothing Then
