@@ -91,6 +91,7 @@ Private mPanelWidth As Single
 Private mBaseListLeft As Single
 Private mUpdatingSheets As Boolean
 Private Const SELECTION_OFF_COLOR As Long = &H8080FF
+Private mActivatingSheetFromList As Boolean
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -1989,11 +1990,14 @@ Private Sub RefreshSheetList()
     Dim ws As Worksheet
     Dim activeSheetName As String
     Dim rowText As String
+    Dim selectedSheetName As String
+    Dim selectedIndex As Long
 
     If mLstSheets Is Nothing Then Exit Sub
 
     On Error GoTo SafeExit
     mUpdatingSheets = True
+    selectedSheetName = GetRawSheetNameFromRow(mLstSheets.ListIndex)
     mLstSheets.Clear
     If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Caption = ""
     Set wb = GetCurrentWorkbookForSheets()
@@ -2013,6 +2017,23 @@ Private Sub RefreshSheetList()
         If ws.Name = activeSheetName Then rowText = ACTIVE_PREFIX & rowText
         mLstSheets.AddItem rowText
     Next ws
+
+    selectedIndex = -1
+    If Len(selectedSheetName) > 0 Then
+        For selectedIndex = 0 To mLstSheets.ListCount - 1
+            If GetRawSheetNameFromRow(selectedIndex) = selectedSheetName Then Exit For
+        Next selectedIndex
+        If selectedIndex >= mLstSheets.ListCount Then selectedIndex = -1
+    End If
+
+    If selectedIndex = -1 And Len(activeSheetName) > 0 Then
+        For selectedIndex = 0 To mLstSheets.ListCount - 1
+            If GetRawSheetNameFromRow(selectedIndex) = activeSheetName Then Exit For
+        Next selectedIndex
+        If selectedIndex >= mLstSheets.ListCount Then selectedIndex = -1
+    End If
+
+    If selectedIndex >= 0 Then mLstSheets.ListIndex = selectedIndex
 
 SafeExit:
     mUpdatingSheets = False
@@ -2043,18 +2064,21 @@ Private Sub ActivateSheetFromSheetList()
 
     If mUpdatingSheets Then Exit Sub
     If mUIBusy Then Exit Sub
+    If mActivatingSheetFromList Then Exit Sub
     If mLstSheets.ListIndex < 0 Then Exit Sub
 
+    mActivatingSheetFromList = True
+
     Set wb = GetCurrentWorkbookForSheets()
-    If wb Is Nothing Then Exit Sub
+    If wb Is Nothing Then GoTo SafeExit
 
     sheetName = GetRawSheetNameFromRow(mLstSheets.ListIndex)
-    If Len(sheetName) = 0 Then Exit Sub
+    If Len(sheetName) = 0 Then GoTo SafeExit
 
     On Error Resume Next
     Set ws = wb.Worksheets(sheetName)
     On Error GoTo 0
-    If ws Is Nothing Then Exit Sub
+    If ws Is Nothing Then GoTo SafeExit
 
     On Error Resume Next
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
@@ -2063,6 +2087,12 @@ Private Sub ActivateSheetFromSheetList()
     On Error GoTo 0
 
     RefreshVisuals
+    On Error Resume Next
+    mLstSheets.SetFocus
+    On Error GoTo 0
+
+SafeExit:
+    mActivatingSheetFromList = False
 End Sub
 
 Private Sub mLstSheets_Click()
@@ -2075,27 +2105,8 @@ End Sub
 Private Sub mLstSheets_Change()
 End Sub
 
-Private Sub mLstSheets_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
-    Dim idx As Long
-
-    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
-        idx = mLstSheets.ListIndex
-        If idx < 0 Then idx = 0
-        If KeyCode = vbKeyUp Then idx = idx - 1
-        If KeyCode = vbKeyDown Then idx = idx + 1
-        If idx < 0 Then idx = 0
-        If idx > mLstSheets.ListCount - 1 Then idx = mLstSheets.ListCount - 1
-
-        If idx >= 0 And idx < mLstSheets.ListCount Then
-            mLstSheets.ListIndex = idx
-            ActivateSheetFromSheetList
-            On Error Resume Next
-            mLstSheets.SetFocus
-            On Error GoTo 0
-        End If
-
-        KeyCode = 0
-    End If
+Private Sub mLstSheets_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then ActivateSheetFromSheetList
 End Sub
 
 Private Sub UserForm_Terminate()
