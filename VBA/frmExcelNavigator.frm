@@ -895,6 +895,9 @@ Private Sub lstWorkbooks_Click()
     Dim idx As Long
 
     If mUIBusy Then Exit Sub
+    On Error Resume Next
+    Me.lstWorkbooks.SetFocus
+    On Error GoTo 0
 
     idx = Me.lstWorkbooks.ListIndex
 
@@ -950,13 +953,44 @@ End Sub
 
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If KeyCode = vbKeyUp Then
+        MoveWorkbookSelectionBy -1
+        KeyCode = 0
+        Exit Sub
+    End If
+
+    If KeyCode = vbKeyDown Then
+        MoveWorkbookSelectionBy 1
+        KeyCode = 0
+        Exit Sub
+    End If
+
     FixHeaderSelection
 End Sub
 
 Private Sub lstWorkbooks_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
-    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
-        If Me.lstWorkbooks.ListIndex > 0 Then ActivateWorkbookFromListIndex Me.lstWorkbooks.ListIndex
+End Sub
+
+Private Sub MoveWorkbookSelectionBy(ByVal delta As Long)
+    Dim idx As Long
+
+    If mUIBusy Then Exit Sub
+    If delta = 0 Then Exit Sub
+    If Me.lstWorkbooks.ListCount <= 1 Then Exit Sub
+
+    idx = Me.lstWorkbooks.ListIndex
+    If idx < 1 Then idx = 1
+    idx = idx + delta
+
+    If idx < 1 Then idx = 1
+    If idx > Me.lstWorkbooks.ListCount - 1 Then idx = Me.lstWorkbooks.ListCount - 1
+
+    If idx <> Me.lstWorkbooks.ListIndex Then
+        Me.lstWorkbooks.ListIndex = idx
     End If
+
+    ShowFullPathForIndex idx
+    ActivateWorkbookFromListIndex idx
 End Sub
 
 Private Sub ActivateWorkbookFromListIndex(ByVal idx As Long)
