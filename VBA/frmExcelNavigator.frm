@@ -915,14 +915,17 @@ Private Sub lstWorkbooks_Click()
 
     ShowFullPathForIndex idx
 
-    ' Selection mode: tylko zaznaczanie, bez aktywacji
+    ' Click only selects row and refreshes dependent UI.
+    ' Workbook activation is handled by arrow-key navigation
+    ' (and double-click) to keep keyboard focus stable.
     If Me.tglBatchMode.Value Then
         RefreshVisuals
         RefreshSheetList
         Exit Sub
     End If
 
-    ActivateWorkbookFromListIndex idx
+    RefreshVisuals
+    RefreshSheetList
 End Sub
 
 
@@ -969,6 +972,11 @@ Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal S
 End Sub
 
 Private Sub lstWorkbooks_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+End Sub
+
+Private Sub lstWorkbooks_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
+    If mUIBusy Then Exit Sub
+    If Me.lstWorkbooks.ListIndex > 0 Then ActivateWorkbookFromListIndex Me.lstWorkbooks.ListIndex
 End Sub
 
 Private Sub MoveWorkbookSelectionBy(ByVal delta As Long)
