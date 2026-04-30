@@ -93,6 +93,8 @@ Private mUpdatingSheets As Boolean
 Private Const SELECTION_OFF_COLOR As Long = &H8080FF
 Private mActivatingSheetFromList As Boolean
 Private mActivatingWorkbookFromList As Boolean
+Private mWorkbookKeyboardNavigation As Boolean
+Private mSheetKeyboardNavigation As Boolean
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -957,13 +959,22 @@ End Sub
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     If KeyCode = vbKeyUp Then
+        mWorkbookKeyboardNavigation = True
         MoveWorkbookSelectionBy -1
         KeyCode = 0
         Exit Sub
     End If
 
     If KeyCode = vbKeyDown Then
+        mWorkbookKeyboardNavigation = True
         MoveWorkbookSelectionBy 1
+        KeyCode = 0
+        Exit Sub
+    End If
+
+    If KeyCode = vbKeyReturn Then
+        mWorkbookKeyboardNavigation = False
+        If Me.lstWorkbooks.ListIndex > 0 Then ActivateWorkbookFromListIndex Me.lstWorkbooks.ListIndex
         KeyCode = 0
         Exit Sub
     End If
@@ -972,6 +983,7 @@ Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal S
 End Sub
 
 Private Sub lstWorkbooks_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    mWorkbookKeyboardNavigation = False
 End Sub
 
 Private Sub lstWorkbooks_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
@@ -998,7 +1010,6 @@ Private Sub MoveWorkbookSelectionBy(ByVal delta As Long)
     End If
 
     ShowFullPathForIndex idx
-    ActivateWorkbookFromListIndex idx
 End Sub
 
 Private Sub ActivateWorkbookFromListIndex(ByVal idx As Long)
@@ -2139,8 +2150,21 @@ End Sub
 Private Sub mLstSheets_Change()
 End Sub
 
+Private Sub mLstSheets_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
+        mSheetKeyboardNavigation = True
+        Exit Sub
+    End If
+
+    If KeyCode = vbKeyReturn Then
+        mSheetKeyboardNavigation = False
+        ActivateSheetFromSheetList
+        KeyCode = 0
+    End If
+End Sub
+
 Private Sub mLstSheets_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
-    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then ActivateSheetFromSheetList
+    mSheetKeyboardNavigation = False
 End Sub
 
 Private Sub UserForm_Terminate()
