@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.5"
+   Caption         =   "ExcelNavigator v4.6"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -35,7 +35,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator45"
+Private Const REG_APP As String = "ExcelNavigator46_alpha"
 Private Const REG_SEC As String = "FormState"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
@@ -74,10 +74,27 @@ Private mOpenCopiedOffsetLeft As Single
 
 ' ========= CONSTANTS =========
 Private Const ACTIVE_PREFIX As String = "> "
+Private Const PANEL_TOGGLE_COLLAPSED As String = ">>>>"
+Private Const PANEL_TOGGLE_EXPANDED As String = "<<<<"
 Private Const CLOSEMODE_ASK_EACH As Long = 0
 Private Const CLOSEMODE_SAVE_ALL As Long = 1
 Private Const CLOSEMODE_DONT_SAVE_ALL As Long = 2
 Private Const MOUSE_BUTTON_RIGHT As Integer = 2
+Private WithEvents mBtnTogglePanel As MSForms.CommandButton
+Attribute mBtnTogglePanel.VB_VarHelpID = -1
+Private WithEvents mLstSheets As MSForms.ListBox
+Attribute mLstSheets.VB_VarHelpID = -1
+Private mLblSheetsWorkbook As MSForms.Label
+Private mIsExpandedView As Boolean
+Private mCollapsedInsideW As Single
+Private mPanelWidth As Single
+Private mBaseListLeft As Single
+Private mUpdatingSheets As Boolean
+Private Const SELECTION_OFF_COLOR As Long = &H8080FF
+Private mActivatingSheetFromList As Boolean
+Private mActivatingWorkbookFromList As Boolean
+Private mWorkbookKeyboardNavigation As Boolean
+Private mSheetKeyboardNavigation As Boolean
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -763,6 +780,7 @@ Private Sub UserForm_Initialize()
 
     Me.tglBatchMode.Value = False
     Me.tglBatchMode.Caption = "Selection mode: OFF"
+    Me.tglBatchMode.BackColor = SELECTION_OFF_COLOR
 
     SetActionButtonsEnabled False
     SetOptionalControlEnabled "btnMaximize", True
@@ -797,6 +815,11 @@ If mMinTrackW = 0 Then mMinTrackW = CLng(Me.Width)
 If mMinTrackH = 0 Then mMinTrackH = CLng(Me.Height)
 btnCancel.Visible = False
 btnCancel.enabled = True
+EnsureRightPanelControls
+mIsExpandedView = False
+mCollapsedInsideW = Me.InsideWidth
+mPanelWidth = GetSheetPanelWidthPt()
+SetExpandedView False
 PositionTopButtons
 
 ' --- layout only (resize hook will be done in Activate when hwnd exists) ---
@@ -836,8 +859,9 @@ Private Sub ApplySelectionModeState()
     End If
 
     ShowFullPathForIndex -1
-    Me.tglBatchMode.BackColor = IIf(Me.tglBatchMode.Value, RGB(0, 176, 80), vbButtonFace)
+    Me.tglBatchMode.BackColor = IIf(Me.tglBatchMode.Value, RGB(0, 176, 80), SELECTION_OFF_COLOR)
     RefreshVisuals
+    RefreshSheetList
 
 SafeExit:
     mUIBusy = False
@@ -871,10 +895,11 @@ End Sub
 Private Sub lstWorkbooks_Click()
 
     Dim idx As Long
-    Dim wbName As String
-    Dim wb As Workbook
 
     If mUIBusy Then Exit Sub
+    On Error Resume Next
+    Me.lstWorkbooks.SetFocus
+    On Error GoTo 0
 
     idx = Me.lstWorkbooks.ListIndex
 
@@ -892,22 +917,17 @@ Private Sub lstWorkbooks_Click()
 
     ShowFullPathForIndex idx
 
-    ' Selection mode: tylko zaznaczanie, bez aktywacji
+    ' Click only selects row and refreshes dependent UI.
+    ' Workbook activation is handled by arrow-key navigation
+    ' (and double-click) to keep keyboard focus stable.
     If Me.tglBatchMode.Value Then
         RefreshVisuals
+        RefreshSheetList
         Exit Sub
     End If
 
-    wbName = GetRawNameFromRow(idx)
-    Set wb = GetWorkbookByName(wbName)
-    If wb Is Nothing Then Exit Sub
-
-    On Error Resume Next
-    If wb.Windows.Count > 0 Then wb.Windows(1).Activate
-    wb.Activate
-    On Error GoTo 0
-
     RefreshVisuals
+    RefreshSheetList
 End Sub
 
 
@@ -932,11 +952,94 @@ Private Sub lstWorkbooks_Change()
     End If
 
     ShowFullPathForIndex idx
+    RefreshSheetList
+
 End Sub
 
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If KeyCode = vbKeyUp Then
+        mWorkbookKeyboardNavigation = True
+        MoveWorkbookSelectionBy -1
+        KeyCode = 0
+        Exit Sub
+    End If
+
+    If KeyCode = vbKeyDown Then
+        mWorkbookKeyboardNavigation = True
+        MoveWorkbookSelectionBy 1
+        KeyCode = 0
+        Exit Sub
+    End If
+
+    If KeyCode = vbKeyReturn Then
+        mWorkbookKeyboardNavigation = False
+        If Me.lstWorkbooks.ListIndex > 0 Then ActivateWorkbookFromListIndex Me.lstWorkbooks.ListIndex
+        KeyCode = 0
+        Exit Sub
+    End If
+
     FixHeaderSelection
+End Sub
+
+Private Sub lstWorkbooks_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    mWorkbookKeyboardNavigation = False
+End Sub
+
+Private Sub lstWorkbooks_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
+    If mUIBusy Then Exit Sub
+    If Me.lstWorkbooks.ListIndex > 0 Then ActivateWorkbookFromListIndex Me.lstWorkbooks.ListIndex
+End Sub
+
+Private Sub MoveWorkbookSelectionBy(ByVal delta As Long)
+    Dim idx As Long
+
+    If mUIBusy Then Exit Sub
+    If delta = 0 Then Exit Sub
+    If Me.lstWorkbooks.ListCount <= 1 Then Exit Sub
+
+    idx = Me.lstWorkbooks.ListIndex
+    If idx < 1 Then idx = 1
+    idx = idx + delta
+
+    If idx < 1 Then idx = 1
+    If idx > Me.lstWorkbooks.ListCount - 1 Then idx = Me.lstWorkbooks.ListCount - 1
+
+    If idx <> Me.lstWorkbooks.ListIndex Then
+        Me.lstWorkbooks.ListIndex = idx
+    End If
+
+    ShowFullPathForIndex idx
+End Sub
+
+Private Sub ActivateWorkbookFromListIndex(ByVal idx As Long)
+    Dim wbName As String
+    Dim wb As Workbook
+
+    If idx <= 0 Then Exit Sub
+    If Me.tglBatchMode.Value Then
+        RefreshVisuals
+        RefreshSheetList
+        Exit Sub
+    End If
+
+    If mActivatingWorkbookFromList Then Exit Sub
+    mActivatingWorkbookFromList = True
+
+    wbName = GetRawNameFromRow(idx)
+    Set wb = GetWorkbookByName(wbName)
+    If wb Is Nothing Then GoTo SafeExit
+
+    On Error Resume Next
+    If wb.Windows.Count > 0 Then wb.Windows(1).Activate
+    wb.Activate
+    Me.lstWorkbooks.SetFocus
+    On Error GoTo 0
+
+SafeExit:
+    RefreshVisuals
+    RefreshSheetList
+    mActivatingWorkbookFromList = False
 End Sub
 
 Private Sub lstWorkbooks_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
@@ -1583,6 +1686,8 @@ Private Sub RefreshVisuals()
         ' Status column based on RAW name
         Me.lstWorkbooks.List(i, 2) = GetStatusText(rawName)
     Next i
+
+    RefreshSheetList
 End Sub
 
 Private Function GetRawNameFromRow(ByVal rowIndex As Long) As String
@@ -1838,9 +1943,247 @@ Private Function IsWorkbookSkippable(ByVal wb As Workbook) As Boolean
     IsWorkbookSkippable = (nm = "PERSONAL.XLSB" Or Right$(nm, 5) = ".XLAM")
 End Function
 
+Private Sub EnsureRightPanelControls()
+    Dim ctlBtn As Object
+    Dim ctlList As Object
+    Dim ctlLbl As Object
+
+    Set ctlBtn = GetControlIfExists("btnTogglePanel")
+    If ctlBtn Is Nothing Then
+        Set ctlBtn = Me.Controls.Add("Forms.CommandButton.1", "btnTogglePanel", True)
+    End If
+    Set mBtnTogglePanel = ctlBtn
+    With mBtnTogglePanel
+        .Caption = PANEL_TOGGLE_COLLAPSED
+        .Width = Me.btnClose.Width
+        .Height = Me.btnClose.Height
+        .Visible = True
+    End With
+
+    Set ctlList = GetControlIfExists("lstSheets")
+    If ctlList Is Nothing Then
+        Set ctlList = Me.Controls.Add("Forms.ListBox.1", "lstSheets", True)
+    End If
+    Set mLstSheets = ctlList
+    With mLstSheets
+        .Visible = False
+        .IntegralHeight = False
+        .ColumnCount = 1
+        .BoundColumn = 1
+    End With
+
+    Set ctlLbl = GetControlIfExists("lblSheetsWorkbook")
+    If ctlLbl Is Nothing Then
+        Set ctlLbl = Me.Controls.Add("Forms.Label.1", "lblSheetsWorkbook", True)
+    End If
+    Set mLblSheetsWorkbook = ctlLbl
+    With mLblSheetsWorkbook
+        .Caption = ""
+        .Visible = False
+        .WordWrap = False
+    End With
+End Sub
+
+Private Function GetSheetPanelWidthPt() As Single
+    Dim charWidth As Single
+    charWidth = MeasureTextWidthPt(String$(33, "W"))
+    GetSheetPanelWidthPt = (charWidth + 20) * 0.45
+    If GetSheetPanelWidthPt < 90 Then GetSheetPanelWidthPt = 90
+End Function
+
+Private Sub SetExpandedView(ByVal expanded As Boolean)
+    Dim frameW As Single
+    Dim targetInsideW As Single
+
+    mIsExpandedView = expanded
+    frameW = Me.Width - Me.InsideWidth
+    If mCollapsedInsideW <= 0 Then mCollapsedInsideW = Me.InsideWidth
+    If mPanelWidth <= 0 Then mPanelWidth = GetSheetPanelWidthPt()
+
+    If expanded Then
+        mCollapsedInsideW = Me.InsideWidth
+        targetInsideW = mCollapsedInsideW + mGap + mPanelWidth
+    Else
+        targetInsideW = mCollapsedInsideW
+    End If
+
+    Me.Width = targetInsideW + frameW
+
+    If mBtnTogglePanel Is Nothing Then EnsureRightPanelControls
+    mBtnTogglePanel.Caption = IIf(expanded, PANEL_TOGGLE_EXPANDED, PANEL_TOGGLE_COLLAPSED)
+    mLstSheets.Visible = expanded
+    If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Visible = expanded
+
+    ApplyLayout
+    PositionTopButtons
+    RefreshSheetList
+End Sub
+
+Private Function GetCurrentWorkbookForSheets() As Workbook
+    Dim idx As Long
+    Dim wbName As String
+
+    idx = Me.lstWorkbooks.ListIndex
+    If idx <= 0 Then Exit Function
+
+    wbName = GetRawNameFromRow(idx)
+    Set GetCurrentWorkbookForSheets = GetWorkbookByName(wbName)
+End Function
+
+Private Sub RefreshSheetList()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim activeSheetName As String
+    Dim rowText As String
+    Dim selectedSheetName As String
+    Dim selectedIndex As Long
+    Dim restoreWorkbookFocus As Boolean
+
+    If mLstSheets Is Nothing Then Exit Sub
+
+    On Error Resume Next
+    restoreWorkbookFocus = (Not Me.ActiveControl Is Nothing And Me.ActiveControl.Name = "lstWorkbooks")
+    On Error GoTo SafeExit
+
+    mUpdatingSheets = True
+    selectedSheetName = GetRawSheetNameFromRow(mLstSheets.ListIndex)
+    mLstSheets.Clear
+    If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Caption = ""
+    Set wb = GetCurrentWorkbookForSheets()
+    If wb Is Nothing Then
+        mUpdatingSheets = False
+        Exit Sub
+    End If
+
+    If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Caption = wb.Name
+
+    On Error Resume Next
+    activeSheetName = CStr(wb.ActiveSheet.Name)
+    On Error GoTo 0
+
+    For Each ws In wb.Worksheets
+        rowText = ws.Name
+        If ws.Name = activeSheetName Then rowText = ACTIVE_PREFIX & rowText
+        mLstSheets.AddItem rowText
+    Next ws
+
+    selectedIndex = -1
+    If Len(selectedSheetName) > 0 Then
+        For selectedIndex = 0 To mLstSheets.ListCount - 1
+            If GetRawSheetNameFromRow(selectedIndex) = selectedSheetName Then Exit For
+        Next selectedIndex
+        If selectedIndex >= mLstSheets.ListCount Then selectedIndex = -1
+    End If
+
+    If selectedIndex = -1 And Len(activeSheetName) > 0 Then
+        For selectedIndex = 0 To mLstSheets.ListCount - 1
+            If GetRawSheetNameFromRow(selectedIndex) = activeSheetName Then Exit For
+        Next selectedIndex
+        If selectedIndex >= mLstSheets.ListCount Then selectedIndex = -1
+    End If
+
+    If selectedIndex >= 0 Then mLstSheets.ListIndex = selectedIndex
+
+SafeExit:
+    mUpdatingSheets = False
+
+    If restoreWorkbookFocus Then
+        On Error Resume Next
+        Me.lstWorkbooks.SetFocus
+        On Error GoTo 0
+    End If
+End Sub
+
+Private Function GetRawSheetNameFromRow(ByVal rowIndex As Long) As String
+    Dim s As String
+
+    If mLstSheets Is Nothing Then Exit Function
+    If rowIndex < 0 Or rowIndex >= mLstSheets.ListCount Then Exit Function
+
+    s = CStr(mLstSheets.List(rowIndex, 0))
+    If Left$(s, Len(ACTIVE_PREFIX)) = ACTIVE_PREFIX Then
+        GetRawSheetNameFromRow = Mid$(s, Len(ACTIVE_PREFIX) + 1)
+    Else
+        GetRawSheetNameFromRow = s
+    End If
+End Function
+
+Private Sub mBtnTogglePanel_Click()
+    SetExpandedView Not mIsExpandedView
+End Sub
+
+Private Sub ActivateSheetFromSheetList()
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim sheetName As String
+
+    If mUpdatingSheets Then Exit Sub
+    If mUIBusy Then Exit Sub
+    If mActivatingSheetFromList Then Exit Sub
+    If mLstSheets.ListIndex < 0 Then Exit Sub
+
+    mActivatingSheetFromList = True
+
+    Set wb = GetCurrentWorkbookForSheets()
+    If wb Is Nothing Then GoTo SafeExit
+
+    sheetName = GetRawSheetNameFromRow(mLstSheets.ListIndex)
+    If Len(sheetName) = 0 Then GoTo SafeExit
+
+    On Error Resume Next
+    Set ws = wb.Worksheets(sheetName)
+    On Error GoTo 0
+    If ws Is Nothing Then GoTo SafeExit
+
+    On Error Resume Next
+    If wb.Windows.Count > 0 Then wb.Windows(1).Activate
+    wb.Activate
+    ws.Activate
+    On Error GoTo 0
+
+    RefreshVisuals
+    On Error Resume Next
+    mLstSheets.SetFocus
+    On Error GoTo 0
+
+SafeExit:
+    mActivatingSheetFromList = False
+End Sub
+
+Private Sub mLstSheets_Click()
+    If mUpdatingSheets Then Exit Sub
+    If mUIBusy Then Exit Sub
+    If mSheetKeyboardNavigation Then Exit Sub
+
+    On Error Resume Next
+    mLstSheets.SetFocus
+    On Error GoTo 0
+    ActivateSheetFromSheetList
+End Sub
+
+Private Sub mLstSheets_Change()
+End Sub
+
+Private Sub mLstSheets_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
+        mSheetKeyboardNavigation = True
+        Exit Sub
+    End If
+
+    If KeyCode = vbKeyReturn Then
+        mSheetKeyboardNavigation = False
+        ActivateSheetFromSheetList
+        KeyCode = 0
+    End If
+End Sub
+
+Private Sub mLstSheets_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    mSheetKeyboardNavigation = False
+End Sub
+
 Private Sub UserForm_Terminate()
     On Error Resume Next
-    SaveSetting REG_APP, REG_SEC, "W", Me.Width
+    SaveSetting REG_APP, REG_SEC, "W", IIf(mIsExpandedView, Me.Width - (mGap + mPanelWidth), Me.Width)
     SaveSetting REG_APP, REG_SEC, "H", Me.Height
 End Sub
 
@@ -1852,6 +2195,7 @@ Private Sub CacheLayout()
 
     mRightMargin = 8
     mGap = 8
+    mBaseListLeft = Me.lstWorkbooks.Left
 
     ' Bottom block anchor (we shift these by deltaH)
     mCtlTop(1) = Me.tglBatchMode.TOP
@@ -1899,6 +2243,8 @@ Private Sub ApplyLayout()
     Dim ctlS2 As Object
     Dim ctlS3 As Object
     Dim ctlOpenCopied As Object
+    Dim reservedRight As Single
+    Dim sheetBottom As Single
 
     If mBaseInsideW = 0 Or mBaseInsideH = 0 Then Exit Sub
 
@@ -1908,6 +2254,8 @@ Private Sub ApplyLayout()
     rightX = Me.InsideWidth - mRightMargin
     Me.btnReload.Left = rightX - Me.btnReload.Width
     Me.txtSearch.Width = (Me.btnReload.Left - mGap) - Me.txtSearch.Left
+    Me.Label1.TextAlign = fmTextAlignRight
+    Me.Label1.Left = Me.txtSearch.Left - Me.Label1.Width
 
     ' Label3: left-aligned to Reload, below it, between top row and list
     Me.Label3.Left = Me.btnReload.Left
@@ -1976,9 +2324,17 @@ Private Sub ApplyLayout()
 
     Me.btnClose.TOP = actionTop
     Me.btnCancel.TOP = actionTop
+    If Not mBtnTogglePanel Is Nothing Then
+        mBtnTogglePanel.TOP = actionTop - actionGap - mBtnTogglePanel.Height
+    End If
 
     Me.btnClose.Left = Me.InsideWidth - actionBottomMargin - Me.btnClose.Width
     Me.btnCancel.Left = Me.btnClose.Left - actionGap - Me.btnCancel.Width
+    If Not mBtnTogglePanel Is Nothing Then
+        mBtnTogglePanel.Left = Me.btnClose.Left
+        mBtnTogglePanel.Width = Me.btnClose.Width
+        mBtnTogglePanel.Height = Me.btnClose.Height
+    End If
 
     Set ctlMax = GetControlIfExists("btnMaximize")
     Set ctlS1 = GetControlIfExists("btnScreen1")
@@ -2034,8 +2390,13 @@ Private Sub ApplyLayout()
     End If
 
     ' --- ListBox: stretch to fill between top row and bottom block
-    Me.lstWorkbooks.Left = Me.Label1.Left
-    Me.lstWorkbooks.Width = Me.InsideWidth - Me.lstWorkbooks.Left - mRightMargin
+    Me.lstWorkbooks.Left = mBaseListLeft
+    If mIsExpandedView Then
+        reservedRight = mRightMargin + mGap + mPanelWidth
+    Else
+        reservedRight = mRightMargin
+    End If
+    Me.lstWorkbooks.Width = Me.InsideWidth - Me.lstWorkbooks.Left - reservedRight
     Me.lstWorkbooks.TOP = topBlockBottom + mGap
     ' FullPath bar aligns with listbox width
 Me.txtFullPath.Left = Me.lstWorkbooks.Left
@@ -2046,6 +2407,30 @@ Me.txtFullPath.TOP = Me.tglBatchMode.TOP - mGap - Me.txtFullPath.Height
 
 ' ListBox ends above FullPath bar (leave gap)
 Me.lstWorkbooks.Height = (Me.txtFullPath.TOP - mGap) - Me.lstWorkbooks.TOP
+
+Me.Label3.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width - Me.Label3.Width
+
+If Not mLstSheets Is Nothing Then
+    mLstSheets.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width + mGap
+    If Not mLblSheetsWorkbook Is Nothing Then
+        mLblSheetsWorkbook.Left = mLstSheets.Left
+        mLstSheets.TOP = Me.lstWorkbooks.TOP
+        mLblSheetsWorkbook.TOP = mLstSheets.TOP - mLblSheetsWorkbook.Height
+        mLblSheetsWorkbook.Width = mPanelWidth
+        mLblSheetsWorkbook.Visible = mIsExpandedView
+        mLblSheetsWorkbook.TextAlign = fmTextAlignLeft
+    Else
+        mLstSheets.TOP = Me.lstWorkbooks.TOP
+    End If
+    mLstSheets.Width = mPanelWidth
+    sheetBottom = Me.btnOpenFile.TOP + Me.btnOpenFile.Height
+    If Not mBtnTogglePanel Is Nothing Then
+        If mBtnTogglePanel.TOP - mGap < sheetBottom Then sheetBottom = mBtnTogglePanel.TOP - mGap
+    End If
+    If sheetBottom < mLstSheets.TOP + 24 Then sheetBottom = mLstSheets.TOP + 24
+    mLstSheets.Height = sheetBottom - mLstSheets.TOP
+    mLstSheets.Visible = mIsExpandedView
+End If
 
 
     ' --- ListBox columns: File width based on average display width of file names
@@ -2179,6 +2564,7 @@ Private Sub UserForm_Resize()
     If mMinTrackH > 0 And Me.Height < mMinTrackH Then Me.Height = mMinTrackH
     If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
     If Me.Height > FORM_MAX_H Then Me.Height = FORM_MAX_H
+    If Not mIsExpandedView Then mCollapsedInsideW = Me.InsideWidth
     ApplyLayout
     On Error GoTo 0
     PositionTopButtons
@@ -2272,6 +2658,12 @@ Private Sub PositionTopButtons()
     ' Cancel  zawsze obok Close (z lewej)
     btnCancel.TOP = btnClose.TOP
     btnCancel.Left = btnClose.Left - GAP - btnCancel.Width
+    If Not mBtnTogglePanel Is Nothing Then
+        mBtnTogglePanel.Width = btnClose.Width
+        mBtnTogglePanel.Height = btnClose.Height
+        mBtnTogglePanel.Left = btnClose.Left
+        mBtnTogglePanel.TOP = btnClose.TOP - GAP - mBtnTogglePanel.Height
+    End If
 
     Set ctlMax = GetControlIfExists("btnMaximize")
     Set ctlS1 = GetControlIfExists("btnScreen1")
@@ -2307,6 +2699,7 @@ Private Sub PositionTopButtons()
     ' Na wierzch (jesli cos przykrywa)
     btnClose.ZOrder 0
     btnCancel.ZOrder 0
+    If Not mBtnTogglePanel Is Nothing Then mBtnTogglePanel.ZOrder 0
 End Sub
 
 
