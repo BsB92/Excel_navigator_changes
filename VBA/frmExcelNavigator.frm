@@ -71,6 +71,7 @@ Private mMinTrackH As Long
 Private mHookReady As Boolean
 Private mOpenCopiedOffsetTop As Single
 Private mOpenCopiedOffsetLeft As Single
+Private Const HEADER_IMAGE_MARGIN As Single = 6
 
 
 ' ========= CONSTANTS =========
@@ -791,6 +792,7 @@ Private Sub UserForm_Initialize()
     mLastCopyFolder = ""
     Me.btnOpenCopyFolder.enabled = False
     Me.txtSuffix.Value = "_without_formulas"
+    PinImage1AndTopRow
 
 
     ReloadListPreserveSelection
@@ -830,6 +832,23 @@ ApplyLayout
 
 
 
+End Sub
+
+Private Sub PinImage1AndTopRow()
+    Dim img As Object
+    Dim minTop As Single
+
+    Set img = GetControlIfExists("Image1")
+    If img Is Nothing Then Exit Sub
+
+    img.TOP = HEADER_IMAGE_MARGIN
+    img.Left = Me.InsideWidth - HEADER_IMAGE_MARGIN - img.Width
+
+    minTop = img.TOP + img.Height + HEADER_IMAGE_MARGIN
+
+    Me.txtSearch.TOP = minTop
+    Me.btnReload.TOP = minTop
+    Me.Label1.TOP = minTop
 End Sub
 
 ' =========================================================
@@ -2250,6 +2269,8 @@ Private Sub ApplyLayout()
     If mBaseInsideW = 0 Or mBaseInsideH = 0 Then Exit Sub
 
     deltaH = Me.InsideHeight - mBaseInsideH
+
+    PinImage1AndTopRow
 
     ' --- Top row: Search stretches, Reload stays right
     rightX = Me.InsideWidth - mRightMargin
