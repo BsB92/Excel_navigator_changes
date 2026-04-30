@@ -2037,10 +2037,14 @@ Private Sub RefreshSheetList()
     Dim rowText As String
     Dim selectedSheetName As String
     Dim selectedIndex As Long
+    Dim restoreWorkbookFocus As Boolean
 
     If mLstSheets Is Nothing Then Exit Sub
 
+    On Error Resume Next
+    restoreWorkbookFocus = (Not Me.ActiveControl Is Nothing And Me.ActiveControl.Name = "lstWorkbooks")
     On Error GoTo SafeExit
+
     mUpdatingSheets = True
     selectedSheetName = GetRawSheetNameFromRow(mLstSheets.ListIndex)
     mLstSheets.Clear
@@ -2082,6 +2086,12 @@ Private Sub RefreshSheetList()
 
 SafeExit:
     mUpdatingSheets = False
+
+    If restoreWorkbookFocus Then
+        On Error Resume Next
+        Me.lstWorkbooks.SetFocus
+        On Error GoTo 0
+    End If
 End Sub
 
 Private Function GetRawSheetNameFromRow(ByVal rowIndex As Long) As String
@@ -2141,6 +2151,10 @@ SafeExit:
 End Sub
 
 Private Sub mLstSheets_Click()
+    If mUpdatingSheets Then Exit Sub
+    If mUIBusy Then Exit Sub
+    If mSheetKeyboardNavigation Then Exit Sub
+
     On Error Resume Next
     mLstSheets.SetFocus
     On Error GoTo 0
