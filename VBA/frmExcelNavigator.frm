@@ -846,9 +846,9 @@ Private Sub PinImage1AndTopRow()
 
     minTop = img.TOP + img.Height + HEADER_IMAGE_MARGIN
 
-    If Me.txtSearch.TOP < minTop Then Me.txtSearch.TOP = minTop
-    If Me.btnReload.TOP < minTop Then Me.btnReload.TOP = minTop
-    If Me.Label1.TOP < minTop Then Me.Label1.TOP = minTop
+    Me.txtSearch.TOP = minTop
+    Me.btnReload.TOP = minTop
+    Me.Label1.TOP = minTop
 End Sub
 
 ' =========================================================
