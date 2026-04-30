@@ -97,6 +97,12 @@ Private mActivatingSheetFromList As Boolean
 Private mActivatingWorkbookFromList As Boolean
 Private mWorkbookKeyboardNavigation As Boolean
 Private mSheetKeyboardNavigation As Boolean
+Private WithEvents mBtnSettings As MSForms.CommandButton
+Attribute mBtnSettings.VB_VarHelpID = -1
+Private WithEvents mBtnHelp As MSForms.CommandButton
+Attribute mBtnHelp.VB_VarHelpID = -1
+Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
+Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -263,10 +269,16 @@ End Sub
 
 Private Function PickFolder(ByVal titleText As String) As String
     Dim fd As FileDialog
+    Dim initialFolder As String
+
+    initialFolder = modNavigatorSettings.ResolveInitialFolder(ThisWorkbook.Path)
     Set fd = Application.FileDialog(msoFileDialogFolderPicker)
     With fd
         .Title = titleText
         .AllowMultiSelect = False
+        On Error Resume Next
+        .InitialFileName = initialFolder
+        On Error GoTo 0
         If .Show = -1 Then
             PickFolder = .SelectedItems(1)
         Else
@@ -820,9 +832,10 @@ btnCancel.Visible = False
 btnCancel.enabled = True
 EnsureRightPanelControls
 mIsExpandedView = False
-mCollapsedInsideW = Me.InsideWidth
+    mCollapsedInsideW = Me.InsideWidth
 mPanelWidth = GetSheetPanelWidthPt()
 SetExpandedView False
+EnsureTopLeftButtons
 PositionTopButtons
 
 ' --- layout only (resize hook will be done in Activate when hwnd exists) ---
@@ -832,6 +845,52 @@ ApplyLayout
 
 
 
+End Sub
+
+Private Sub EnsureTopLeftButtons()
+    If mBtnSettings Is Nothing Then
+        Set mBtnSettings = GetControlIfExists("btnSettings")
+        If mBtnSettings Is Nothing Then
+            Set mBtnSettings = Me.Controls.Add("Forms.CommandButton.1", "btnSettings", True)
+        End If
+    End If
+
+    If mBtnHelp Is Nothing Then
+        Set mBtnHelp = GetControlIfExists("btnHelp")
+        If mBtnHelp Is Nothing Then
+            Set mBtnHelp = Me.Controls.Add("Forms.CommandButton.1", "btnHelp", True)
+        End If
+    End If
+
+    With mBtnSettings
+        .Caption = "Settings"
+        .Top = TOP_LEFT_BUTTON_MARGIN
+        .Left = TOP_LEFT_BUTTON_MARGIN
+        .Height = 18
+        .Width = 54
+        .Visible = True
+    End With
+
+    With mBtnHelp
+        .Caption = "?"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 18
+        .Left = mBtnSettings.Left + mBtnSettings.Width + TOP_LEFT_BUTTON_GAP
+        .Visible = True
+    End With
+End Sub
+
+Private Sub mBtnSettings_Click()
+    frmNavigatorSettings.Show vbModal
+End Sub
+
+Private Sub mBtnHelp_Click()
+    On Error GoTo EH
+    modNavigatorSettings.OpenHelpInstructions
+    Exit Sub
+EH:
+    SafeMsgBox "Could not open help file: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub PinImage1AndTopRow()
@@ -2717,6 +2776,8 @@ Private Sub PositionTopButtons()
             ctlS3.Left = ctlS2.Left + ctlS2.Width + GAP
         End If
     End If
+
+    EnsureTopLeftButtons
 
     ' Na wierzch (jesli cos przykrywa)
     btnClose.ZOrder 0
