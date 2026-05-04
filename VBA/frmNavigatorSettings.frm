@@ -6,35 +6,35 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmNavigatorSettings
    ClientTop       =   465
    ClientWidth     =   6400
    StartUpPosition =   1  'CenterOwner
-   Begin VB.Label lblTitle
+   Begin Forms.Label.1 lblTitle
       Caption         =   "Ustawienia dodatku"
       Height          =   255
       Left            =   120
       Top             =   120
       Width           =   2200
    End
-   Begin VB.Label lblDesc
+   Begin Forms.Label.1 lblDesc
       Caption         =   "Domyślna lokalizacja dla Open / Open&Refresh / Copy i podobnych operacji:"
       Height          =   375
       Left            =   120
       Top             =   420
       Width           =   6100
    End
-   Begin VB.Label lblFolder
+   Begin Forms.Label.1 lblFolder
       Caption         =   "Folder:"
       Height          =   255
       Left            =   120
       Top             =   840
       Width           =   735
    End
-   Begin VB.TextBox txtDefaultFolder
+   Begin Forms.TextBox.1 txtDefaultFolder
       Height          =   285
       Left            =   120
       TabIndex        =   0
       Top             =   1080
       Width           =   5055
    End
-   Begin VB.CommandButton btnBrowse
+   Begin Forms.CommandButton.1 btnBrowse
       Caption         =   "Browse..."
       Height          =   285
       Left            =   5280
@@ -42,7 +42,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmNavigatorSettings
       Top             =   1080
       Width           =   975
    End
-   Begin VB.CommandButton btnSave
+   Begin Forms.CommandButton.1 btnSave
       Caption         =   "Save settings"
       Height          =   345
       Left            =   4200
@@ -50,7 +50,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmNavigatorSettings
       Top             =   1560
       Width           =   975
    End
-   Begin VB.CommandButton btnClose
+   Begin Forms.CommandButton.1 btnClose
       Caption         =   "Close"
       Height          =   345
       Left            =   5280
