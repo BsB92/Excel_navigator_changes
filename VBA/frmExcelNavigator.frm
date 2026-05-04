@@ -97,8 +97,6 @@ Private mActivatingSheetFromList As Boolean
 Private mActivatingWorkbookFromList As Boolean
 Private mWorkbookKeyboardNavigation As Boolean
 Private mSheetKeyboardNavigation As Boolean
-Private WithEvents mBtnMain As MSForms.CommandButton
-Attribute mBtnMain.VB_VarHelpID = -1
 Private WithEvents mBtnSettings As MSForms.CommandButton
 Attribute mBtnSettings.VB_VarHelpID = -1
 Private WithEvents mBtnHelp As MSForms.CommandButton
@@ -850,13 +848,6 @@ ApplyLayout
 End Sub
 
 Private Sub EnsureTopLeftButtons()
-    If mBtnMain Is Nothing Then
-        Set mBtnMain = GetControlIfExists("btnMain")
-        If mBtnMain Is Nothing Then
-            Set mBtnMain = Me.Controls.Add("Forms.CommandButton.1", "btnMain", True)
-        End If
-    End If
-
     If mBtnSettings Is Nothing Then
         Set mBtnSettings = GetControlIfExists("btnSettings")
         If mBtnSettings Is Nothing Then
@@ -871,21 +862,12 @@ Private Sub EnsureTopLeftButtons()
         End If
     End If
 
-    With mBtnMain
-        .Caption = "Main"
+    With mBtnSettings
+        .Caption = "Settings"
         .Top = TOP_LEFT_BUTTON_MARGIN
         .Left = TOP_LEFT_BUTTON_MARGIN
         .Height = 18
-        .Width = 42
-        .Visible = True
-    End With
-
-    With mBtnSettings
-        .Caption = "Settings"
-        .Top = mBtnMain.Top
-        .Height = mBtnMain.Height
         .Width = 54
-        .Left = mBtnMain.Left + mBtnMain.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
 
@@ -897,10 +879,6 @@ Private Sub EnsureTopLeftButtons()
         .Left = mBtnSettings.Left + mBtnSettings.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
-End Sub
-
-Private Sub mBtnMain_Click()
-    If Me.lstWorkbooks.Visible And Me.lstWorkbooks.enabled Then Me.lstWorkbooks.SetFocus
 End Sub
 
 Private Sub mBtnSettings_Click()
