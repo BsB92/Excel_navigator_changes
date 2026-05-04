@@ -103,6 +103,17 @@ Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
+Private mSettingsMode As Boolean
+Private mSettingsFrame As MSForms.Frame
+Private mSettingsLblTitle As MSForms.Label
+Private mSettingsLblCopy As MSForms.Label
+Private mSettingsTxtCopy As MSForms.TextBox
+Private mSettingsLblOpen As MSForms.Label
+Private mSettingsTxtOpen As MSForms.TextBox
+Private WithEvents mBtnSettingsSave As MSForms.CommandButton
+Attribute mBtnSettingsSave.VB_VarHelpID = -1
+Private WithEvents mBtnSettingsCancel As MSForms.CommandButton
+Attribute mBtnSettingsCancel.VB_VarHelpID = -1
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -881,35 +892,108 @@ Private Sub EnsureTopLeftButtons()
     End With
 End Sub
 
+Private Sub EnsureSettingsOverlay()
+    If mSettingsFrame Is Nothing Then
+        Set mSettingsFrame = Me.Controls.Add("Forms.Frame.1", "fraNavigatorSettings", True)
+        Set mSettingsLblTitle = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsTitle", True)
+        Set mSettingsLblCopy = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsCopy", True)
+        Set mSettingsTxtCopy = mSettingsFrame.Controls.Add("Forms.TextBox.1", "txtSettingsCopy", True)
+        Set mSettingsLblOpen = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsOpen", True)
+        Set mSettingsTxtOpen = mSettingsFrame.Controls.Add("Forms.TextBox.1", "txtSettingsOpen", True)
+        Set mBtnSettingsSave = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSave", True)
+        Set mBtnSettingsCancel = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsCancel", True)
+    End If
+
+    With mSettingsFrame
+        .Caption = ""
+        .Left = 4
+        .Top = Me.btnReload.Top + Me.btnReload.Height + 8
+        .Width = Me.InsideWidth - 8
+        .Height = Me.btnClose.Top - .Top - 6
+        .SpecialEffect = fmSpecialEffectFlat
+    End With
+
+    With mSettingsLblTitle
+        .Caption = "Navigator Settings"
+        .Left = 8
+        .Top = 8
+        .Width = 220
+        .Height = 20
+        .Font.Bold = True
+        .Font.Size = 14
+    End With
+
+    With mSettingsLblCopy
+        .Caption = "Set default path for copy operations:"
+        .Left = 8
+        .Top = 40
+        .Width = 260
+        .Height = 16
+    End With
+
+    With mSettingsTxtCopy
+        .Left = 8
+        .Top = 58
+        .Width = mSettingsFrame.Width - 16
+        .Height = 22
+    End With
+
+    With mSettingsLblOpen
+        .Caption = "Set default path for open operations:"
+        .Left = 8
+        .Top = 90
+        .Width = 260
+        .Height = 16
+    End With
+
+    With mSettingsTxtOpen
+        .Left = 8
+        .Top = 108
+        .Width = mSettingsFrame.Width - 16
+        .Height = 22
+    End With
+
+    With mBtnSettingsSave
+        .Caption = "Save settings"
+        .Width = 92
+        .Height = 24
+        .Top = mSettingsFrame.Height - 32
+        .Left = (mSettingsFrame.Width / 2) - .Width - 10
+    End With
+
+    With mBtnSettingsCancel
+        .Caption = "Cancel"
+        .Width = 72
+        .Height = 24
+        .Top = mSettingsFrame.Height - 32
+        .Left = (mSettingsFrame.Width / 2) + 10
+    End With
+End Sub
+
+Private Sub ApplySettingsOverlayVisibility()
+    If mSettingsFrame Is Nothing Then Exit Sub
+
+    mSettingsFrame.Visible = mSettingsMode
+
+    If mSettingsMode Then
+        mSettingsTxtCopy.Text = modNavigatorSettings.GetDefaultWorkingFolder()
+        mSettingsTxtOpen.Text = modNavigatorSettings.GetOpenFilesFolder()
+        mSettingsFrame.ZOrder 0
+    End If
+End Sub
+
 Private Sub mBtnSettings_Click()
-    Dim currentCopyFolder As String
-    Dim currentOpenFolder As String
-    Dim settingsInput As String
-    Dim lines() As String
+    mSettingsMode = Not mSettingsMode
+    EnsureSettingsOverlay
+    ApplySettingsOverlayVisibility
+End Sub
+
+Private Sub mBtnSettingsSave_Click()
     Dim copyFolder As String
     Dim openFolder As String
 
-    currentCopyFolder = modNavigatorSettings.GetDefaultWorkingFolder()
-    currentOpenFolder = modNavigatorSettings.GetOpenFilesFolder()
-
-    settingsInput = InputBox$( _
-        "Paste two folders (one per line):" & vbCrLf & _
-        "1) Copy operations" & vbCrLf & _
-        "2) Open/Open&Refresh", _
-        "Navigator settings", _
-        currentCopyFolder & vbCrLf & currentOpenFolder _
-    )
-
-    If Len(settingsInput) = 0 Then Exit Sub
-
-    lines = Split(Replace(settingsInput, vbLf, vbCrLf), vbCrLf)
-    If UBound(lines) < 1 Then
-        SafeMsgBox "Please provide two lines: copy folder and open folder.", vbExclamation
-        Exit Sub
-    End If
-
-    copyFolder = Trim$(lines(0))
-    openFolder = Trim$(lines(1))
+    copyFolder = Trim$(mSettingsTxtCopy.Text)
+    openFolder = Trim$(mSettingsTxtOpen.Text)
 
     If Len(copyFolder) = 0 Or Len(Dir$(copyFolder, vbDirectory)) = 0 Then
         SafeMsgBox "Copy folder does not exist: " & copyFolder, vbExclamation
@@ -923,7 +1007,15 @@ Private Sub mBtnSettings_Click()
 
     modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
     modNavigatorSettings.SaveOpenFilesFolder openFolder
+
+    mSettingsMode = False
+    ApplySettingsOverlayVisibility
     SafeMsgBox "Settings saved.", vbInformation
+End Sub
+
+Private Sub mBtnSettingsCancel_Click()
+    mSettingsMode = False
+    ApplySettingsOverlayVisibility
 End Sub
 
 Private Sub mBtnHelp_Click()
@@ -2822,6 +2914,7 @@ Private Sub PositionTopButtons()
     End If
 
     EnsureTopLeftButtons
+    If mSettingsMode Then EnsureSettingsOverlay
 
     ' Na wierzch (jesli cos przykrywa)
     btnClose.ZOrder 0
