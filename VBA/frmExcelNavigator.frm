@@ -882,39 +882,54 @@ Private Sub EnsureTopLeftButtons()
 End Sub
 
 Private Sub mBtnSettings_Click()
+    Dim currentCopyFolder As String
+    Dim currentOpenFolder As String
+    Dim settingsInput As String
+    Dim lines() As String
     Dim copyFolder As String
     Dim openFolder As String
 
-    copyFolder = PromptForExistingFolder( _
-        "Default folder for copy operations:", _
-        modNavigatorSettings.GetDefaultWorkingFolder() _
-    )
-    If Len(copyFolder) = 0 Then Exit Sub
+    currentCopyFolder = modNavigatorSettings.GetDefaultWorkingFolder()
+    currentOpenFolder = modNavigatorSettings.GetOpenFilesFolder()
 
-    openFolder = PromptForExistingFolder( _
-        "Default folder for Open/Open&Refresh:", _
-        modNavigatorSettings.GetOpenFilesFolder() _
+    settingsInput = InputBox$( _
+        "Paste two folders (one per line):" & vbCrLf & _
+        "1) Copy operations" & vbCrLf & _
+        "2) Open/Open&Refresh", _
+        "Navigator settings", _
+        currentCopyFolder & vbCrLf & currentOpenFolder _
     )
-    If Len(openFolder) = 0 Then Exit Sub
+
+    If Len(settingsInput) = 0 Then Exit Sub
+
+    lines = Split(Replace(settingsInput, vbLf, vbCrLf), vbCrLf)
+    If UBound(lines) < 1 Then
+        SafeMsgBox "Please provide two lines: copy folder and open folder.", vbExclamation
+        Exit Sub
+    End If
+
+    copyFolder = Trim$(lines(0))
+    openFolder = Trim$(lines(1))
+
+    If Not IsExistingFolder(copyFolder) Then
+        SafeMsgBox "Copy folder does not exist: " & copyFolder, vbExclamation
+        Exit Sub
+    End If
+
+    If Not IsExistingFolder(openFolder) Then
+        SafeMsgBox "Open folder does not exist: " & openFolder, vbExclamation
+        Exit Sub
+    End If
 
     modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
     modNavigatorSettings.SaveOpenFilesFolder openFolder
     SafeMsgBox "Settings saved.", vbInformation
 End Sub
 
-Private Function PromptForExistingFolder(ByVal promptText As String, ByVal currentFolder As String) As String
-    Dim newFolder As String
-
-    newFolder = InputBox$(promptText, "Navigator settings", currentFolder)
-    If Len(newFolder) = 0 Then Exit Function
-
-    newFolder = Trim$(newFolder)
-    If Len(Dir$(newFolder, vbDirectory)) = 0 Then
-        SafeMsgBox "Folder does not exist: " & newFolder, vbExclamation
-        Exit Function
-    End If
-
-    PromptForExistingFolder = newFolder
+Private Function IsExistingFolder(ByVal folderPath As String) As Boolean
+    folderPath = Trim$(folderPath)
+    If Len(folderPath) = 0 Then Exit Function
+    IsExistingFolder = (Len(Dir$(folderPath, vbDirectory)) > 0)
 End Function
 
 Private Sub mBtnHelp_Click()
