@@ -101,6 +101,13 @@ Private WithEvents mBtnSettings As MSForms.CommandButton
 Attribute mBtnSettings.VB_VarHelpID = -1
 Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
+Private WithEvents mBtnSaveSettings As MSForms.CommandButton
+Attribute mBtnSaveSettings.VB_VarHelpID = -1
+Private mLblCopyFolder As MSForms.Label
+Private mTxtCopyFolder As MSForms.TextBox
+Private mLblOpenFolder As MSForms.Label
+Private mTxtOpenFolder As MSForms.TextBox
+Private mSettingsVisible As Boolean
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 
@@ -862,54 +869,86 @@ Private Sub EnsureTopLeftButtons()
         End If
     End If
 
+    If mBtnSaveSettings Is Nothing Then
+        Set mBtnSaveSettings = GetControlIfExists("btnSaveSettings")
+        If mBtnSaveSettings Is Nothing Then
+            Set mBtnSaveSettings = Me.Controls.Add("Forms.CommandButton.1", "btnSaveSettings", True)
+        End If
+    End If
+
+    If mLblCopyFolder Is Nothing Then Set mLblCopyFolder = Me.Controls.Add("Forms.Label.1", "lblCopyFolder", True)
+    If mTxtCopyFolder Is Nothing Then Set mTxtCopyFolder = Me.Controls.Add("Forms.TextBox.1", "txtCopyFolder", True)
+    If mLblOpenFolder Is Nothing Then Set mLblOpenFolder = Me.Controls.Add("Forms.Label.1", "lblOpenFolder", True)
+    If mTxtOpenFolder Is Nothing Then Set mTxtOpenFolder = Me.Controls.Add("Forms.TextBox.1", "txtOpenFolder", True)
+
     With mBtnSettings
         .Caption = "Settings"
-        .Top = TOP_LEFT_BUTTON_MARGIN
-        .Left = TOP_LEFT_BUTTON_MARGIN
-        .Height = 18
         .Width = 54
+        .Height = 20
+        .Top = Me.btnClose.Top
+        .Left = Me.btnCancel.Left - TOP_LEFT_BUTTON_GAP - .Width
         .Visible = True
     End With
 
     With mBtnHelp
         .Caption = "Help"
-        .Top = mBtnSettings.Top
-        .Height = mBtnSettings.Height
         .Width = 36
-        .Left = mBtnSettings.Left + mBtnSettings.Width + TOP_LEFT_BUTTON_GAP
+        .Height = 20
+        .Top = Me.btnClose.Top
+        .Left = mBtnSettings.Left - TOP_LEFT_BUTTON_GAP - .Width
         .Visible = True
+    End With
+
+    With mBtnSaveSettings
+        .Caption = "Save"
+        .Width = 42
+        .Height = 20
+        .Top = Me.btnClose.Top
+        .Left = mBtnHelp.Left - TOP_LEFT_BUTTON_GAP - .Width
+        .Visible = mSettingsVisible
+    End With
+
+    With mLblCopyFolder
+        .Caption = "Default folder for copy operations"
+        .Left = 8
+        .Top = Me.btnClose.Top - 84
+        .Width = 220
+        .Height = 14
+        .Visible = mSettingsVisible
+    End With
+
+    With mTxtCopyFolder
+        .Left = 8
+        .Top = mLblCopyFolder.Top + mLblCopyFolder.Height + 2
+        .Width = Me.InsideWidth - 16
+        .Height = 18
+        .Visible = mSettingsVisible
+    End With
+
+    With mLblOpenFolder
+        .Caption = "Default folder for Open/Open&Refresh"
+        .Left = 8
+        .Top = mTxtCopyFolder.Top + mTxtCopyFolder.Height + 4
+        .Width = 220
+        .Height = 14
+        .Visible = mSettingsVisible
+    End With
+
+    With mTxtOpenFolder
+        .Left = 8
+        .Top = mLblOpenFolder.Top + mLblOpenFolder.Height + 2
+        .Width = Me.InsideWidth - 16
+        .Height = 18
+        .Visible = mSettingsVisible
     End With
 End Sub
 
-Private Sub mBtnSettings_Click()
-    Dim currentCopyFolder As String
-    Dim currentOpenFolder As String
-    Dim settingsInput As String
-    Dim lines() As String
+Private Sub mBtnSaveSettings_Click()
     Dim copyFolder As String
     Dim openFolder As String
 
-    currentCopyFolder = modNavigatorSettings.GetDefaultWorkingFolder()
-    currentOpenFolder = modNavigatorSettings.GetOpenFilesFolder()
-
-    settingsInput = InputBox$( _
-        "Paste two folders (one per line):" & vbCrLf & _
-        "1) Copy operations" & vbCrLf & _
-        "2) Open/Open&Refresh", _
-        "Navigator settings", _
-        currentCopyFolder & vbCrLf & currentOpenFolder _
-    )
-
-    If Len(settingsInput) = 0 Then Exit Sub
-
-    lines = Split(Replace(settingsInput, vbLf, vbCrLf), vbCrLf)
-    If UBound(lines) < 1 Then
-        SafeMsgBox "Please provide two lines: copy folder and open folder.", vbExclamation
-        Exit Sub
-    End If
-
-    copyFolder = Trim$(lines(0))
-    openFolder = Trim$(lines(1))
+    copyFolder = Trim$(mTxtCopyFolder.Text)
+    openFolder = Trim$(mTxtOpenFolder.Text)
 
     If Not IsExistingFolder(copyFolder) Then
         SafeMsgBox "Copy folder does not exist: " & copyFolder, vbExclamation
@@ -924,6 +963,17 @@ Private Sub mBtnSettings_Click()
     modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
     modNavigatorSettings.SaveOpenFilesFolder openFolder
     SafeMsgBox "Settings saved.", vbInformation
+End Sub
+
+Private Sub mBtnSettings_Click()
+    mSettingsVisible = Not mSettingsVisible
+
+    If mSettingsVisible Then
+        mTxtCopyFolder.Text = modNavigatorSettings.GetDefaultWorkingFolder()
+        mTxtOpenFolder.Text = modNavigatorSettings.GetOpenFilesFolder()
+    End If
+
+    EnsureTopLeftButtons
 End Sub
 
 Private Function IsExistingFolder(ByVal folderPath As String) As Boolean
