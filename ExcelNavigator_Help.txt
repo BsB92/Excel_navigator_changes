@@ -1,0 +1,40 @@
+Excel Navigator - Instrukcja użytkowania
+
+1) Search
+Filtruje listę otwartych plików po nazwie i pełnej ścieżce.
+
+2) Reload
+Odświeża listę aktywnych skoroszytów bez utraty ustawień formularza.
+
+3) Selection mode OFF/ON
+Przełącza tryb wyboru pojedynczego i wielu plików.
+
+4) Open
+Aktywuje zaznaczony skoroszyt.
+
+5) Open & Refresh
+Otwiera i odświeża dane w wybranych skoroszytach.
+
+6) Refresh / Save / Refresh+Save
+Operacje wsadowe dla zaznaczonych plików.
+
+7) Copy + Break Links
+Tworzy kopię pliku i zrywa połączenia zewnętrzne.
+
+8) Copy with suffix
+Tworzy kopię pliku z dopiskiem z pola Suffix.
+
+9) Open copied files / Open folder
+Szybkie otwieranie wyników kopiowania i folderu docelowego.
+
+10) Close selected
+Zamyka zaznaczone pliki z obsługą zapisanych/niezapisanych zmian.
+
+11) Panel arkuszy (po prawej)
+Umożliwia szybkie przejście do wybranego arkusza aktywnego pliku.
+
+12) Settings
+Ustawia domyślną lokalizację folderu używaną przy operacjach Open/Copy itp.
+
+Wskazówka:
+Ustaw domyślny folder w Settings i kliknij Save settings.
