@@ -97,6 +97,8 @@ Private mActivatingSheetFromList As Boolean
 Private mActivatingWorkbookFromList As Boolean
 Private mWorkbookKeyboardNavigation As Boolean
 Private mSheetKeyboardNavigation As Boolean
+Private WithEvents mBtnMain As MSForms.CommandButton
+Attribute mBtnMain.VB_VarHelpID = -1
 Private WithEvents mBtnSettings As MSForms.CommandButton
 Attribute mBtnSettings.VB_VarHelpID = -1
 Private WithEvents mBtnHelp As MSForms.CommandButton
@@ -848,6 +850,13 @@ ApplyLayout
 End Sub
 
 Private Sub EnsureTopLeftButtons()
+    If mBtnMain Is Nothing Then
+        Set mBtnMain = GetControlIfExists("btnMain")
+        If mBtnMain Is Nothing Then
+            Set mBtnMain = Me.Controls.Add("Forms.CommandButton.1", "btnMain", True)
+        End If
+    End If
+
     If mBtnSettings Is Nothing Then
         Set mBtnSettings = GetControlIfExists("btnSettings")
         If mBtnSettings Is Nothing Then
@@ -862,29 +871,55 @@ Private Sub EnsureTopLeftButtons()
         End If
     End If
 
-    With mBtnSettings
-        .Caption = "Settings"
+    With mBtnMain
+        .Caption = "Main"
         .Top = TOP_LEFT_BUTTON_MARGIN
         .Left = TOP_LEFT_BUTTON_MARGIN
         .Height = 18
+        .Width = 42
+        .Visible = True
+    End With
+
+    With mBtnSettings
+        .Caption = "Settings"
+        .Top = mBtnMain.Top
+        .Height = mBtnMain.Height
         .Width = 54
+        .Left = mBtnMain.Left + mBtnMain.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
 
     With mBtnHelp
-        .Caption = "?"
+        .Caption = "Help"
         .Top = mBtnSettings.Top
         .Height = mBtnSettings.Height
-        .Width = 18
+        .Width = 36
         .Left = mBtnSettings.Left + mBtnSettings.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
 End Sub
 
+Private Sub mBtnMain_Click()
+    If Me.lstWorkbooks.Visible And Me.lstWorkbooks.enabled Then Me.lstWorkbooks.SetFocus
+End Sub
+
 Private Sub mBtnSettings_Click()
-    Dim settingsForm As Object
-    Set settingsForm = VBA.UserForms.Add("frmNavigatorSettings")
-    settingsForm.Show vbModal
+    Dim currentFolder As String
+    Dim newFolder As String
+
+    currentFolder = modNavigatorSettings.GetDefaultWorkingFolder()
+    newFolder = InputBox$("Default folder for file operations:", "Navigator settings", currentFolder)
+
+    If Len(newFolder) = 0 Then Exit Sub
+    newFolder = Trim$(newFolder)
+
+    If Len(Dir$(newFolder, vbDirectory)) = 0 Then
+        SafeMsgBox "Folder does not exist: " & newFolder, vbExclamation
+        Exit Sub
+    End If
+
+    modNavigatorSettings.SaveDefaultWorkingFolder newFolder
+    SafeMsgBox "Default folder saved.", vbInformation
 End Sub
 
 Private Sub mBtnHelp_Click()
