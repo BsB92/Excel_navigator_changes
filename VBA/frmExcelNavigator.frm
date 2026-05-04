@@ -101,13 +101,15 @@ Private WithEvents mBtnSettings As MSForms.CommandButton
 Attribute mBtnSettings.VB_VarHelpID = -1
 Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
-Private WithEvents mBtnSaveSettings As MSForms.CommandButton
-Attribute mBtnSaveSettings.VB_VarHelpID = -1
+Private WithEvents mBtnSettingsOk As MSForms.CommandButton
+Attribute mBtnSettingsOk.VB_VarHelpID = -1
+Private WithEvents mBtnSettingsCancel As MSForms.CommandButton
+Attribute mBtnSettingsCancel.VB_VarHelpID = -1
+Private mFrmSettings As MSForms.Frame
 Private mLblCopyFolder As MSForms.Label
 Private mTxtCopyFolder As MSForms.TextBox
 Private mLblOpenFolder As MSForms.Label
 Private mTxtOpenFolder As MSForms.TextBox
-Private mSettingsVisible As Boolean
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 
@@ -869,81 +871,62 @@ Private Sub EnsureTopLeftButtons()
         End If
     End If
 
-    If mBtnSaveSettings Is Nothing Then
-        Set mBtnSaveSettings = GetControlIfExists("btnSaveSettings")
-        If mBtnSaveSettings Is Nothing Then
-            Set mBtnSaveSettings = Me.Controls.Add("Forms.CommandButton.1", "btnSaveSettings", True)
-        End If
-    End If
-
-    If mLblCopyFolder Is Nothing Then Set mLblCopyFolder = Me.Controls.Add("Forms.Label.1", "lblCopyFolder", True)
-    If mTxtCopyFolder Is Nothing Then Set mTxtCopyFolder = Me.Controls.Add("Forms.TextBox.1", "txtCopyFolder", True)
-    If mLblOpenFolder Is Nothing Then Set mLblOpenFolder = Me.Controls.Add("Forms.Label.1", "lblOpenFolder", True)
-    If mTxtOpenFolder Is Nothing Then Set mTxtOpenFolder = Me.Controls.Add("Forms.TextBox.1", "txtOpenFolder", True)
-
     With mBtnSettings
         .Caption = "Settings"
+        .Top = TOP_LEFT_BUTTON_MARGIN
+        .Left = TOP_LEFT_BUTTON_MARGIN
+        .Height = 18
         .Width = 54
-        .Height = 20
-        .Top = Me.btnClose.Top
-        .Left = Me.btnCancel.Left - TOP_LEFT_BUTTON_GAP - .Width
         .Visible = True
     End With
 
     With mBtnHelp
-        .Caption = "Help"
-        .Width = 36
-        .Height = 20
-        .Top = Me.btnClose.Top
-        .Left = mBtnSettings.Left - TOP_LEFT_BUTTON_GAP - .Width
+        .Caption = "?"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 18
+        .Left = mBtnSettings.Left + mBtnSettings.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
-    End With
-
-    With mBtnSaveSettings
-        .Caption = "Save"
-        .Width = 42
-        .Height = 20
-        .Top = Me.btnClose.Top
-        .Left = mBtnHelp.Left - TOP_LEFT_BUTTON_GAP - .Width
-        .Visible = mSettingsVisible
-    End With
-
-    With mLblCopyFolder
-        .Caption = "Default folder for copy operations"
-        .Left = 8
-        .Top = Me.btnClose.Top - 84
-        .Width = 220
-        .Height = 14
-        .Visible = mSettingsVisible
-    End With
-
-    With mTxtCopyFolder
-        .Left = 8
-        .Top = mLblCopyFolder.Top + mLblCopyFolder.Height + 2
-        .Width = Me.InsideWidth - 16
-        .Height = 18
-        .Visible = mSettingsVisible
-    End With
-
-    With mLblOpenFolder
-        .Caption = "Default folder for Open/Open&Refresh"
-        .Left = 8
-        .Top = mTxtCopyFolder.Top + mTxtCopyFolder.Height + 4
-        .Width = 220
-        .Height = 14
-        .Visible = mSettingsVisible
-    End With
-
-    With mTxtOpenFolder
-        .Left = 8
-        .Top = mLblOpenFolder.Top + mLblOpenFolder.Height + 2
-        .Width = Me.InsideWidth - 16
-        .Height = 18
-        .Visible = mSettingsVisible
     End With
 End Sub
 
-Private Sub mBtnSaveSettings_Click()
+Private Sub EnsureSettingsPopupControls()
+    If mFrmSettings Is Nothing Then
+        Set mFrmSettings = Me.Controls.Add("Forms.Frame.1", "fraSettingsPopup", True)
+        mFrmSettings.Caption = "Navigator settings"
+
+        Set mLblCopyFolder = mFrmSettings.Controls.Add("Forms.Label.1", "lblCopyFolder", True)
+        Set mTxtCopyFolder = mFrmSettings.Controls.Add("Forms.TextBox.1", "txtCopyFolder", True)
+        Set mLblOpenFolder = mFrmSettings.Controls.Add("Forms.Label.1", "lblOpenFolder", True)
+        Set mTxtOpenFolder = mFrmSettings.Controls.Add("Forms.TextBox.1", "txtOpenFolder", True)
+
+        Set mBtnSettingsOk = mFrmSettings.Controls.Add("Forms.CommandButton.1", "btnSettingsOk", True)
+        Set mBtnSettingsCancel = mFrmSettings.Controls.Add("Forms.CommandButton.1", "btnSettingsCancel", True)
+
+        mLblCopyFolder.Caption = "Default folder for copy operations"
+        mLblOpenFolder.Caption = "Default folder for Open/Open&Refresh"
+        mBtnSettingsOk.Caption = "Save"
+        mBtnSettingsCancel.Caption = "Cancel"
+
+        mLblCopyFolder.Left = 10: mLblCopyFolder.Top = 18: mLblCopyFolder.Width = 220
+        mTxtCopyFolder.Left = 10: mTxtCopyFolder.Top = 34: mTxtCopyFolder.Width = 300: mTxtCopyFolder.Height = 18
+        mLblOpenFolder.Left = 10: mLblOpenFolder.Top = 58: mLblOpenFolder.Width = 220
+        mTxtOpenFolder.Left = 10: mTxtOpenFolder.Top = 74: mTxtOpenFolder.Width = 300: mTxtOpenFolder.Height = 18
+        mBtnSettingsCancel.Width = 54: mBtnSettingsCancel.Height = 20: mBtnSettingsCancel.Top = 98: mBtnSettingsCancel.Left = 256
+        mBtnSettingsOk.Width = 54: mBtnSettingsOk.Height = 20: mBtnSettingsOk.Top = 98: mBtnSettingsOk.Left = 196
+    End If
+
+    With mFrmSettings
+        .Width = 322
+        .Height = 126
+        .Left = (Me.InsideWidth - .Width) / 2
+        .Top = (Me.InsideHeight - .Height) / 2
+        .Visible = True
+        .ZOrder 0
+    End With
+End Sub
+
+Private Sub mBtnSettingsOk_Click()
     Dim copyFolder As String
     Dim openFolder As String
 
@@ -962,25 +945,19 @@ Private Sub mBtnSaveSettings_Click()
 
     modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
     modNavigatorSettings.SaveOpenFilesFolder openFolder
+    mFrmSettings.Visible = False
     SafeMsgBox "Settings saved.", vbInformation
 End Sub
 
-Private Sub mBtnSettings_Click()
-    mSettingsVisible = Not mSettingsVisible
-
-    If mSettingsVisible Then
-        mTxtCopyFolder.Text = modNavigatorSettings.GetDefaultWorkingFolder()
-        mTxtOpenFolder.Text = modNavigatorSettings.GetOpenFilesFolder()
-    End If
-
-    EnsureTopLeftButtons
+Private Sub mBtnSettingsCancel_Click()
+    If Not mFrmSettings Is Nothing Then mFrmSettings.Visible = False
 End Sub
 
-Private Function IsExistingFolder(ByVal folderPath As String) As Boolean
-    folderPath = Trim$(folderPath)
-    If Len(folderPath) = 0 Then Exit Function
-    IsExistingFolder = (Len(Dir$(folderPath, vbDirectory)) > 0)
-End Function
+Private Sub mBtnSettings_Click()
+    EnsureSettingsPopupControls
+    mTxtCopyFolder.Text = modNavigatorSettings.GetDefaultWorkingFolder()
+    mTxtOpenFolder.Text = modNavigatorSettings.GetOpenFilesFolder()
+End Sub
 
 Private Sub mBtnHelp_Click()
     On Error GoTo EH
@@ -989,6 +966,14 @@ Private Sub mBtnHelp_Click()
 EH:
     SafeMsgBox "Could not open help file: " & Err.Description, vbExclamation
 End Sub
+
+Private Function IsExistingFolder(ByVal folderPath As String) As Boolean
+    folderPath = Trim$(folderPath)
+    If Len(folderPath) = 0 Then Exit Function
+    IsExistingFolder = (Len(Dir$(folderPath, vbDirectory)) > 0)
+End Function
+
+
 
 Private Sub PinImage1AndTopRow()
     Dim img As Object
