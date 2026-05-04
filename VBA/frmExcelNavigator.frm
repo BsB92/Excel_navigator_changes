@@ -882,23 +882,40 @@ Private Sub EnsureTopLeftButtons()
 End Sub
 
 Private Sub mBtnSettings_Click()
-    Dim currentFolder As String
+    Dim copyFolder As String
+    Dim openFolder As String
+
+    copyFolder = PromptForExistingFolder( _
+        "Default folder for copy operations:", _
+        modNavigatorSettings.GetDefaultWorkingFolder() _
+    )
+    If Len(copyFolder) = 0 Then Exit Sub
+
+    openFolder = PromptForExistingFolder( _
+        "Default folder for Open/Open&Refresh:", _
+        modNavigatorSettings.GetOpenFilesFolder() _
+    )
+    If Len(openFolder) = 0 Then Exit Sub
+
+    modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
+    modNavigatorSettings.SaveOpenFilesFolder openFolder
+    SafeMsgBox "Settings saved.", vbInformation
+End Sub
+
+Private Function PromptForExistingFolder(ByVal promptText As String, ByVal currentFolder As String) As String
     Dim newFolder As String
 
-    currentFolder = modNavigatorSettings.GetDefaultWorkingFolder()
-    newFolder = InputBox$("Default folder for file operations:", "Navigator settings", currentFolder)
+    newFolder = InputBox$(promptText, "Navigator settings", currentFolder)
+    If Len(newFolder) = 0 Then Exit Function
 
-    If Len(newFolder) = 0 Then Exit Sub
     newFolder = Trim$(newFolder)
-
     If Len(Dir$(newFolder, vbDirectory)) = 0 Then
         SafeMsgBox "Folder does not exist: " & newFolder, vbExclamation
-        Exit Sub
+        Exit Function
     End If
 
-    modNavigatorSettings.SaveDefaultWorkingFolder newFolder
-    SafeMsgBox "Default folder saved.", vbInformation
-End Sub
+    PromptForExistingFolder = newFolder
+End Function
 
 Private Sub mBtnHelp_Click()
     On Error GoTo EH
@@ -2848,13 +2865,18 @@ Private Function PickFilesMulti(ByVal titleText As String) As Collection
     Dim fd As FileDialog
     Dim col As Collection
     Dim i As Long
+    Dim initialFolder As String
 
     Set col = New Collection
     Set fd = Application.FileDialog(msoFileDialogFilePicker)
+    initialFolder = modNavigatorSettings.ResolveOpenFilesInitialFolder(ThisWorkbook.Path)
 
     With fd
         .Title = titleText
         .AllowMultiSelect = True
+        On Error Resume Next
+        .InitialFileName = initialFolder
+        On Error GoTo 0
         .Filters.Clear
         .Filters.Add "Excel files", "*.xlsx;*.xlsm;*.xlsb;*.xls", 1
         .Filters.Add "All files", "*.*"
