@@ -1,11 +1,63 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmNavigatorSettings
    Caption         =   "Excel Navigator Settings"
-   ClientHeight    =   2580
+   ClientHeight    =   2100
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   5580
+   ClientWidth     =   6400
    StartUpPosition =   1  'CenterOwner
+   Begin VB.Label lblTitle
+      Caption         =   "Ustawienia dodatku"
+      Height          =   255
+      Left            =   120
+      Top             =   120
+      Width           =   2200
+   End
+   Begin VB.Label lblDesc
+      Caption         =   "Domyślna lokalizacja dla Open / Open&Refresh / Copy i podobnych operacji:"
+      Height          =   375
+      Left            =   120
+      Top             =   420
+      Width           =   6100
+   End
+   Begin VB.Label lblFolder
+      Caption         =   "Folder:"
+      Height          =   255
+      Left            =   120
+      Top             =   840
+      Width           =   735
+   End
+   Begin VB.TextBox txtDefaultFolder
+      Height          =   285
+      Left            =   120
+      TabIndex        =   0
+      Top             =   1080
+      Width           =   5055
+   End
+   Begin VB.CommandButton btnBrowse
+      Caption         =   "Browse..."
+      Height          =   285
+      Left            =   5280
+      TabIndex        =   1
+      Top             =   1080
+      Width           =   975
+   End
+   Begin VB.CommandButton btnSave
+      Caption         =   "Save settings"
+      Height          =   345
+      Left            =   4200
+      TabIndex        =   2
+      Top             =   1560
+      Width           =   975
+   End
+   Begin VB.CommandButton btnClose
+      Caption         =   "Close"
+      Height          =   345
+      Left            =   5280
+      TabIndex        =   3
+      Top             =   1560
+      Width           =   975
+   End
 End
 Attribute VB_Name = "frmNavigatorSettings"
 Attribute VB_GlobalNameSpace = False
@@ -15,7 +67,6 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Private Sub UserForm_Initialize()
-    BuildLayout
     txtDefaultFolder.Value = modNavigatorSettings.GetDefaultWorkingFolder()
 End Sub
 
@@ -53,57 +104,4 @@ End Sub
 
 Private Sub btnClose_Click()
     Unload Me
-End Sub
-
-Private Sub BuildLayout()
-    Dim lblTitle As MSForms.Label
-    Dim lblDesc As MSForms.Label
-    Dim lblFolder As MSForms.Label
-    Dim txt As MSForms.TextBox
-    Dim btnBrowse As MSForms.CommandButton
-    Dim btnSave As MSForms.CommandButton
-    Dim btnClose As MSForms.CommandButton
-
-    Set lblTitle = Me.Controls.Add("Forms.Label.1", "lblTitle", True)
-    lblTitle.Caption = "Ustawienia dodatku"
-    lblTitle.Font.Bold = True
-    lblTitle.Left = 12
-    lblTitle.Top = 12
-    lblTitle.Width = 220
-
-    Set lblDesc = Me.Controls.Add("Forms.Label.1", "lblDesc", True)
-    lblDesc.Caption = "Domyślna lokalizacja dla Open / Open&Refresh / Copy i podobnych operacji:"
-    lblDesc.Left = 12
-    lblDesc.Top = 36
-    lblDesc.Width = 520
-    lblDesc.Height = 24
-
-    Set lblFolder = Me.Controls.Add("Forms.Label.1", "lblFolder", True)
-    lblFolder.Caption = "Folder:"
-    lblFolder.Left = 12
-    lblFolder.Top = 72
-    lblFolder.Width = 60
-
-    Set txt = Me.Controls.Add("Forms.TextBox.1", "txtDefaultFolder", True)
-    txt.Left = 12
-    txt.Top = 90
-    txt.Width = 450
-
-    Set btnBrowse = Me.Controls.Add("Forms.CommandButton.1", "btnBrowse", True)
-    btnBrowse.Caption = "Browse..."
-    btnBrowse.Left = 468
-    btnBrowse.Top = 88
-    btnBrowse.Width = 78
-
-    Set btnSave = Me.Controls.Add("Forms.CommandButton.1", "btnSave", True)
-    btnSave.Caption = "Save settings"
-    btnSave.Left = 354
-    btnSave.Top = 126
-    btnSave.Width = 94
-
-    Set btnClose = Me.Controls.Add("Forms.CommandButton.1", "btnClose", True)
-    btnClose.Caption = "Close"
-    btnClose.Left = 452
-    btnClose.Top = 126
-    btnClose.Width = 94
 End Sub
