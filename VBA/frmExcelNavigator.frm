@@ -882,9 +882,48 @@ Private Sub EnsureTopLeftButtons()
 End Sub
 
 Private Sub mBtnSettings_Click()
-    Dim settingsForm As Object
-    Set settingsForm = VBA.UserForms.Add("frmNavigatorSettings")
-    settingsForm.Show vbModal
+    Dim currentCopyFolder As String
+    Dim currentOpenFolder As String
+    Dim settingsInput As String
+    Dim lines() As String
+    Dim copyFolder As String
+    Dim openFolder As String
+
+    currentCopyFolder = modNavigatorSettings.GetDefaultWorkingFolder()
+    currentOpenFolder = modNavigatorSettings.GetOpenFilesFolder()
+
+    settingsInput = InputBox$( _
+        "Paste two folders (one per line):" & vbCrLf & _
+        "1) Copy operations" & vbCrLf & _
+        "2) Open/Open&Refresh", _
+        "Navigator settings", _
+        currentCopyFolder & vbCrLf & currentOpenFolder _
+    )
+
+    If Len(settingsInput) = 0 Then Exit Sub
+
+    lines = Split(Replace(settingsInput, vbLf, vbCrLf), vbCrLf)
+    If UBound(lines) < 1 Then
+        SafeMsgBox "Please provide two lines: copy folder and open folder.", vbExclamation
+        Exit Sub
+    End If
+
+    copyFolder = Trim$(lines(0))
+    openFolder = Trim$(lines(1))
+
+    If Len(copyFolder) = 0 Or Len(Dir$(copyFolder, vbDirectory)) = 0 Then
+        SafeMsgBox "Copy folder does not exist: " & copyFolder, vbExclamation
+        Exit Sub
+    End If
+
+    If Len(openFolder) = 0 Or Len(Dir$(openFolder, vbDirectory)) = 0 Then
+        SafeMsgBox "Open folder does not exist: " & openFolder, vbExclamation
+        Exit Sub
+    End If
+
+    modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
+    modNavigatorSettings.SaveOpenFilesFolder openFolder
+    SafeMsgBox "Settings saved.", vbInformation
 End Sub
 
 Private Sub mBtnHelp_Click()
@@ -895,11 +934,6 @@ EH:
     SafeMsgBox "Could not open help file: " & Err.Description, vbExclamation
 End Sub
 
-Private Function IsExistingFolder(ByVal folderPath As String) As Boolean
-    folderPath = Trim$(folderPath)
-    If Len(folderPath) = 0 Then Exit Function
-    IsExistingFolder = (Len(Dir$(folderPath, vbDirectory)) > 0)
-End Function
 
 
 
