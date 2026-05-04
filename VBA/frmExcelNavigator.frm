@@ -882,7 +882,9 @@ Private Sub EnsureTopLeftButtons()
 End Sub
 
 Private Sub mBtnSettings_Click()
-    frmNavigatorSettings.Show vbModal
+    Dim settingsForm As Object
+    Set settingsForm = VBA.UserForms.Add("frmNavigatorSettings")
+    settingsForm.Show vbModal
 End Sub
 
 Private Sub mBtnHelp_Click()
