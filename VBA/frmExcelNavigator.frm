@@ -343,12 +343,21 @@ End Function
 Private Sub BreakExternalLinks(ByVal wb As Workbook)
     Dim links As Variant
     Dim i As Long
+    Dim linkName As String
 
     links = wb.LinkSources(Type:=xlExcelLinks)
     If IsEmpty(links) Then Exit Sub
 
     For i = LBound(links) To UBound(links)
-        wb.BreakLink Name:=CStr(links(i)), Type:=xlLinkTypeExcelLinks
+        linkName = CStr(links(i))
+        On Error Resume Next
+        wb.BreakLink Name:=linkName, Type:=xlLinkTypeExcelLinks
+        If Err.Number <> 0 Then
+            Err.Clear
+            wb.ChangeLink Name:=linkName, NewName:=wb.FullName, Type:=xlLinkTypeExcelLinks
+            wb.BreakLink Name:=wb.FullName, Type:=xlLinkTypeExcelLinks
+        End If
+        On Error GoTo 0
     Next i
 End Sub
 
