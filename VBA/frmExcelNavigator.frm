@@ -1183,6 +1183,11 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
 
     handled = False
 
+    If mSettingsMode Then
+        HandleGlobalKeyboardShortcuts = False
+        Exit Function
+    End If
+
     If KeyCode = vbKeyA Then
         If (Shift And KEYBOARD_CTRL_MASK) <> 0 Then
             btnSelectAll_Click
@@ -1190,13 +1195,17 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
             handled = True
         End If
     ElseIf KeyCode = vbKeyRight Then
-        If Not mIsExpandedView Then SetExpandedView True
-        KeyCode = 0
-        handled = True
+        If Shift = 0 Then
+            If Not mIsExpandedView Then SetExpandedView True
+            KeyCode = 0
+            handled = True
+        End If
     ElseIf KeyCode = vbKeyLeft Then
-        If mIsExpandedView Then SetExpandedView False
-        KeyCode = 0
-        handled = True
+        If Shift = 0 Then
+            If mIsExpandedView Then SetExpandedView False
+            KeyCode = 0
+            handled = True
+        End If
     End If
 
     HandleGlobalKeyboardShortcuts = handled
