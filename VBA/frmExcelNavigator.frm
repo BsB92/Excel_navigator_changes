@@ -907,20 +907,20 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsFrame
         .Caption = ""
         .Left = 4
-        .Top = Me.btnReload.Top + Me.btnReload.Height + 8
+        .Top = Me.Image1.Top + Me.Image1.Height + 2
         .Width = Me.InsideWidth - 8
         .Height = Me.btnClose.Top - .Top - 6
         .SpecialEffect = fmSpecialEffectFlat
     End With
 
     With mSettingsLblTitle
-        .Caption = "Navigator Settings"
+        .Caption = "Settings:"
         .Left = 8
         .Top = 8
         .Width = 220
         .Height = 20
         .Font.Bold = True
-        .Font.Size = 14
+        .Font.Size = 11
     End With
 
     With mSettingsLblCopy
@@ -976,9 +976,14 @@ Private Sub ApplySettingsOverlayVisibility()
     mSettingsFrame.Visible = mSettingsMode
 
     If mSettingsMode Then
+        mBtnSettings.BackColor = RGB(0, 176, 80)
+        mBtnSettings.Font.Bold = True
         mSettingsTxtCopy.Text = modNavigatorSettings.GetDefaultWorkingFolder()
         mSettingsTxtOpen.Text = modNavigatorSettings.GetOpenFilesFolder()
         mSettingsFrame.ZOrder 0
+    Else
+        mBtnSettings.BackColor = vbButtonFace
+        mBtnSettings.Font.Bold = False
     End If
 End Sub
 
