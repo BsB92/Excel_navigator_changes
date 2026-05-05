@@ -6,10 +6,15 @@ Excel Navigator - User Guide
 - Select a workbook from the list and use actions below.
 
 2) Keyboard and mouse shortcuts
+- Ctrl+A on workbook/sheets list = Select All (when Selection mode is ON).
+- Arrow Right on workbook/sheets list = expand right-side Sheets panel (same as >>>>).
+- Arrow Left on workbook/sheets list = collapse right-side Sheets panel (same as <<<<).
 - Arrow Up/Down on the workbook list moves selection and activates workbook preview logic.
+- Enter on workbook list activates selected workbook.
 - Double-click workbook row = activate selected workbook.
 - Right-click on workbook list toggles Selection mode ON/OFF.
 - Arrow Up/Down on Sheets panel (right side) activates sheet navigation.
+- Enter on Sheets panel activates selected sheet.
 - Full path box supports right-click copy/select behavior.
 
 3) Top row controls
