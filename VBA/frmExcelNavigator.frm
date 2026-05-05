@@ -237,10 +237,7 @@ Private Sub btnCopyBreakLinks_Click()
         SafeMsgBox "Suffix is required (e.g. _without_formulas).", vbExclamation
         Exit Sub
     End If
-    If Left$(suffix, 1) <> "_" And Left$(suffix, 1) <> "-" Then
-        suffix = "_" & suffix
-        Me.txtSuffix.Value = suffix
-    End If
+    ' Use suffix exactly as typed by user (no automatic prefixing)
 
     targetFolder = PickFolder("Choose target folder for copied files")
     If Len(targetFolder) = 0 Then Exit Sub
