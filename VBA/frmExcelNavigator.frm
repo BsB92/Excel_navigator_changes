@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.6"
+   Caption         =   "ExcelNavigator v4.7"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -36,7 +36,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator46_alpha"
+Private Const REG_APP As String = "ExcelNavigator_v4.7"
 Private Const REG_SEC As String = "FormState"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
@@ -103,6 +103,17 @@ Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
+Private mSettingsMode As Boolean
+Private mSettingsFrame As MSForms.Frame
+Private mSettingsLblTitle As MSForms.Label
+Private mSettingsLblCopy As MSForms.Label
+Private mSettingsTxtCopy As MSForms.TextBox
+Private mSettingsLblOpen As MSForms.Label
+Private mSettingsTxtOpen As MSForms.TextBox
+Private WithEvents mBtnSettingsSave As MSForms.CommandButton
+Attribute mBtnSettingsSave.VB_VarHelpID = -1
+Private WithEvents mBtnSettingsCancel As MSForms.CommandButton
+Attribute mBtnSettingsCancel.VB_VarHelpID = -1
 
 Private Sub btnCancel_Click()
     ' Cancel DOES NOT stop an active RefreshAll.
@@ -881,10 +892,135 @@ Private Sub EnsureTopLeftButtons()
     End With
 End Sub
 
+Private Sub EnsureSettingsOverlay()
+    If mSettingsFrame Is Nothing Then
+        Set mSettingsFrame = Me.Controls.Add("Forms.Frame.1", "fraNavigatorSettings", True)
+        Set mSettingsLblTitle = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsTitle", True)
+        Set mSettingsLblCopy = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsCopy", True)
+        Set mSettingsTxtCopy = mSettingsFrame.Controls.Add("Forms.TextBox.1", "txtSettingsCopy", True)
+        Set mSettingsLblOpen = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsOpen", True)
+        Set mSettingsTxtOpen = mSettingsFrame.Controls.Add("Forms.TextBox.1", "txtSettingsOpen", True)
+        Set mBtnSettingsSave = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSave", True)
+        Set mBtnSettingsCancel = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsCancel", True)
+    End If
+
+    With mSettingsFrame
+        .Caption = ""
+        .Left = 4
+        .Top = Me.Image1.Top + Me.Image1.Height + 2
+        .Width = Me.InsideWidth - 8
+        .Height = Me.btnClose.Top - .Top - 6
+        .SpecialEffect = fmSpecialEffectFlat
+    End With
+
+    With mSettingsLblTitle
+        .Caption = "Settings:"
+        .Left = 8
+        .Top = 8
+        .Width = 220
+        .Height = 20
+        .Font.Bold = True
+        .Font.Size = 11
+    End With
+
+    With mSettingsLblCopy
+        .Caption = "Set default path for copy operations:"
+        .Left = 8
+        .Top = 40
+        .Width = 260
+        .Height = 16
+    End With
+
+    With mSettingsTxtCopy
+        .Left = 8
+        .Top = 58
+        .Width = mSettingsFrame.Width - 16
+        .Height = 22
+    End With
+
+    With mSettingsLblOpen
+        .Caption = "Set default path for open operations:"
+        .Left = 8
+        .Top = 90
+        .Width = 260
+        .Height = 16
+    End With
+
+    With mSettingsTxtOpen
+        .Left = 8
+        .Top = 108
+        .Width = mSettingsFrame.Width - 16
+        .Height = 22
+    End With
+
+    With mBtnSettingsSave
+        .Caption = "Save settings"
+        .Width = 92
+        .Height = 24
+        .Top = mSettingsFrame.Height - 32
+        .Left = (mSettingsFrame.Width / 2) - .Width - 10
+    End With
+
+    With mBtnSettingsCancel
+        .Caption = "Cancel"
+        .Width = 72
+        .Height = 24
+        .Top = mSettingsFrame.Height - 32
+        .Left = (mSettingsFrame.Width / 2) + 10
+    End With
+End Sub
+
+Private Sub ApplySettingsOverlayVisibility()
+    If mSettingsFrame Is Nothing Then Exit Sub
+
+    mSettingsFrame.Visible = mSettingsMode
+
+    If mSettingsMode Then
+        mBtnSettings.BackColor = RGB(0, 176, 80)
+        mBtnSettings.Font.Bold = True
+        mSettingsTxtCopy.Text = modNavigatorSettings.GetDefaultWorkingFolder()
+        mSettingsTxtOpen.Text = modNavigatorSettings.GetOpenFilesFolder()
+        mSettingsFrame.ZOrder 0
+    Else
+        mBtnSettings.BackColor = vbButtonFace
+        mBtnSettings.Font.Bold = False
+    End If
+End Sub
+
 Private Sub mBtnSettings_Click()
-    Dim settingsForm As Object
-    Set settingsForm = VBA.UserForms.Add("frmNavigatorSettings")
-    settingsForm.Show vbModal
+    mSettingsMode = Not mSettingsMode
+    EnsureSettingsOverlay
+    ApplySettingsOverlayVisibility
+End Sub
+
+Private Sub mBtnSettingsSave_Click()
+    Dim copyFolder As String
+    Dim openFolder As String
+
+    copyFolder = Trim$(mSettingsTxtCopy.Text)
+    openFolder = Trim$(mSettingsTxtOpen.Text)
+
+    If Len(copyFolder) = 0 Or Len(Dir$(copyFolder, vbDirectory)) = 0 Then
+        SafeMsgBox "Copy folder does not exist: " & copyFolder, vbExclamation
+        Exit Sub
+    End If
+
+    If Len(openFolder) = 0 Or Len(Dir$(openFolder, vbDirectory)) = 0 Then
+        SafeMsgBox "Open folder does not exist: " & openFolder, vbExclamation
+        Exit Sub
+    End If
+
+    modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
+    modNavigatorSettings.SaveOpenFilesFolder openFolder
+
+    mSettingsMode = False
+    ApplySettingsOverlayVisibility
+    SafeMsgBox "Settings saved.", vbInformation
+End Sub
+
+Private Sub mBtnSettingsCancel_Click()
+    mSettingsMode = False
+    ApplySettingsOverlayVisibility
 End Sub
 
 Private Sub mBtnHelp_Click()
@@ -894,6 +1030,9 @@ Private Sub mBtnHelp_Click()
 EH:
     SafeMsgBox "Could not open help file: " & Err.Description, vbExclamation
 End Sub
+
+
+
 
 Private Sub PinImage1AndTopRow()
     Dim img As Object
@@ -2780,6 +2919,7 @@ Private Sub PositionTopButtons()
     End If
 
     EnsureTopLeftButtons
+    If mSettingsMode Then EnsureSettingsOverlay
 
     ' Na wierzch (jesli cos przykrywa)
     btnClose.ZOrder 0
@@ -2835,13 +2975,18 @@ Private Function PickFilesMulti(ByVal titleText As String) As Collection
     Dim fd As FileDialog
     Dim col As Collection
     Dim i As Long
+    Dim initialFolder As String
 
     Set col = New Collection
     Set fd = Application.FileDialog(msoFileDialogFilePicker)
+    initialFolder = modNavigatorSettings.ResolveOpenFilesInitialFolder(ThisWorkbook.Path)
 
     With fd
         .Title = titleText
         .AllowMultiSelect = True
+        On Error Resume Next
+        .InitialFileName = initialFolder
+        On Error GoTo 0
         .Filters.Clear
         .Filters.Add "Excel files", "*.xlsx;*.xlsm;*.xlsb;*.xls", 1
         .Filters.Add "All files", "*.*"

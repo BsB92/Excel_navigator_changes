@@ -1,9 +1,10 @@
 Attribute VB_Name = "modNavigatorSettings"
 Option Explicit
 
-Private Const REG_APP As String = "ExcelNavigator46_alpha"
+Private Const REG_APP As String = "ExcelNavigator_v4.7"
 Private Const REG_SEC_SETTINGS As String = "Settings"
 Private Const KEY_DEFAULT_FOLDER As String = "DefaultFolder"
+Private Const KEY_OPEN_FILES_FOLDER As String = "OpenFilesFolder"
 Private Const HELP_FILE_NAME As String = "ExcelNavigator_Help.txt"
 
 Public Function GetDefaultWorkingFolder() As String
@@ -14,18 +15,32 @@ Public Sub SaveDefaultWorkingFolder(ByVal folderPath As String)
     SaveSetting REG_APP, REG_SEC_SETTINGS, KEY_DEFAULT_FOLDER, folderPath
 End Sub
 
-Public Function ResolveInitialFolder(ByVal fallbackFolder As String) As String
-    Dim configuredFolder As String
-    configuredFolder = Trim$(GetDefaultWorkingFolder())
 
+Public Function GetOpenFilesFolder() As String
+    GetOpenFilesFolder = GetSetting(REG_APP, REG_SEC_SETTINGS, KEY_OPEN_FILES_FOLDER, ThisWorkbook.Path)
+End Function
+
+Public Sub SaveOpenFilesFolder(ByVal folderPath As String)
+    SaveSetting REG_APP, REG_SEC_SETTINGS, KEY_OPEN_FILES_FOLDER, folderPath
+End Sub
+
+Public Function ResolveOpenFilesInitialFolder(ByVal fallbackFolder As String) As String
+    ResolveOpenFilesInitialFolder = ResolveExistingFolder(Trim$(GetOpenFilesFolder()), fallbackFolder)
+End Function
+
+Public Function ResolveInitialFolder(ByVal fallbackFolder As String) As String
+    ResolveInitialFolder = ResolveExistingFolder(Trim$(GetDefaultWorkingFolder()), fallbackFolder)
+End Function
+
+Private Function ResolveExistingFolder(ByVal configuredFolder As String, ByVal fallbackFolder As String) As String
     If Len(configuredFolder) > 0 Then
         If Len(Dir$(configuredFolder, vbDirectory)) > 0 Then
-            ResolveInitialFolder = configuredFolder
+            ResolveExistingFolder = configuredFolder
             Exit Function
         End If
     End If
 
-    ResolveInitialFolder = fallbackFolder
+    ResolveExistingFolder = fallbackFolder
 End Function
 
 Public Sub OpenHelpInstructions()

@@ -1,40 +1,73 @@
-Excel Navigator - Instrukcja użytkowania
+Excel Navigator - User Guide
 
-1) Search
-Filtruje listę otwartych plików po nazwie i pełnej ścieżce.
+1) General workflow
+- Click Reload list to refresh the list of currently open workbooks.
+- Use Search to filter by workbook name/path.
+- Select a workbook from the list and use actions below.
 
-2) Reload
-Odświeża listę aktywnych skoroszytów bez utraty ustawień formularza.
+2) Keyboard and mouse shortcuts
+- Arrow Up/Down on the workbook list moves selection and activates workbook preview logic.
+- Double-click workbook row = activate selected workbook.
+- Right-click on workbook list toggles Selection mode ON/OFF.
+- Arrow Up/Down on Sheets panel (right side) activates sheet navigation.
+- Full path box supports right-click copy/select behavior.
 
-3) Selection mode OFF/ON
-Przełącza tryb wyboru pojedynczego i wielu plików.
+3) Top row controls
+- Settings: toggles Settings frame ON/OFF.
+  * ON state is highlighted.
+  * Configure two folders:
+    1) default copy folder
+    2) default open folder
+  * Save settings validates both paths and stores them.
+- ?: opens this help file.
 
-4) Open
-Aktywuje zaznaczony skoroszyt.
+4) Workbook list area
+- Columns: File / Dir / Sync.
+- Header row is not selectable as a workbook action target.
+- Active workbook is visually marked.
 
-5) Open & Refresh
-Otwiera i odświeża dane w wybranych skoroszytach.
+5) Selection mode and bulk actions
+- Selection mode OFF: single-select behavior.
+- Selection mode ON: multi-select behavior and bulk action buttons enabled.
+- Select All / Clear Selection work only in Selection mode ON.
 
-6) Refresh / Save / Refresh+Save
-Operacje wsadowe dla zaznaczonych plików.
+6) Open and refresh actions
+- Open file: lets you pick one or more Excel files and open them.
+- Open&Refresh: open selected files and run refresh flow.
+- Refresh selected: refreshes selected open workbooks.
+- Save selected: saves selected open workbooks.
+- Refresh + Save: refresh then save selected open workbooks.
+- During batch, Cancel stops starting NEXT items (cannot safely abort active RefreshAll).
 
-7) Copy + Break Links
-Tworzy kopię pliku i zrywa połączenia zewnętrzne.
+7) Copy actions
+- Suffix: suffix added for copy operations (auto-prepends _ when needed).
+- Copy + Break Links:
+  * choose target folder
+  * create copy
+  * break external Excel links
+- Copy with suffix:
+  * choose target folder
+  * create copy only (no link breaking)
+- Open copied checkbox: optionally auto-open copied files after operation.
+- Open folder: opens last used copy target folder.
 
-8) Copy with suffix
-Tworzy kopię pliku z dopiskiem z pola Suffix.
+8) Close actions
+- Close selected closes only selected workbooks.
+- Add-ins and PERSONAL.XLSB are protected from closing.
+- Unsaved handling supports save-all / don't-save-all / ask-each depending on prompt.
+- Workbooks actively refreshing are skipped where unsafe.
 
-9) Open copied files / Open folder
-Szybkie otwieranie wyników kopiowania i folderu docelowego.
+9) Right-side Sheets panel
+- Toggle panel button (>>>> / <<<<) shows/hides expanded sheets view.
+- Sheets list follows active workbook.
+- Click or use arrows to activate selected sheet.
 
-10) Close selected
-Zamyka zaznaczone pliki z obsługą zapisanych/niezapisanych zmian.
+10) Window and placement buttons
+- Max: maximize active workbook window.
+- 1 / 2 / 3: move active workbook to predefined screen positions.
+- Close: closes navigator form.
 
-11) Panel arkuszy (po prawej)
-Umożliwia szybkie przejście do wybranego arkusza aktywnego pliku.
-
-12) Settings
-Ustawia domyślną lokalizację folderu używaną przy operacjach Open/Copy itp.
-
-Wskazówka:
-Ustaw domyślny folder w Settings i kliknij Save settings.
+11) Settings details
+- Default copy folder is used as initial folder for copy target selection.
+- Default open folder is used as initial folder for Open/Open&Refresh file picker.
+- If configured folder no longer exists, navigator falls back to add-in workbook path.
