@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.7"
+   Caption         =   "ExcelNavigator v4.8"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -36,7 +36,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator_v4.7"
+Private Const REG_APP As String = "ExcelNavigator_v4.8"
 Private Const REG_SEC As String = "FormState"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
@@ -72,6 +72,7 @@ Private mHookReady As Boolean
 Private mOpenCopiedOffsetTop As Single
 Private mOpenCopiedOffsetLeft As Single
 Private Const HEADER_IMAGE_MARGIN As Single = 6
+Private Const KEYBOARD_CTRL_MASK As Integer = 2
 
 
 ' ========= CONSTANTS =========
@@ -1177,7 +1178,42 @@ Private Sub lstWorkbooks_Change()
 End Sub
 
 
+Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer) As Boolean
+    Dim handled As Boolean
+
+    handled = False
+
+    If mSettingsMode Then
+        HandleGlobalKeyboardShortcuts = False
+        Exit Function
+    End If
+
+    If KeyCode = vbKeyA Then
+        If (Shift And KEYBOARD_CTRL_MASK) <> 0 Then
+            btnSelectAll_Click
+            KeyCode = 0
+            handled = True
+        End If
+    ElseIf KeyCode = vbKeyRight Then
+        If Shift = 0 Then
+            If Not mIsExpandedView Then SetExpandedView True
+            KeyCode = 0
+            handled = True
+        End If
+    ElseIf KeyCode = vbKeyLeft Then
+        If Shift = 0 Then
+            If mIsExpandedView Then SetExpandedView False
+            KeyCode = 0
+            handled = True
+        End If
+    End If
+
+    HandleGlobalKeyboardShortcuts = handled
+End Function
+
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If HandleGlobalKeyboardShortcuts(KeyCode, Shift) Then Exit Sub
+
     If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
         mWorkbookKeyboardNavigation = True
         Exit Sub
@@ -2376,6 +2412,8 @@ Private Sub mLstSheets_Change()
 End Sub
 
 Private Sub mLstSheets_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If HandleGlobalKeyboardShortcuts(KeyCode, Shift) Then Exit Sub
+
     If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
         mSheetKeyboardNavigation = True
         Exit Sub
