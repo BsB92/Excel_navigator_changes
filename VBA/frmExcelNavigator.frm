@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.8"
+   Caption         =   "ExcelNavigator v4.8_test"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -343,22 +343,40 @@ End Function
 Private Sub BreakExternalLinks(ByVal wb As Workbook)
     Dim links As Variant
     Dim i As Long
+    Dim passNo As Long
     Dim linkName As String
+    Dim prevAskToUpdate As Boolean
+    Dim prevDisplayAlerts As Boolean
 
-    links = wb.LinkSources(Type:=xlExcelLinks)
-    If IsEmpty(links) Then Exit Sub
+    prevAskToUpdate = Application.AskToUpdateLinks
+    prevDisplayAlerts = Application.DisplayAlerts
+    Application.AskToUpdateLinks = False
+    Application.DisplayAlerts = False
 
-    For i = LBound(links) To UBound(links)
-        linkName = CStr(links(i))
-        On Error Resume Next
-        wb.BreakLink Name:=linkName, Type:=xlLinkTypeExcelLinks
-        If Err.Number <> 0 Then
+    On Error GoTo CleanExit
+
+    For passNo = 1 To 3
+        links = wb.LinkSources(Type:=xlExcelLinks)
+        If IsEmpty(links) Then Exit For
+        If Not IsArray(links) Then Exit For
+
+        For i = LBound(links) To UBound(links)
+            linkName = CStr(links(i))
+            On Error Resume Next
+            wb.BreakLink Name:=linkName, Type:=xlLinkTypeExcelLinks
+            If Err.Number <> 0 Then
+                Err.Clear
+                wb.ChangeLink Name:=linkName, NewName:=wb.FullName, Type:=xlLinkTypeExcelLinks
+                wb.BreakLink Name:=wb.FullName, Type:=xlLinkTypeExcelLinks
+            End If
             Err.Clear
-            wb.ChangeLink Name:=linkName, NewName:=wb.FullName, Type:=xlLinkTypeExcelLinks
-            wb.BreakLink Name:=wb.FullName, Type:=xlLinkTypeExcelLinks
-        End If
-        On Error GoTo 0
-    Next i
+            On Error GoTo CleanExit
+        Next i
+    Next passNo
+
+CleanExit:
+    Application.DisplayAlerts = prevDisplayAlerts
+    Application.AskToUpdateLinks = prevAskToUpdate
 End Sub
 
 Private Sub btnCopyWithSuffix_Click()
