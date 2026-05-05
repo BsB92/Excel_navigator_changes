@@ -72,6 +72,7 @@ Private mHookReady As Boolean
 Private mOpenCopiedOffsetTop As Single
 Private mOpenCopiedOffsetLeft As Single
 Private Const HEADER_IMAGE_MARGIN As Single = 6
+Private Const KEYBOARD_CTRL_MASK As Integer = 2
 
 
 ' ========= CONSTANTS =========
@@ -1183,7 +1184,7 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
     handled = False
 
     If KeyCode = vbKeyA Then
-        If (Shift And fmCtrlMask) <> 0 Then
+        If (Shift And KEYBOARD_CTRL_MASK) <> 0 Then
             btnSelectAll_Click
             KeyCode = 0
             handled = True
