@@ -1177,7 +1177,33 @@ Private Sub lstWorkbooks_Change()
 End Sub
 
 
+Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer) As Boolean
+    Dim handled As Boolean
+
+    handled = False
+
+    If KeyCode = vbKeyA Then
+        If (Shift And fmCtrlMask) <> 0 Then
+            btnSelectAll_Click
+            KeyCode = 0
+            handled = True
+        End If
+    ElseIf KeyCode = vbKeyRight Then
+        If Not mIsExpandedView Then SetExpandedView True
+        KeyCode = 0
+        handled = True
+    ElseIf KeyCode = vbKeyLeft Then
+        If mIsExpandedView Then SetExpandedView False
+        KeyCode = 0
+        handled = True
+    End If
+
+    HandleGlobalKeyboardShortcuts = handled
+End Function
+
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If HandleGlobalKeyboardShortcuts(KeyCode, Shift) Then Exit Sub
+
     If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
         mWorkbookKeyboardNavigation = True
         Exit Sub
@@ -2376,6 +2402,8 @@ Private Sub mLstSheets_Change()
 End Sub
 
 Private Sub mLstSheets_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If HandleGlobalKeyboardShortcuts(KeyCode, Shift) Then Exit Sub
+
     If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
         mSheetKeyboardNavigation = True
         Exit Sub
