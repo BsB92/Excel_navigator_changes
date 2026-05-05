@@ -340,6 +340,39 @@ Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As S
     BuildOutputPath = folderPath & Application.PathSeparator & baseName & suffix & ext
 End Function
 
+Private Sub ForceBreakExternalFormulas(ByVal wb As Workbook)
+    Dim ws As Worksheet
+    Dim rngFormulas As Range
+    Dim c As Range
+    Dim chObj As ChartObject
+    Dim srs As Series
+
+    On Error Resume Next
+
+    For Each ws In wb.Worksheets
+        Set rngFormulas = Nothing
+        Set rngFormulas = ws.UsedRange.SpecialCells(xlCellTypeFormulas)
+        If Not rngFormulas Is Nothing Then
+            For Each c In rngFormulas.Cells
+                If InStr(1, c.Formula, "[", vbTextCompare) > 0 Then
+                    c.Value = c.Value
+                End If
+            Next c
+        End If
+
+        For Each chObj In ws.ChartObjects
+            For Each srs In chObj.Chart.SeriesCollection
+                If InStr(1, srs.Formula, "[", vbTextCompare) > 0 Then
+                    srs.Values = srs.Values
+                    srs.XValues = srs.XValues
+                End If
+            Next srs
+        Next chObj
+    Next ws
+
+    On Error GoTo 0
+End Sub
+
 Private Sub BreakExternalLinks(ByVal wb As Workbook)
     Dim links As Variant
     Dim i As Long
@@ -373,6 +406,11 @@ Private Sub BreakExternalLinks(ByVal wb As Workbook)
             On Error GoTo CleanExit
         Next i
     Next passNo
+
+    links = wb.LinkSources(Type:=xlExcelLinks)
+    If Not IsEmpty(links) Then
+        ForceBreakExternalFormulas wb
+    End If
 
 CleanExit:
     Application.DisplayAlerts = prevDisplayAlerts
