@@ -1178,17 +1178,8 @@ End Sub
 
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
-    If KeyCode = vbKeyUp Then
+    If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
         mWorkbookKeyboardNavigation = True
-        MoveWorkbookSelectionBy -1
-        KeyCode = 0
-        Exit Sub
-    End If
-
-    If KeyCode = vbKeyDown Then
-        mWorkbookKeyboardNavigation = True
-        MoveWorkbookSelectionBy 1
-        KeyCode = 0
         Exit Sub
     End If
 
