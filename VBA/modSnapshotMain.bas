@@ -13,6 +13,9 @@ Public Sub SnapshotCreateActiveWorkbook()
     If wb Is Nothing Then Err.Raise vbObjectError + 6101, "SnapshotCreateActiveWorkbook", "No active workbook."
 
     If Len(wb.Path) = 0 Then
+        On Error Resume Next
+        frmExcelNavigator.RestoreNavigatorToFront
+        On Error GoTo EH
         MsgBox "Workbook must be saved before creating snapshot.", vbExclamation, "ExcelNavigator Snapshot"
         Exit Sub
     End If
@@ -21,10 +24,16 @@ Public Sub SnapshotCreateActiveWorkbook()
     jsonText = modSnapshotJson.SerializeWorkbookSnapshot(snap)
     finalPath = modSnapshotStorage.SaveSnapshotTransactional(wb, jsonText, snap("CreatedBy"))
 
+    On Error Resume Next
+    frmExcelNavigator.RestoreNavigatorToFront
+    On Error GoTo EH
     MsgBox "Snapshot created:" & vbCrLf & finalPath, vbInformation, "ExcelNavigator Snapshot"
     Exit Sub
 
 EH:
+    On Error Resume Next
+    frmExcelNavigator.RestoreNavigatorToFront
+    On Error GoTo 0
     MsgBox "Snapshot creation failed: " & Err.Description, vbCritical, "ExcelNavigator Snapshot"
 End Sub
 
@@ -41,6 +50,9 @@ Public Sub SnapshotCompareActiveWorkbook()
     Set wb = ActiveWorkbook
     If wb Is Nothing Then Err.Raise vbObjectError + 6102, "SnapshotCompareActiveWorkbook", "No active workbook."
 
+    On Error Resume Next
+    frmExcelNavigator.RestoreNavigatorToFront
+    On Error GoTo EH
     fp = Application.GetOpenFilename("JSON Files (*.json),*.json", , "Select snapshot JSON")
     If VarType(fp) = vbBoolean Then Exit Sub
 
@@ -57,5 +69,8 @@ Public Sub SnapshotCompareActiveWorkbook()
     Exit Sub
 
 EH:
+    On Error Resume Next
+    frmExcelNavigator.RestoreNavigatorToFront
+    On Error GoTo 0
     MsgBox "Compare failed: " & Err.Description, vbCritical, "ExcelNavigator Snapshot"
 End Sub
