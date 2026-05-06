@@ -102,6 +102,12 @@ Private WithEvents mBtnSettings As MSForms.CommandButton
 Attribute mBtnSettings.VB_VarHelpID = -1
 Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotCreate As MSForms.CommandButton
+Attribute mBtnSnapshotCreate.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotCompare As MSForms.CommandButton
+Attribute mBtnSnapshotCompare.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotHistory As MSForms.CommandButton
+Attribute mBtnSnapshotHistory.VB_VarHelpID = -1
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 Private mSettingsMode As Boolean
@@ -955,6 +961,21 @@ Private Sub EnsureTopLeftButtons()
         End If
     End If
 
+    If mBtnSnapshotCreate Is Nothing Then
+        Set mBtnSnapshotCreate = GetControlIfExists("btnSnapshotCreate")
+        If mBtnSnapshotCreate Is Nothing Then Set mBtnSnapshotCreate = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCreate", True)
+    End If
+
+    If mBtnSnapshotCompare Is Nothing Then
+        Set mBtnSnapshotCompare = GetControlIfExists("btnSnapshotCompare")
+        If mBtnSnapshotCompare Is Nothing Then Set mBtnSnapshotCompare = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCompare", True)
+    End If
+
+    If mBtnSnapshotHistory Is Nothing Then
+        Set mBtnSnapshotHistory = GetControlIfExists("btnSnapshotHistory")
+        If mBtnSnapshotHistory Is Nothing Then Set mBtnSnapshotHistory = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotHistory", True)
+    End If
+
     With mBtnSettings
         .Caption = "Settings"
         .Top = TOP_LEFT_BUTTON_MARGIN
@@ -970,6 +991,33 @@ Private Sub EnsureTopLeftButtons()
         .Height = mBtnSettings.Height
         .Width = 18
         .Left = mBtnSettings.Left + mBtnSettings.Width + TOP_LEFT_BUTTON_GAP
+        .Visible = True
+    End With
+
+    With mBtnSnapshotCreate
+        .Caption = "Create Snapshot"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 92
+        .Left = mBtnHelp.Left + mBtnHelp.Width + TOP_LEFT_BUTTON_GAP
+        .Visible = True
+    End With
+
+    With mBtnSnapshotCompare
+        .Caption = "Compare Snapshot"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 96
+        .Left = mBtnSnapshotCreate.Left + mBtnSnapshotCreate.Width + TOP_LEFT_BUTTON_GAP
+        .Visible = True
+    End With
+
+    With mBtnSnapshotHistory
+        .Caption = "Snapshot History"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 96
+        .Left = mBtnSnapshotCompare.Left + mBtnSnapshotCompare.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
 End Sub
@@ -1113,6 +1161,29 @@ EH:
     SafeMsgBox "Could not open help file: " & Err.Description, vbExclamation
 End Sub
 
+Private Sub mBtnSnapshotCreate_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCreateActiveWorkbook
+    Exit Sub
+EH:
+    SafeMsgBox "Create Snapshot failed: " & Err.Description, vbExclamation
+End Sub
+
+Private Sub mBtnSnapshotCompare_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCompareActiveWorkbook
+    Exit Sub
+EH:
+    SafeMsgBox "Compare Snapshot failed: " & Err.Description, vbExclamation
+End Sub
+
+Private Sub mBtnSnapshotHistory_Click()
+    On Error GoTo EH
+    modSnapshotHistory.SnapshotHistoryManager
+    Exit Sub
+EH:
+    SafeMsgBox "Snapshot History failed: " & Err.Description, vbExclamation
+End Sub
 
 
 
