@@ -108,6 +108,14 @@ Private WithEvents mBtnSnapshotCompare As MSForms.CommandButton
 Attribute mBtnSnapshotCompare.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotHistory As MSForms.CommandButton
 Attribute mBtnSnapshotHistory.VB_VarHelpID = -1
+Private mSnapshotMode As Boolean
+Private mSnapshotFrame As MSForms.Frame
+Private WithEvents mBtnSnapshotActionCreate As MSForms.CommandButton
+Attribute mBtnSnapshotActionCreate.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotActionCompare As MSForms.CommandButton
+Attribute mBtnSnapshotActionCompare.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotActionHistory As MSForms.CommandButton
+Attribute mBtnSnapshotActionHistory.VB_VarHelpID = -1
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 Private mSettingsMode As Boolean
@@ -935,6 +943,8 @@ mIsExpandedView = False
 mPanelWidth = GetSheetPanelWidthPt()
 SetExpandedView False
 EnsureTopLeftButtons
+EnsureSnapshotOverlay
+ApplySnapshotOverlayVisibility
 PositionTopButtons
 
 ' --- layout only (resize hook will be done in Activate when hwnd exists) ---
@@ -995,13 +1005,16 @@ Private Sub EnsureTopLeftButtons()
     End With
 
     With mBtnSnapshotCreate
-        .Caption = "Create Snapshot"
+        .Caption = "Snapshot"
         .Top = mBtnSettings.Top
         .Height = mBtnSettings.Height
-        .Width = 92
+        .Width = 72
         .Left = mBtnHelp.Left + mBtnHelp.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
+
+    mBtnSnapshotCompare.Visible = False
+    mBtnSnapshotHistory.Visible = False
 
     With mBtnSnapshotCompare
         .Caption = "Compare Snapshot"
@@ -1085,7 +1098,7 @@ Private Sub EnsureSettingsOverlay()
 
     With mBtnSettingsSave
         .Caption = "Save settings"
-        .Width = 92
+        .Width = 72
         .Height = 24
         .Top = mSettingsFrame.Height - 32
         .Left = (mSettingsFrame.Width / 2) - .Width - 10
@@ -1162,6 +1175,57 @@ EH:
 End Sub
 
 Private Sub mBtnSnapshotCreate_Click()
+    mSnapshotMode = Not mSnapshotMode
+    EnsureSnapshotOverlay
+    ApplySnapshotOverlayVisibility
+End Sub
+
+Private Sub mBtnSnapshotCompare_Click()
+End Sub
+
+Private Sub mBtnSnapshotHistory_Click()
+End Sub
+
+
+
+Private Sub EnsureSnapshotOverlay()
+    If mSnapshotFrame Is Nothing Then
+        Set mSnapshotFrame = Me.Controls.Add("Forms.Frame.1", "fraSnapshotActions", True)
+        Set mBtnSnapshotActionCreate = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCreate", True)
+        Set mBtnSnapshotActionCompare = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCompare", True)
+        Set mBtnSnapshotActionHistory = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionHistory", True)
+    End If
+
+    With mSnapshotFrame
+        .Caption = "Snapshot / Compare"
+        .Left = mBtnSnapshotCreate.Left
+        .Top = mBtnSnapshotCreate.Top + mBtnSnapshotCreate.Height + 4
+        .Width = 170
+        .Height = 88
+        .SpecialEffect = fmSpecialEffectFlat
+    End With
+
+    With mBtnSnapshotActionCreate
+        .Caption = "Create Snapshot"
+        .Left = 8: .Top = 14: .Width = 150: .Height = 20
+    End With
+    With mBtnSnapshotActionCompare
+        .Caption = "Compare Snapshot"
+        .Left = 8: .Top = 36: .Width = 150: .Height = 20
+    End With
+    With mBtnSnapshotActionHistory
+        .Caption = "Snapshot History"
+        .Left = 8: .Top = 58: .Width = 150: .Height = 20
+    End With
+End Sub
+
+Private Sub ApplySnapshotOverlayVisibility()
+    If mSnapshotFrame Is Nothing Then Exit Sub
+    mSnapshotFrame.Visible = mSnapshotMode
+    If mSnapshotMode Then mSnapshotFrame.ZOrder 0
+End Sub
+
+Private Sub mBtnSnapshotActionCreate_Click()
     On Error GoTo EH
     modSnapshotMain.SnapshotCreateActiveWorkbook
     Exit Sub
@@ -1169,7 +1233,7 @@ EH:
     SafeMsgBox "Create Snapshot failed: " & Err.Description, vbExclamation
 End Sub
 
-Private Sub mBtnSnapshotCompare_Click()
+Private Sub mBtnSnapshotActionCompare_Click()
     On Error GoTo EH
     modSnapshotMain.SnapshotCompareActiveWorkbook
     Exit Sub
@@ -1177,15 +1241,13 @@ EH:
     SafeMsgBox "Compare Snapshot failed: " & Err.Description, vbExclamation
 End Sub
 
-Private Sub mBtnSnapshotHistory_Click()
+Private Sub mBtnSnapshotActionHistory_Click()
     On Error GoTo EH
     modSnapshotHistory.SnapshotHistoryManager
     Exit Sub
 EH:
     SafeMsgBox "Snapshot History failed: " & Err.Description, vbExclamation
 End Sub
-
-
 
 Private Sub PinImage1AndTopRow()
     Dim img As Object
@@ -3138,6 +3200,8 @@ Private Sub PositionTopButtons()
     End If
 
     EnsureTopLeftButtons
+    EnsureSnapshotOverlay
+    ApplySnapshotOverlayVisibility
     If mSettingsMode Then EnsureSettingsOverlay
 
     ' Na wierzch (jesli cos przykrywa)

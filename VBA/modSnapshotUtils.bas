@@ -23,7 +23,7 @@ End Function
 
 Public Function JsonEscape(ByVal s As String) As String
     s = Replace(s, "\", "\\")
-    s = Replace(s, """", "\"")
+    s = Replace(s, """", Chr$(92) & Chr$(34))
     s = Replace(s, vbCrLf, "\n")
     s = Replace(s, vbCr, "\n")
     s = Replace(s, vbLf, "\n")
