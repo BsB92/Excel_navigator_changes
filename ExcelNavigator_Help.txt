@@ -83,6 +83,37 @@ Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
 - Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh.
 - Jeśli skonfigurowany folder już nie istnieje, navigator wraca do ścieżki skoroszytu dodatku.
 
+12) Snapshoty - co to jest i jak używać
+- Snapshot to zapis "stanu" skoroszytu w pliku JSON (m.in. arkusze, komórki, metadane) w danym momencie.
+- Do czego służy:
+  * audyt zmian między wersjami pliku,
+  * szybkie porównanie bieżącego stanu z wcześniej zapisanym snapshotem,
+  * podgląd historii snapshotów.
+- Jak utworzyć snapshot:
+  1) Upewnij się, że aktywny skoroszyt jest zapisany na dysku (ma ścieżkę).
+  2) Kliknij Snapshot (górny pasek), potem Create Snapshot.
+  3) Po sukcesie dostaniesz komunikat z pełną ścieżką zapisanego pliku .json.
+- Jak porównywać snapshot:
+  1) Otwórz docelowy skoroszyt i ustaw go jako aktywny.
+  2) Snapshot -> Compare Snapshot.
+  3) Wskaż wcześniej zapisany plik .json.
+  4) Narzędzie porówna wybrany snapshot ze stanem bieżącego skoroszytu.
+- Jak sprawdzać historię:
+  1) Snapshot -> Snapshot History.
+  2) W oknie historii możesz przeglądać dostępne snapshoty dla skoroszytu.
+
+13) Snapshot - typowe błędy
+- "Snapshot creation failed: Snapshot JSON validation failed." oznacza, że wygenerowana treść JSON nie przeszła walidacji przed finalnym zapisem.
+- Najczęstsze przyczyny:
+  * nieprawidłowa/niekompletna treść JSON wygenerowana podczas serializacji,
+  * problem z zapisem pliku tymczasowego,
+  * nietypowe dane w skoroszycie powodujące błąd serializacji.
+- Co zrobić:
+  1) Zapisz skoroszyt i spróbuj ponownie.
+  2) Zamknij i otwórz ponownie plik Excel.
+  3) Sprawdź, czy masz uprawnienia zapisu do folderu skoroszytu i `%APPDATA%\\ExcelNavigator\\Snapshots`.
+  4) Jeśli błąd wraca, zgłoś problem z nazwą pliku i godziną błędu (ułatwia diagnostykę).
+
 ------------------------------------------------------------
 Excel Navigator - User Guide (v5.0) [EN]
 
@@ -166,3 +197,34 @@ Excel Navigator - User Guide (v5.0) [EN]
 - Default copy folder is used as initial folder for copy target selection.
 - Default open folder is used as initial folder for Open/Open&Refresh file picker.
 - If configured folder no longer exists, navigator falls back to add-in workbook path.
+
+12) Snapshots - what they are and how to use them
+- A snapshot is a JSON capture of workbook state (e.g., worksheets, cells, metadata) at a specific point in time.
+- Typical use cases:
+  * auditing changes between file versions,
+  * comparing current workbook state against a previously saved snapshot,
+  * reviewing snapshot history.
+- How to create a snapshot:
+  1) Make sure the active workbook is saved to disk (has a valid path).
+  2) Click Snapshot (top row), then Create Snapshot.
+  3) On success, a message shows the full path to the saved .json file.
+- How to compare a snapshot:
+  1) Open the target workbook and make it active.
+  2) Snapshot -> Compare Snapshot.
+  3) Select a previously saved .json snapshot file.
+  4) The tool compares that snapshot with the current workbook state.
+- How to check history:
+  1) Snapshot -> Snapshot History.
+  2) Use the history window to browse available workbook snapshots.
+
+13) Snapshot - common errors
+- "Snapshot creation failed: Snapshot JSON validation failed." means the generated JSON did not pass validation before final save.
+- Most common causes:
+  * malformed/incomplete JSON generated during serialization,
+  * temporary file write issue,
+  * unusual workbook data that breaks serialization.
+- What to do:
+  1) Save workbook and retry.
+  2) Restart Excel/workbook and retry.
+  3) Verify write permissions for the workbook folder and `%APPDATA%\\ExcelNavigator\\Snapshots`.
+  4) If it still fails, report workbook name and timestamp of failure for troubleshooting.
