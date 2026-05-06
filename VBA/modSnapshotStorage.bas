@@ -14,10 +14,13 @@ Public Function SaveSnapshotTransactional(ByVal wb As Workbook, ByVal jsonText A
     baseName = ts & "_" & CleanFileName(LCase$(userName)) & ".json"
     finalFile = finalDir & "\" & baseName
     tmpFile = finalFile & ".tmp"
+    If Not modSnapshotJson.IsLikelyValidJson(jsonText) Then
+        Err.Raise vbObjectError + 6202, , "Snapshot JSON validation failed (in-memory payload)."
+    End If
     WriteTextFile tmpFile, jsonText
     If Not modSnapshotJson.IsLikelyValidJson(ReadTextFile(tmpFile)) Then
         On Error Resume Next: Kill tmpFile: On Error GoTo 0
-        Err.Raise vbObjectError + 6202, , "Snapshot JSON validation failed."
+        Err.Raise vbObjectError + 6202, , "Snapshot JSON validation failed (file roundtrip)."
     End If
     Name tmpFile As finalFile
     SaveSnapshotTransactional = finalFile

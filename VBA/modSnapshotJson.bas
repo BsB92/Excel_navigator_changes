@@ -29,8 +29,29 @@ Public Function SerializeWorkbookSnapshot(ByVal s As Object) As String
 End Function
 
 Public Function IsLikelyValidJson(ByVal t As String) As Boolean
-    t = Trim$(t)
-    IsLikelyValidJson = (Left$(t, 1) = "{" And Right$(t, 1) = "}")
+    Dim i As Long
+    Dim j As Long
+    Dim ch As Integer
+
+    If Len(t) = 0 Then Exit Function
+
+    i = 1
+    Do While i <= Len(t)
+        ch = AscW(Mid$(t, i, 1))
+        If ch > 32 Then Exit Do
+        i = i + 1
+    Loop
+
+    j = Len(t)
+    Do While j >= i
+        ch = AscW(Mid$(t, j, 1))
+        If ch > 32 Then Exit Do
+        j = j - 1
+    Loop
+
+    If j < i Then Exit Function
+
+    IsLikelyValidJson = (Mid$(t, i, 1) = "{" And Mid$(t, j, 1) = "}")
 End Function
 
 Public Function LoadWorkbookSnapshot(ByVal path As String) As Object
