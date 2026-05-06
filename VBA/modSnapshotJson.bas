@@ -10,7 +10,7 @@ Public Function SerializeWorkbookSnapshot(ByVal s As Object) As String
     b = b & """createdBy"":""" & modSnapshotUtils.JsonEscape(s("CreatedBy")) & ""","
     b = b & """machineName"":""" & modSnapshotUtils.JsonEscape(s("MachineName")) & ""","
     b = b & """excelVersion"":""" & modSnapshotUtils.JsonEscape(s("ExcelVersion")) & ""","
-    b = b & """worksheets":{"
+    b = b & """worksheets"":{"
     first = True
     For Each k In s("Worksheets").Keys
         If Not first Then b = b & ","
