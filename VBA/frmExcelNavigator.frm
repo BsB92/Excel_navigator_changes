@@ -306,7 +306,7 @@ Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder A
     srcWb.SaveCopyAs outPath
     Set copiedWb = Workbooks.Open(fileName:=outPath, UpdateLinks:=0, ReadOnly:=False)
 
-    BreakExternalLinks copiedWb
+    BreakExternalLinks copiedWb, srcWb.FullName
 
     copiedWb.Save
     copiedWb.Close saveChanges:=False
@@ -370,7 +370,7 @@ Private Sub ForceBreakExternalFormulas(ByVal wb As Workbook)
     On Error GoTo 0
 End Sub
 
-Private Sub BreakExternalLinks(ByVal wb As Workbook)
+Private Sub BreakExternalLinks(ByVal wb As Workbook, ByVal sourceWorkbookPath As String)
     Dim links As Variant
     Dim i As Long
     Dim passNo As Long
@@ -396,8 +396,8 @@ Private Sub BreakExternalLinks(ByVal wb As Workbook)
             wb.BreakLink Name:=linkName, Type:=xlLinkTypeExcelLinks
             If Err.Number <> 0 Then
                 Err.Clear
-                wb.ChangeLink Name:=linkName, NewName:=wb.FullName, Type:=xlLinkTypeExcelLinks
-                wb.BreakLink Name:=wb.FullName, Type:=xlLinkTypeExcelLinks
+                wb.ChangeLink Name:=linkName, NewName:=sourceWorkbookPath, Type:=xlLinkTypeExcelLinks
+                wb.BreakLink Name:=sourceWorkbookPath, Type:=xlLinkTypeExcelLinks
             End If
             Err.Clear
             On Error GoTo CleanExit
