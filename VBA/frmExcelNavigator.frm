@@ -1180,12 +1180,6 @@ Private Sub mBtnSnapshotCreate_Click()
     ApplySnapshotOverlayVisibility
 End Sub
 
-Private Sub mBtnSnapshotCompare_Click()
-End Sub
-
-Private Sub mBtnSnapshotHistory_Click()
-End Sub
-
 
 
 Private Sub EnsureSnapshotOverlay()
