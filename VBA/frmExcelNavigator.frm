@@ -337,6 +337,12 @@ End Function
 Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As String, ByVal suffix As String) As String
     Dim baseName As String, ext As String
     Dim dotPos As Long
+    Dim normalizedFolder As String
+
+    normalizedFolder = Trim$(folderPath)
+    Do While Right$(normalizedFolder, 1) = Application.PathSeparator
+        normalizedFolder = Left$(normalizedFolder, Len(normalizedFolder) - 1)
+    Loop
 
     dotPos = InStrRev(fileName, ".")
     If dotPos > 0 Then
@@ -347,7 +353,7 @@ Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As S
         ext = ".xlsx"
     End If
 
-    BuildOutputPath = folderPath & Application.PathSeparator & baseName & suffix & ext
+    BuildOutputPath = normalizedFolder & Application.PathSeparator & baseName & suffix & ext
 End Function
 
 Private Sub ForceBreakExternalFormulas(ByVal wb As Workbook)
