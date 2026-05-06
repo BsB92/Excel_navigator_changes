@@ -1,4 +1,4 @@
-Excel Navigator - User Guide
+Excel Navigator - User Guide (v4.9)
 
 1) General workflow
 - Click Reload list to refresh the list of currently open workbooks.
@@ -7,14 +7,18 @@ Excel Navigator - User Guide
 
 2) Keyboard and mouse shortcuts
 - Ctrl+A on workbook/sheets list = Select All (when Selection mode is ON).
-- Arrow Right on workbook/sheets list = expand right-side Sheets panel (same as >>>>).
-- Arrow Left on workbook/sheets list = collapse right-side Sheets panel (same as <<<<).
-- Arrow Up/Down on the workbook list moves selection and activates workbook preview logic.
-- Enter on workbook list activates selected workbook.
+- S = turn Selection mode ON.
+- Arrow Right on workbook/sheets list = expand right-side Sheets panel and move focus to the Sheets list.
+- Arrow Left on workbook/sheets list = collapse right-side Sheets panel and move focus back to workbook list.
+- Arrow Up/Down on workbook list = move current row.
+- Enter on workbook list = activate selected workbook.
 - Double-click workbook row = activate selected workbook.
-- Right-click on workbook list toggles Selection mode ON/OFF.
-- Arrow Up/Down on Sheets panel (right side) activates sheet navigation.
-- Enter on Sheets panel activates selected sheet.
+- Right-click on workbook list = toggle Selection mode ON/OFF.
+- In Selection mode on workbook list:
+  * A = add current workbook row to selection.
+  * D = remove current workbook row from selection.
+- Arrow Up/Down on Sheets panel (right side) = navigate sheets.
+- Enter on Sheets panel = activate selected sheet.
 - Full path box supports right-click copy/select behavior.
 
 3) Top row controls
@@ -45,7 +49,7 @@ Excel Navigator - User Guide
 - During batch, Cancel stops starting NEXT items (cannot safely abort active RefreshAll).
 
 7) Copy actions
-- Suffix: suffix added for copy operations (auto-prepends _ when needed).
+- Suffix: suffix added for copy operations (used exactly as typed).
 - Copy + Break Links:
   * choose target folder
   * create copy
