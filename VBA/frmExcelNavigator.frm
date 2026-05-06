@@ -3097,10 +3097,10 @@ Private Function SafeMsgBox(ByVal Prompt As String, _
                             Optional ByVal Title As String = vbNullString) As VbMsgBoxResult
     On Error Resume Next
     modWinAPI.BringFormToFront Me.Caption
-    modWinAPI.SetTopMostState Me.Caption, True
+    modWinAPI.SetTopMostState Me.Caption, False
     On Error GoTo 0
 
-    SafeMsgBox = MsgBox(Prompt, Buttons, Title)
+    SafeMsgBox = MsgBox(Prompt, Buttons Or vbMsgBoxSetForeground, Title)
 
     On Error Resume Next
     modWinAPI.BringFormToFront Me.Caption

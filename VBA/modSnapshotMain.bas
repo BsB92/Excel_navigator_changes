@@ -14,9 +14,13 @@ Public Sub SnapshotCreateActiveWorkbook()
 
     If Len(wb.Path) = 0 Then
         On Error Resume Next
+        modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
         frmExcelNavigator.RestoreNavigatorToFront
         On Error GoTo EH
-        MsgBox "Workbook must be saved before creating snapshot.", vbExclamation, "ExcelNavigator Snapshot"
+        MsgBox "Workbook must be saved before creating snapshot.", vbExclamation Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+        On Error Resume Next
+        modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+        On Error GoTo EH
         Exit Sub
     End If
 
@@ -25,9 +29,13 @@ Public Sub SnapshotCreateActiveWorkbook()
     finalPath = modSnapshotStorage.SaveSnapshotTransactional(wb, jsonText, snap("CreatedBy"))
 
     On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
     frmExcelNavigator.RestoreNavigatorToFront
     On Error GoTo EH
-    MsgBox "Snapshot created:" & vbCrLf & finalPath, vbInformation, "ExcelNavigator Snapshot"
+    MsgBox "Snapshot created:" & vbCrLf & finalPath, vbInformation Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo EH
     Exit Sub
 
 EH:
@@ -36,8 +44,12 @@ EH:
     If Len(errMsg) = 0 Then errMsg = "Unknown error."
     On Error Resume Next
     frmExcelNavigator.RestoreNavigatorToFront
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
     On Error GoTo 0
-    MsgBox "Snapshot creation failed: " & errMsg, vbCritical, "ExcelNavigator Snapshot"
+    MsgBox "Snapshot creation failed: " & errMsg, vbCritical Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo 0
 End Sub
 
 Public Sub SnapshotCompareActiveWorkbook()
@@ -55,8 +67,12 @@ Public Sub SnapshotCompareActiveWorkbook()
 
     On Error Resume Next
     frmExcelNavigator.RestoreNavigatorToFront
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
     On Error GoTo EH
     fp = Application.GetOpenFilename("JSON Files (*.json),*.json", , "Select snapshot JSON")
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo EH
     If VarType(fp) = vbBoolean Then Exit Sub
 
     Set oldSnap = modSnapshotJson.LoadWorkbookSnapshot(CStr(fp))
@@ -77,6 +93,10 @@ EH:
     If Len(compareErr) = 0 Then compareErr = "Unknown error."
     On Error Resume Next
     frmExcelNavigator.RestoreNavigatorToFront
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
     On Error GoTo 0
-    MsgBox "Compare failed: " & compareErr, vbCritical, "ExcelNavigator Snapshot"
+    MsgBox "Compare failed: " & compareErr, vbCritical Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo 0
 End Sub
