@@ -104,10 +104,6 @@ Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotCreate As MSForms.CommandButton
 Attribute mBtnSnapshotCreate.VB_VarHelpID = -1
-Private WithEvents mBtnSnapshotCompare As MSForms.CommandButton
-Attribute mBtnSnapshotCompare.VB_VarHelpID = -1
-Private WithEvents mBtnSnapshotHistory As MSForms.CommandButton
-Attribute mBtnSnapshotHistory.VB_VarHelpID = -1
 Private mSnapshotMode As Boolean
 Private mSnapshotFrame As MSForms.Frame
 Private WithEvents mBtnSnapshotActionCreate As MSForms.CommandButton
@@ -976,16 +972,6 @@ Private Sub EnsureTopLeftButtons()
         If mBtnSnapshotCreate Is Nothing Then Set mBtnSnapshotCreate = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCreate", True)
     End If
 
-    If mBtnSnapshotCompare Is Nothing Then
-        Set mBtnSnapshotCompare = GetControlIfExists("btnSnapshotCompare")
-        If mBtnSnapshotCompare Is Nothing Then Set mBtnSnapshotCompare = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCompare", True)
-    End If
-
-    If mBtnSnapshotHistory Is Nothing Then
-        Set mBtnSnapshotHistory = GetControlIfExists("btnSnapshotHistory")
-        If mBtnSnapshotHistory Is Nothing Then Set mBtnSnapshotHistory = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotHistory", True)
-    End If
-
     With mBtnSettings
         .Caption = "Settings"
         .Top = TOP_LEFT_BUTTON_MARGIN
@@ -1013,26 +999,6 @@ Private Sub EnsureTopLeftButtons()
         .Visible = True
     End With
 
-    mBtnSnapshotCompare.Visible = False
-    mBtnSnapshotHistory.Visible = False
-
-    With mBtnSnapshotCompare
-        .Caption = "Compare Snapshot"
-        .Top = mBtnSettings.Top
-        .Height = mBtnSettings.Height
-        .Width = 96
-        .Left = mBtnSnapshotCreate.Left + mBtnSnapshotCreate.Width + TOP_LEFT_BUTTON_GAP
-        .Visible = True
-    End With
-
-    With mBtnSnapshotHistory
-        .Caption = "Snapshot History"
-        .Top = mBtnSettings.Top
-        .Height = mBtnSettings.Height
-        .Width = 96
-        .Left = mBtnSnapshotCompare.Left + mBtnSnapshotCompare.Width + TOP_LEFT_BUTTON_GAP
-        .Visible = True
-    End With
 End Sub
 
 Private Sub EnsureSettingsOverlay()
@@ -1196,7 +1162,8 @@ Private Sub EnsureSnapshotOverlay()
         .Top = mBtnSnapshotCreate.Top + mBtnSnapshotCreate.Height + 4
         .Width = 170
         .Height = 88
-        .SpecialEffect = fmSpecialEffectFlat
+        .SpecialEffect = fmSpecialEffectSunken
+        .BorderStyle = fmBorderStyleSingle
     End With
 
     With mBtnSnapshotActionCreate
