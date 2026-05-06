@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.8"
+   Caption         =   "ExcelNavigator v4.8_test"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -237,10 +237,7 @@ Private Sub btnCopyBreakLinks_Click()
         SafeMsgBox "Suffix is required (e.g. _without_formulas).", vbExclamation
         Exit Sub
     End If
-    If Left$(suffix, 1) <> "_" Then
-        suffix = "_" & suffix
-        Me.txtSuffix.Value = suffix
-    End If
+    ' Use suffix exactly as typed by user (no automatic prefixing)
 
     targetFolder = PickFolder("Choose target folder for copied files")
     If Len(targetFolder) = 0 Then Exit Sub
@@ -301,23 +298,36 @@ End Function
 
 Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String, ByRef outPath As String) As Boolean
     Dim copiedWb As Workbook
+    Dim prevAskToUpdate As Boolean
+    Dim prevDisplayAlerts As Boolean
 
     On Error GoTo EH
 
     outPath = BuildOutputPath(targetFolder, srcWb.Name, suffix)
 
     srcWb.SaveCopyAs outPath
-    Set copiedWb = Workbooks.Open(fileName:=outPath, UpdateLinks:=0, ReadOnly:=False)
 
-    BreakExternalLinks copiedWb
+    prevAskToUpdate = Application.AskToUpdateLinks
+    prevDisplayAlerts = Application.DisplayAlerts
+    Application.AskToUpdateLinks = False
+    Application.DisplayAlerts = False
+
+    Set copiedWb = Workbooks.Open(fileName:=outPath, UpdateLinks:=0, ReadOnly:=False, IgnoreReadOnlyRecommended:=True)
+
+    BreakExternalLinks copiedWb, srcWb.FullName
 
     copiedWb.Save
     copiedWb.Close saveChanges:=False
+
+    Application.DisplayAlerts = prevDisplayAlerts
+    Application.AskToUpdateLinks = prevAskToUpdate
 
     CopyAndBreakLinks = True
     Exit Function
 
 EH:
+    Application.DisplayAlerts = prevDisplayAlerts
+    Application.AskToUpdateLinks = prevAskToUpdate
     SafeMsgBox "Copy/BreakLinks error for: " & srcWb.Name & vbCrLf & Err.Description, vbCritical
     On Error Resume Next
     If Not copiedWb Is Nothing Then copiedWb.Close saveChanges:=False
@@ -327,6 +337,12 @@ End Function
 Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As String, ByVal suffix As String) As String
     Dim baseName As String, ext As String
     Dim dotPos As Long
+    Dim normalizedFolder As String
+
+    normalizedFolder = Trim$(folderPath)
+    Do While Right$(normalizedFolder, 1) = Application.PathSeparator
+        normalizedFolder = Left$(normalizedFolder, Len(normalizedFolder) - 1)
+    Loop
 
     dotPos = InStrRev(fileName, ".")
     If dotPos > 0 Then
@@ -337,19 +353,84 @@ Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As S
         ext = ".xlsx"
     End If
 
-    BuildOutputPath = folderPath & Application.PathSeparator & baseName & suffix & ext
+    BuildOutputPath = normalizedFolder & Application.PathSeparator & baseName & suffix & ext
 End Function
 
-Private Sub BreakExternalLinks(ByVal wb As Workbook)
+Private Sub ForceBreakExternalFormulas(ByVal wb As Workbook)
+    Dim ws As Worksheet
+    Dim rngFormulas As Range
+    Dim c As Range
+    Dim chObj As ChartObject
+    Dim srs As Series
+
+    On Error Resume Next
+
+    For Each ws In wb.Worksheets
+        Set rngFormulas = Nothing
+        Set rngFormulas = ws.UsedRange.SpecialCells(xlCellTypeFormulas)
+        If Not rngFormulas Is Nothing Then
+            For Each c In rngFormulas.Cells
+                If InStr(1, c.Formula, "[", vbTextCompare) > 0 Then
+                    c.Value = c.Value
+                End If
+            Next c
+        End If
+
+        For Each chObj In ws.ChartObjects
+            For Each srs In chObj.Chart.SeriesCollection
+                If InStr(1, srs.Formula, "[", vbTextCompare) > 0 Then
+                    srs.Values = srs.Values
+                    srs.XValues = srs.XValues
+                End If
+            Next srs
+        Next chObj
+    Next ws
+
+    On Error GoTo 0
+End Sub
+
+Private Sub BreakExternalLinks(ByVal wb As Workbook, ByVal sourceWorkbookPath As String)
     Dim links As Variant
     Dim i As Long
+    Dim passNo As Long
+    Dim linkName As String
+    Dim prevAskToUpdate As Boolean
+    Dim prevDisplayAlerts As Boolean
+
+    prevAskToUpdate = Application.AskToUpdateLinks
+    prevDisplayAlerts = Application.DisplayAlerts
+    Application.AskToUpdateLinks = False
+    Application.DisplayAlerts = False
+
+    On Error GoTo CleanExit
+
+    For passNo = 1 To 3
+        links = wb.LinkSources(Type:=xlExcelLinks)
+        If IsEmpty(links) Then Exit For
+        If Not IsArray(links) Then Exit For
+
+        For i = LBound(links) To UBound(links)
+            linkName = CStr(links(i))
+            On Error Resume Next
+            wb.BreakLink Name:=linkName, Type:=xlLinkTypeExcelLinks
+            If Err.Number <> 0 Then
+                Err.Clear
+                wb.ChangeLink Name:=linkName, NewName:=sourceWorkbookPath, Type:=xlLinkTypeExcelLinks
+                wb.BreakLink Name:=sourceWorkbookPath, Type:=xlLinkTypeExcelLinks
+            End If
+            Err.Clear
+            On Error GoTo CleanExit
+        Next i
+    Next passNo
 
     links = wb.LinkSources(Type:=xlExcelLinks)
-    If IsEmpty(links) Then Exit Sub
+    If Not IsEmpty(links) Then
+        ForceBreakExternalFormulas wb
+    End If
 
-    For i = LBound(links) To UBound(links)
-        wb.BreakLink Name:=CStr(links(i)), Type:=xlLinkTypeExcelLinks
-    Next i
+CleanExit:
+    Application.DisplayAlerts = prevDisplayAlerts
+    Application.AskToUpdateLinks = prevAskToUpdate
 End Sub
 
 Private Sub btnCopyWithSuffix_Click()
