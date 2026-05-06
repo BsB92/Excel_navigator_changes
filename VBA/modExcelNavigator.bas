@@ -19,3 +19,16 @@ End Sub
 Public Sub ExcelNavigator()
     ShowExcelNavigatorForm
 End Sub
+
+
+Public Sub ExcelNavigatorCreateSnapshot()
+    modSnapshotMain.SnapshotCreateActiveWorkbook
+End Sub
+
+Public Sub ExcelNavigatorCompareSnapshot()
+    modSnapshotMain.SnapshotCompareActiveWorkbook
+End Sub
+
+Public Sub ExcelNavigatorSnapshotHistory()
+    modSnapshotHistory.SnapshotHistoryManager
+End Sub
