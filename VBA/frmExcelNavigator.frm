@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.8_test"
+   Caption         =   "ExcelNavigator v4.9"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -36,7 +36,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator_v4.8"
+Private Const REG_APP As String = "ExcelNavigator_v4.9"
 Private Const REG_SEC As String = "FormState"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
@@ -1275,15 +1275,33 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
             KeyCode = 0
             handled = True
         End If
+    ElseIf KeyCode = vbKeyS Then
+        If Shift = 0 Then
+            If Not Me.tglBatchMode.Value Then Me.tglBatchMode.Value = True
+            KeyCode = 0
+            handled = True
+        End If
     ElseIf KeyCode = vbKeyRight Then
         If Shift = 0 Then
             If Not mIsExpandedView Then SetExpandedView True
+            If Not mLstSheets Is Nothing Then
+                If mLstSheets.Visible And mLstSheets.Enabled And mLstSheets.ListCount > 0 Then
+                    On Error Resume Next
+                    mLstSheets.SetFocus
+                    On Error GoTo 0
+                End If
+            End If
             KeyCode = 0
             handled = True
         End If
     ElseIf KeyCode = vbKeyLeft Then
         If Shift = 0 Then
             If mIsExpandedView Then SetExpandedView False
+            If Me.lstWorkbooks.Visible And Me.lstWorkbooks.Enabled Then
+                On Error Resume Next
+                Me.lstWorkbooks.SetFocus
+                On Error GoTo 0
+            End If
             KeyCode = 0
             handled = True
         End If
@@ -1298,6 +1316,26 @@ Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal S
     If KeyCode = vbKeyUp Or KeyCode = vbKeyDown Then
         mWorkbookKeyboardNavigation = True
         Exit Sub
+    End If
+
+    If Me.tglBatchMode.Value And Shift = 0 Then
+        If KeyCode = vbKeyA Then
+            If Me.lstWorkbooks.ListIndex > 0 Then
+                Me.lstWorkbooks.Selected(Me.lstWorkbooks.ListIndex) = True
+                RefreshVisuals
+                RefreshSheetList
+            End If
+            KeyCode = 0
+            Exit Sub
+        ElseIf KeyCode = vbKeyD Then
+            If Me.lstWorkbooks.ListIndex > 0 Then
+                Me.lstWorkbooks.Selected(Me.lstWorkbooks.ListIndex) = False
+                RefreshVisuals
+                RefreshSheetList
+            End If
+            KeyCode = 0
+            Exit Sub
+        End If
     End If
 
     If KeyCode = vbKeyReturn Then
