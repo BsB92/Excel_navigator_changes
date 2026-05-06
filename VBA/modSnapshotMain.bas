@@ -5,7 +5,7 @@ Public Sub SnapshotCreateActiveWorkbook()
     On Error GoTo EH
 
     Dim wb As Workbook
-    Dim snap As clsWorkbookSnapshot
+    Dim snap As Object
     Dim jsonText As String
     Dim finalPath As String
 
@@ -19,7 +19,7 @@ Public Sub SnapshotCreateActiveWorkbook()
 
     Set snap = modSnapshotCapture.CaptureWorkbookSnapshot(wb)
     jsonText = modSnapshotJson.SerializeWorkbookSnapshot(snap)
-    finalPath = modSnapshotStorage.SaveSnapshotTransactional(wb, jsonText, snap.CreatedBy)
+    finalPath = modSnapshotStorage.SaveSnapshotTransactional(wb, jsonText, snap("CreatedBy"))
 
     MsgBox "Snapshot created:" & vbCrLf & finalPath, vbInformation, "ExcelNavigator Snapshot"
     Exit Sub
@@ -33,10 +33,10 @@ Public Sub SnapshotCompareActiveWorkbook()
 
     Dim wb As Workbook
     Dim fp As Variant
-    Dim oldSnap As clsWorkbookSnapshot
-    Dim newSnap As clsWorkbookSnapshot
-    Dim options As clsSnapshotOptions
-    Dim diff As clsSnapshotDiffResult
+    Dim oldSnap As Object
+    Dim newSnap As Object
+    Dim options As Object
+    Dim diff As Object
 
     Set wb = ActiveWorkbook
     If wb Is Nothing Then Err.Raise vbObjectError + 6102, "SnapshotCompareActiveWorkbook", "No active workbook."
@@ -47,7 +47,10 @@ Public Sub SnapshotCompareActiveWorkbook()
     Set oldSnap = modSnapshotJson.LoadWorkbookSnapshot(CStr(fp))
     Set newSnap = modSnapshotCapture.CaptureWorkbookSnapshot(wb)
 
-    Set options = New clsSnapshotOptions
+    Set options = CreateObject("Scripting.Dictionary")
+    options("IgnoreBlankChanges") = True
+    options("IgnoreFormulaResultChanges") = False
+    options("IgnoreVolatileFormulas") = False
     Set diff = modSnapshotCompare.CompareSnapshots(oldSnap, newSnap, options)
 
     modSnapshotReport.GenerateDiffReport diff, wb, CStr(fp)
