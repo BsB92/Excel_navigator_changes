@@ -308,6 +308,7 @@ End Function
 
 Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String, ByRef outPath As String) As Boolean
     Dim copiedWb As Workbook
+    Dim linksBefore As Variant
     Dim prevAskToUpdate As Boolean
     Dim prevDisplayAlerts As Boolean
 
@@ -324,6 +325,8 @@ Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder A
 
     Set copiedWb = Workbooks.Open(fileName:=outPath, UpdateLinks:=0, ReadOnly:=False, IgnoreReadOnlyRecommended:=True)
 
+    linksBefore = copiedWb.LinkSources(Type:=xlExcelLinks)
+    AddExternalLinksAuditSheet copiedWb, linksBefore, srcWb.FullName
     BreakExternalLinks copiedWb, srcWb.FullName
 
     copiedWb.Save
@@ -342,6 +345,91 @@ EH:
     On Error Resume Next
     If Not copiedWb Is Nothing Then copiedWb.Close saveChanges:=False
     CopyAndBreakLinks = False
+End Function
+
+Private Sub AddExternalLinksAuditSheet(ByVal wb As Workbook, ByVal linksBefore As Variant, ByVal sourceWorkbookPath As String)
+    Dim wsLog As Worksheet
+    Dim ws As Worksheet
+    Dim rngFormulas As Range
+    Dim c As Range
+    Dim r As Long
+    Dim i As Long
+    Dim formulaText As String
+    Dim extRef As String
+
+    On Error GoTo EH
+
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    wb.Worksheets("_ExternalLinksLog").Delete
+    Application.DisplayAlerts = True
+    On Error GoTo EH
+
+    Set wsLog = wb.Worksheets.Add(Before:=wb.Worksheets(1))
+    wsLog.Name = "_ExternalLinksLog"
+
+    wsLog.Range("A1:H1").Value = Array("Timestamp", "SourceWorkbook", "Sheet", "CellAddress", "Formula", "ValueAtSnapshot", "ExternalReferenceDetected", "LinkSource")
+    r = 2
+
+    If IsArray(linksBefore) Then
+        For i = LBound(linksBefore) To UBound(linksBefore)
+            wsLog.Cells(r, 1).Value = Now
+            wsLog.Cells(r, 2).Value = sourceWorkbookPath
+            wsLog.Cells(r, 3).Value = "<workbook-link>"
+            wsLog.Cells(r, 4).Value = ""
+            wsLog.Cells(r, 5).Value = ""
+            wsLog.Cells(r, 6).Value = ""
+            wsLog.Cells(r, 7).Value = ""
+            wsLog.Cells(r, 8).Value = CStr(linksBefore(i))
+            r = r + 1
+        Next i
+    End If
+
+    For Each ws In wb.Worksheets
+        If ws.Name <> wsLog.Name Then
+            Set rngFormulas = Nothing
+            On Error Resume Next
+            Set rngFormulas = ws.UsedRange.SpecialCells(xlCellTypeFormulas)
+            On Error GoTo EH
+
+            If Not rngFormulas Is Nothing Then
+                For Each c In rngFormulas.Cells
+                    formulaText = CStr(c.Formula)
+                    If InStr(1, formulaText, "[", vbTextCompare) > 0 Then
+                        extRef = ExtractBracketReference(formulaText)
+                        wsLog.Cells(r, 1).Value = Now
+                        wsLog.Cells(r, 2).Value = sourceWorkbookPath
+                        wsLog.Cells(r, 3).Value = ws.Name
+                        wsLog.Cells(r, 4).Value = c.Address(False, False)
+                        wsLog.Cells(r, 5).Value = formulaText
+                        wsLog.Cells(r, 6).Value = c.Value2
+                        wsLog.Cells(r, 7).Value = extRef
+                        wsLog.Cells(r, 8).Value = ""
+                        r = r + 1
+                    End If
+                Next c
+            End If
+        End If
+    Next ws
+
+    wsLog.Columns("A:H").EntireColumn.AutoFit
+    Exit Sub
+
+EH:
+    On Error Resume Next
+    Application.DisplayAlerts = True
+End Sub
+
+Private Function ExtractBracketReference(ByVal formulaText As String) As String
+    Dim p1 As Long, p2 As Long
+    p1 = InStr(1, formulaText, "[", vbTextCompare)
+    If p1 = 0 Then Exit Function
+    p2 = InStr(p1 + 1, formulaText, "]", vbTextCompare)
+    If p2 = 0 Then
+        ExtractBracketReference = Mid$(formulaText, p1)
+    Else
+        ExtractBracketReference = Mid$(formulaText, p1, p2 - p1 + 1)
+    End If
 End Function
 
 Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As String, ByVal suffix As String) As String
