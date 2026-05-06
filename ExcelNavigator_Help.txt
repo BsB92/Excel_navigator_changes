@@ -1,4 +1,4 @@
-Excel Navigator - User Guide (v4.9)
+Excel Navigator - User Guide (v5.0)
 
 1) General workflow
 - Click Reload list to refresh the list of currently open workbooks.
