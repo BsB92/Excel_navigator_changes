@@ -1,4 +1,90 @@
-Excel Navigator - User Guide (v5.0)
+Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
+
+1) Ogólny przepływ pracy
+- Kliknij Reload list, aby odświeżyć listę aktualnie otwartych skoroszytów.
+- Użyj Search, aby filtrować po nazwie/ścieżce skoroszytu.
+- Wybierz skoroszyt z listy i użyj akcji poniżej.
+
+2) Skróty klawiaturowe i myszy
+- Ctrl+A na liście skoroszytów/arkuszy = Zaznacz wszystko (gdy Selection mode jest ON).
+- S = włącz Selection mode.
+- Strzałka w prawo na liście skoroszytów/arkuszy = rozwiń prawy panel Sheets i przenieś fokus na listę Sheets.
+- Strzałka w lewo na liście skoroszytów/arkuszy = zwiń prawy panel Sheets i przenieś fokus z powrotem na listę skoroszytów.
+- Strzałka góra/dół na liście skoroszytów = przejdź do poprzedniego/następnego wiersza.
+- Enter na liście skoroszytów = aktywuj wybrany skoroszyt.
+- Dwuklik na wierszu skoroszytu = aktywuj wybrany skoroszyt.
+- Prawy klik na liście skoroszytów = przełącz Selection mode ON/OFF.
+- W Selection mode na liście skoroszytów:
+  * A = dodaj bieżący wiersz skoroszytu do zaznaczenia.
+  * D = usuń bieżący wiersz skoroszytu z zaznaczenia.
+- Strzałka góra/dół w panelu Sheets (po prawej) = nawigacja po arkuszach.
+- Enter w panelu Sheets = aktywuj wybrany arkusz.
+- Pole pełnej ścieżki obsługuje prawy klik (kopiuj/zaznacz).
+
+3) Kontrolki górnego wiersza
+- Settings: przełącza ramkę Settings ON/OFF.
+  * Stan ON jest podświetlony.
+  * Skonfiguruj dwa foldery:
+    1) domyślny folder kopiowania
+    2) domyślny folder otwierania
+  * Save settings waliduje obie ścieżki i zapisuje je.
+- ?: otwiera ten plik pomocy.
+- Snapshot: otwiera/zamyka ramkę Snapshot / Compare.
+  * W ramce dostępne są akcje: Create Snapshot, Compare Snapshot, Snapshot History.
+
+4) Obszar listy skoroszytów
+- Kolumny: File / Dir / Sync.
+- Wiersz nagłówka nie jest możliwy do zaznaczenia jako cel akcji.
+- Aktywny skoroszyt jest wyróżniony wizualnie.
+
+5) Selection mode i akcje zbiorcze
+- Selection mode OFF: zachowanie jednokrotnego wyboru.
+- Selection mode ON: zachowanie wielokrotnego wyboru i aktywne przyciski akcji zbiorczych.
+- Select All / Clear Selection działają tylko w Selection mode ON.
+
+6) Akcje otwierania i odświeżania
+- Open file: pozwala wybrać jeden lub wiele plików Excel i je otworzyć.
+- Open&Refresh: otwiera wybrane pliki i uruchamia proces odświeżania.
+- Refresh selected: odświeża wybrane otwarte skoroszyty.
+- Save selected: zapisuje wybrane otwarte skoroszyty.
+- Refresh + Save: odświeża, a następnie zapisuje wybrane otwarte skoroszyty.
+- W trakcie batch, Cancel zatrzymuje uruchamianie KOLEJNYCH pozycji (nie da się bezpiecznie przerwać aktywnego RefreshAll).
+
+7) Akcje kopiowania
+- Suffix: sufiks dodawany do operacji kopiowania (używany dokładnie tak, jak wpisano).
+- Copy + Break Links:
+  * wybierz folder docelowy
+  * utwórz kopię
+  * zerwij zewnętrzne linki Excel
+- Copy with suffix:
+  * wybierz folder docelowy
+  * utwórz tylko kopię (bez zrywania linków)
+- Open copied checkbox: opcjonalnie automatycznie otwórz skopiowane pliki po operacji.
+- Open folder: otwiera ostatnio użyty folder docelowy kopiowania.
+
+8) Akcje zamykania
+- Close selected zamyka tylko wybrane skoroszyty.
+- Dodatki i PERSONAL.XLSB są chronione przed zamknięciem.
+- Obsługa niezapisanych zmian wspiera save-all / don't-save-all / ask-each zależnie od promptu.
+- Skoroszyty aktywnie odświeżane są pomijane tam, gdzie to niebezpieczne.
+
+9) Prawy panel Sheets
+- Przycisk przełączania panelu (>>>> / <<<<) pokazuje/ukrywa rozszerzony widok arkuszy.
+- Lista Sheets podąża za aktywnym skoroszytem.
+- Kliknij lub użyj strzałek, aby aktywować wybrany arkusz.
+
+10) Przyciski okna i pozycjonowania
+- Max: maksymalizuje okno aktywnego skoroszytu.
+- 1 / 2 / 3: przenosi aktywny skoroszyt do zdefiniowanych pozycji ekranu.
+- Close: zamyka formularz navigatora.
+
+11) Szczegóły Settings
+- Domyślny folder kopiowania jest używany jako folder startowy przy wyborze folderu docelowego kopiowania.
+- Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh.
+- Jeśli skonfigurowany folder już nie istnieje, navigator wraca do ścieżki skoroszytu dodatku.
+
+------------------------------------------------------------
+Excel Navigator - User Guide (v5.0) [EN]
 
 1) General workflow
 - Click Reload list to refresh the list of currently open workbooks.
