@@ -31,10 +31,13 @@ Public Sub SnapshotCreateActiveWorkbook()
     Exit Sub
 
 EH:
+    Dim errMsg As String
+    errMsg = Err.Description
+    If Len(errMsg) = 0 Then errMsg = "Unknown error."
     On Error Resume Next
     frmExcelNavigator.RestoreNavigatorToFront
     On Error GoTo 0
-    MsgBox "Snapshot creation failed: " & Err.Description, vbCritical, "ExcelNavigator Snapshot"
+    MsgBox "Snapshot creation failed: " & errMsg, vbCritical, "ExcelNavigator Snapshot"
 End Sub
 
 Public Sub SnapshotCompareActiveWorkbook()
@@ -69,8 +72,11 @@ Public Sub SnapshotCompareActiveWorkbook()
     Exit Sub
 
 EH:
+    Dim compareErr As String
+    compareErr = Err.Description
+    If Len(compareErr) = 0 Then compareErr = "Unknown error."
     On Error Resume Next
     frmExcelNavigator.RestoreNavigatorToFront
     On Error GoTo 0
-    MsgBox "Compare failed: " & Err.Description, vbCritical, "ExcelNavigator Snapshot"
+    MsgBox "Compare failed: " & compareErr, vbCritical, "ExcelNavigator Snapshot"
 End Sub
