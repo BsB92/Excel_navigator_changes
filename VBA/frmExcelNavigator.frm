@@ -298,23 +298,36 @@ End Function
 
 Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String, ByRef outPath As String) As Boolean
     Dim copiedWb As Workbook
+    Dim prevAskToUpdate As Boolean
+    Dim prevDisplayAlerts As Boolean
 
     On Error GoTo EH
 
     outPath = BuildOutputPath(targetFolder, srcWb.Name, suffix)
 
     srcWb.SaveCopyAs outPath
-    Set copiedWb = Workbooks.Open(fileName:=outPath, UpdateLinks:=0, ReadOnly:=False)
+
+    prevAskToUpdate = Application.AskToUpdateLinks
+    prevDisplayAlerts = Application.DisplayAlerts
+    Application.AskToUpdateLinks = False
+    Application.DisplayAlerts = False
+
+    Set copiedWb = Workbooks.Open(fileName:=outPath, UpdateLinks:=0, ReadOnly:=False, IgnoreReadOnlyRecommended:=True)
 
     BreakExternalLinks copiedWb, srcWb.FullName
 
     copiedWb.Save
     copiedWb.Close saveChanges:=False
 
+    Application.DisplayAlerts = prevDisplayAlerts
+    Application.AskToUpdateLinks = prevAskToUpdate
+
     CopyAndBreakLinks = True
     Exit Function
 
 EH:
+    Application.DisplayAlerts = prevDisplayAlerts
+    Application.AskToUpdateLinks = prevAskToUpdate
     SafeMsgBox "Copy/BreakLinks error for: " & srcWb.Name & vbCrLf & Err.Description, vbCritical
     On Error Resume Next
     If Not copiedWb Is Nothing Then copiedWb.Close saveChanges:=False
