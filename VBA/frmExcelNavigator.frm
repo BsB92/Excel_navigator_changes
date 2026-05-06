@@ -1278,12 +1278,24 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
     ElseIf KeyCode = vbKeyRight Then
         If Shift = 0 Then
             If Not mIsExpandedView Then SetExpandedView True
+            If Not mLstSheets Is Nothing Then
+                If mLstSheets.Visible And mLstSheets.Enabled And mLstSheets.ListCount > 0 Then
+                    On Error Resume Next
+                    mLstSheets.SetFocus
+                    On Error GoTo 0
+                End If
+            End If
             KeyCode = 0
             handled = True
         End If
     ElseIf KeyCode = vbKeyLeft Then
         If Shift = 0 Then
             If mIsExpandedView Then SetExpandedView False
+            If Me.lstWorkbooks.Visible And Me.lstWorkbooks.Enabled Then
+                On Error Resume Next
+                Me.lstWorkbooks.SetFocus
+                On Error GoTo 0
+            End If
             KeyCode = 0
             handled = True
         End If
