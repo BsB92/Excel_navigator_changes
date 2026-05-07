@@ -20,7 +20,7 @@ Public Function CreateWorkbookSnapshotFile(ByVal sourceWb As Workbook) As String
     Application.DisplayAlerts = False
     Set snapWb = Workbooks.Open(Filename:=tempCopy, UpdateLinks:=0, ReadOnly:=False)
     BreakExternalLinks snapWb
-    SaveSnapshotMeta snapWb, sourceWb.FullName
+    SaveSnapshotMeta snapWb, sourceWb.FullName, sourceWb.Name
     snapWb.SaveAs Filename:=targetPath, FileFormat:=xlOpenXMLWorkbook
     snapWb.Close SaveChanges:=False
     Kill tempCopy
@@ -111,13 +111,13 @@ Private Function BlockArraysEqual(ByVal dataA As Variant, ByVal dataB As Variant
     BlockArraysEqual = True
 End Function
 
-Private Sub SaveSnapshotMeta(ByVal snapWb As Workbook, ByVal sourcePath As String)
+Private Sub SaveSnapshotMeta(ByVal snapWb As Workbook, ByVal sourcePath As String, ByVal sourceName As String)
     Dim meta As Worksheet, ws As Worksheet, r As Long
     On Error Resume Next: Set meta = snapWb.Worksheets(META_SHEET): On Error GoTo 0
     If meta Is Nothing Then Set meta = snapWb.Worksheets.Add(After:=snapWb.Worksheets(snapWb.Worksheets.Count))
     meta.Name = META_SHEET: meta.Cells.Clear
     meta.Cells(1, 1).Value = "OriginalPath": meta.Cells(1, 2).Value = sourcePath
-    meta.Cells(2, 1).Value = "OriginalName": meta.Cells(2, 2).Value = snapWb.Name
+    meta.Cells(2, 1).Value = "OriginalName": meta.Cells(2, 2).Value = sourceName
     meta.Cells(3, 1).Value = "SnapshotTimestamp": meta.Cells(3, 2).Value = Format$(Now, "yymmddhhnnss")
     meta.Cells(4, 1).Value = "GeneratedUtc": meta.Cells(4, 2).Value = Format$(Now, "yyyy-mm-dd\Thh:nn:ss\Z")
     r = 6
