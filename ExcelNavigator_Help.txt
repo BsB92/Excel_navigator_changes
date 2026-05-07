@@ -241,8 +241,27 @@ Excel Navigator - User Guide (v5.0) [EN]
 14) Snapshots (NEW LOGIC)
 - Snapshot stores an independent `.xlsx` file in: `workbook_folder\.snapshot\WorkbookName\WorkbookName_snapshot_yymmddhhmmss.xlsx`.
 - Snapshot creation does not modify the original workbook (no save/no structural edits on source).
-- Snapshot includes a technical `_snapshot_meta` sheet (very hidden) that is ignored in compare.
+- Snapshot includes a technical `_snapshot_meta` sheet (visible) that is ignored in compare.
 - Compare Snapshot runs: **current file vs snapshot**.
 - Snapshot History button now runs: **Compare 2 Snapshots** (pick Snapshot A and Snapshot B).
-- Compare uses 20x20 block hashes and cell-by-cell checks only for changed blocks.
+- Compare uses 20x20 blocks and mode-aware cell-by-cell checks.
 - Compare reports are saved under `.snapshot\WorkbookName\`.
+
+
+15) Snapshot Compare modes (Settings)
+- Open Settings and set "Snapshot compare mode".
+- Available modes:
+  * Strict (Value + Formula): compares both displayed values and formulas.
+  * Value-only (recommended): compares only cell values (best for live workbook vs snapshot with broken links).
+  * Hybrid: compares values, and ignores formula-only differences when one side is an external-link formula and values are equal.
+- Why this exists:
+  Snapshot files break external links and keep resulting values. Without mode selection, live files with links can generate excessive false-positive differences.
+
+16) Snapshot metadata (`_snapshot_meta`)
+- The sheet is visible (not hidden) for inspection.
+- Key fields:
+  * `OriginalPath` (source workbook full path)
+  * `OriginalName` (original workbook file name, not temporary copy name)
+  * `SnapshotTimestamp`
+  * `GeneratedUtc`
+- Starting at row 6, it lists worksheet names included in the snapshot.

@@ -85,12 +85,13 @@ Private Function BuildCompareReport(ByVal wbA As Workbook, ByVal wbB As Workbook
 End Function
 
 Private Function CollectDiffs(ByVal wbA As Workbook, ByVal wbB As Workbook, ByVal nameA As String, ByVal nameB As String) As Object
-    Dim d As Object, ws As Worksheet
+    Dim d As Object, ws As Worksheet, compareMode As String
     Set d = CreateObject("Scripting.Dictionary")
     Set d("Rows") = New Collection
+    compareMode = modNavigatorSettings.GetSnapshotCompareMode()
     For Each ws In wbA.Worksheets
         If ws.Name <> META_SHEET Then
-            If WorksheetByName(wbB, ws.Name) Is Nothing Then d("Rows").Add Array("Removed Sheet", ws.Name, "", "", "", "", "") Else CompareSheet ws, WorksheetByName(wbB, ws.Name), d("Rows")
+            If WorksheetByName(wbB, ws.Name) Is Nothing Then d("Rows").Add Array("Removed Sheet", ws.Name, "", "", "", "", "") Else CompareSheet ws, WorksheetByName(wbB, ws.Name), d("Rows"), compareMode
         End If
     Next ws
     For Each ws In wbB.Worksheets
@@ -99,7 +100,7 @@ Private Function CollectDiffs(ByVal wbA As Workbook, ByVal wbB As Workbook, ByVa
     Set CollectDiffs = d
 End Function
 
-Private Sub CompareSheet(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal rows As Collection)
+Private Sub CompareSheet(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal rows As Collection, ByVal compareMode As String)
     Dim rgA As Range, rgB As Range, maxRow As Long, maxCol As Long
     Set rgA = modSnapshotUtils.GetRealUsedRange(wsA)
     Set rgB = modSnapshotUtils.GetRealUsedRange(wsB)
@@ -109,12 +110,12 @@ Private Sub CompareSheet(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal r
     Dim br As Long, bc As Long
     For br = 1 To maxRow Step BLOCK_SIZE
         For bc = 1 To maxCol Step BLOCK_SIZE
-            CompareBlock wsA, wsB, br, bc, maxRow, maxCol, rows
+            CompareBlock wsA, wsB, br, bc, maxRow, maxCol, rows, compareMode
         Next bc
     Next br
 End Sub
 
-Private Sub CompareBlock(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal startR As Long, ByVal startC As Long, ByVal maxRow As Long, ByVal maxCol As Long, ByVal rows As Collection)
+Private Sub CompareBlock(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal startR As Long, ByVal startC As Long, ByVal maxRow As Long, ByVal maxCol As Long, ByVal rows As Collection, ByVal compareMode As String)
     Dim endR As Long, endC As Long
     endR = WorksheetFunction.Min(startR + BLOCK_SIZE - 1, maxRow)
     endC = WorksheetFunction.Min(startC + BLOCK_SIZE - 1, maxCol)
@@ -122,11 +123,11 @@ Private Sub CompareBlock(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal s
     Set rngA = wsA.Range(wsA.Cells(startR, startC), wsA.Cells(endR, endC))
     Set rngB = wsB.Range(wsB.Cells(startR, startC), wsB.Cells(endR, endC))
     valsA = rngA.Value2: valsB = rngB.Value2: frmA = rngA.Formula: frmB = rngB.Formula
-    If BlockArraysEqual(valsA, valsB) And BlockArraysEqual(frmA, frmB) Then Exit Sub
+    If BlockEqualByMode(valsA, valsB, frmA, frmB, compareMode) Then Exit Sub
     Dim r As Long, c As Long, addr As String
     For r = 1 To UBound(valsA, 1)
         For c = 1 To UBound(valsA, 2)
-            If CStr(valsA(r, c)) <> CStr(valsB(r, c)) Or CStr(frmA(r, c)) <> CStr(frmB(r, c)) Then
+            If CellsDifferentByMode(CStr(valsA(r, c)), CStr(valsB(r, c)), CStr(frmA(r, c)), CStr(frmB(r, c)), compareMode) Then
                 addr = wsA.Cells(startR + r - 1, startC + c - 1).Address(False, False)
                 rows.Add Array("Cell Changed", wsA.Name, addr, CStr(valsA(r, c)), CStr(valsB(r, c)), CStr(frmA(r, c)), CStr(frmB(r, c)))
             End If
@@ -144,6 +145,41 @@ Private Function BlockArraysEqual(ByVal dataA As Variant, ByVal dataB As Variant
     Next r
 
     BlockArraysEqual = True
+End Function
+
+Private Function BlockEqualByMode(ByVal valsA As Variant, ByVal valsB As Variant, ByVal frmA As Variant, ByVal frmB As Variant, ByVal compareMode As String) As Boolean
+    If Not BlockArraysEqual(valsA, valsB) Then Exit Function
+    If UCase$(compareMode) = modNavigatorSettings.SNAP_COMPARE_MODE_VALUE_ONLY Then
+        BlockEqualByMode = True
+    ElseIf UCase$(compareMode) = modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID Then
+        BlockEqualByMode = True
+    Else
+        BlockEqualByMode = BlockArraysEqual(frmA, frmB)
+    End If
+End Function
+
+Private Function CellsDifferentByMode(ByVal valA As String, ByVal valB As String, ByVal formA As String, ByVal formB As String, ByVal compareMode As String) As Boolean
+    Dim modeU As String
+    modeU = UCase$(compareMode)
+
+    If valA <> valB Then
+        CellsDifferentByMode = True
+        Exit Function
+    End If
+
+    If modeU = modNavigatorSettings.SNAP_COMPARE_MODE_VALUE_ONLY Then Exit Function
+
+    If modeU = modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID Then
+        If IsExternalFormula(formA) Xor IsExternalFormula(formB) Then Exit Function
+    End If
+
+    CellsDifferentByMode = (formA <> formB)
+End Function
+
+Private Function IsExternalFormula(ByVal f As String) As Boolean
+    If Len(f) = 0 Then Exit Function
+    If Left$(f, 1) <> "=" Then Exit Function
+    IsExternalFormula = (InStr(1, f, "[", vbTextCompare) > 0 And InStr(1, f, "]", vbTextCompare) > 0)
 End Function
 
 Private Sub SaveSnapshotMeta(ByVal snapWb As Workbook, ByVal sourcePath As String, ByVal sourceName As String)
