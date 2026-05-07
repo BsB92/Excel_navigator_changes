@@ -125,7 +125,10 @@ Private Sub SaveSnapshotMeta(ByVal snapWb As Workbook, ByVal sourcePath As Strin
     On Error Resume Next: Set meta = snapWb.Worksheets(META_SHEET): On Error GoTo 0
     If meta Is Nothing Then Set meta = snapWb.Worksheets.Add(After:=snapWb.Worksheets(snapWb.Worksheets.Count))
     meta.Name = META_SHEET: meta.Cells.Clear
-    meta.Range("A1:B4").Value = Array(Array("OriginalPath", sourcePath), Array("OriginalName", snapWb.Name), Array("SnapshotTimestamp", Format$(Now, "yymmddhhnnss")), Array("GeneratedUtc", Format$(Now, "yyyy-mm-dd\Thh:nn:ss\Z")))
+    meta.Cells(1, 1).Value = "OriginalPath": meta.Cells(1, 2).Value = sourcePath
+    meta.Cells(2, 1).Value = "OriginalName": meta.Cells(2, 2).Value = snapWb.Name
+    meta.Cells(3, 1).Value = "SnapshotTimestamp": meta.Cells(3, 2).Value = Format$(Now, "yymmddhhnnss")
+    meta.Cells(4, 1).Value = "GeneratedUtc": meta.Cells(4, 2).Value = Format$(Now, "yyyy-mm-dd\Thh:nn:ss\Z")
     r = 6
     For Each ws In snapWb.Worksheets
         If ws.Name <> META_SHEET Then
