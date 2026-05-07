@@ -1263,7 +1263,7 @@ Private Sub EnsureSnapshotOverlay()
         .Left = 8: .Top = 36: .Width = 150: .Height = 20
     End With
     With mBtnSnapshotActionHistory
-        .Caption = "Compare 2 Snapshots"
+        .Caption = "Compare 2 Snapshots (A/B)"
         .Left = 8: .Top = 58: .Width = 150: .Height = 20
     End With
 End Sub

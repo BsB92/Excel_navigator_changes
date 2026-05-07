@@ -37,7 +37,10 @@ Public Sub SnapshotCompareActiveWorkbook()
     If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6104, "SnapshotCompareActiveWorkbook", "Workbook must be saved before compare."
 
     fp = PickSnapshotFile("Select snapshot XLSX")
-    If VarType(fp) = vbBoolean Then Exit Sub
+    If VarType(fp) = vbBoolean Then
+        ShowSnapshotInfo "Compare canceled (no snapshot selected)."
+        Exit Sub
+    End If
 
     reportPath = CompareCurrentWorkbookToSnapshot(wb, CStr(fp))
     ShowSnapshotInfo "Compare report created:" & vbCrLf & reportPath
@@ -50,9 +53,16 @@ Public Sub SnapshotCompareTwoSnapshots()
     On Error GoTo EH
     Dim fpA As Variant, fpB As Variant, reportPath As String
     fpA = PickSnapshotFile("Select Snapshot A")
-    If VarType(fpA) = vbBoolean Then Exit Sub
+    If VarType(fpA) = vbBoolean Then
+        ShowSnapshotInfo "Compare 2 canceled (Snapshot A not selected)."
+        Exit Sub
+    End If
+    ShowSnapshotInfo "Select Snapshot B (second file for comparison)."
     fpB = PickSnapshotFile("Select Snapshot B")
-    If VarType(fpB) = vbBoolean Then Exit Sub
+    If VarType(fpB) = vbBoolean Then
+        ShowSnapshotInfo "Compare 2 canceled (Snapshot B not selected)."
+        Exit Sub
+    End If
 
     reportPath = CompareTwoSnapshots(CStr(fpA), CStr(fpB))
     ShowSnapshotInfo "Compare report created:" & vbCrLf & reportPath
