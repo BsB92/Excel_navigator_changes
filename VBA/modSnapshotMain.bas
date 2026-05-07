@@ -20,10 +20,7 @@ Public Sub SnapshotCreateActiveWorkbook()
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
     frmExcelNavigator.RestoreNavigatorToFront
     On Error GoTo EH
-    MsgBox "Snapshot created:" & vbCrLf & snapshotPath, vbInformation Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
-    On Error Resume Next
-    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
-    On Error GoTo EH
+    ShowSnapshotInfo "Snapshot created:" & vbCrLf & snapshotPath
     Exit Sub
 EH:
     ShowSnapshotError "Snapshot creation failed", Err.Description
@@ -43,7 +40,7 @@ Public Sub SnapshotCompareActiveWorkbook()
     If VarType(fp) = vbBoolean Then Exit Sub
 
     reportPath = CompareCurrentWorkbookToSnapshot(wb, CStr(fp))
-    MsgBox "Compare report created:" & vbCrLf & reportPath, vbInformation Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    ShowSnapshotInfo "Compare report created:" & vbCrLf & reportPath
     Exit Sub
 EH:
     ShowSnapshotError "Compare failed", Err.Description
@@ -58,16 +55,24 @@ Public Sub SnapshotCompareTwoSnapshots()
     If VarType(fpB) = vbBoolean Then Exit Sub
 
     reportPath = CompareTwoSnapshots(CStr(fpA), CStr(fpB))
-    MsgBox "Compare report created:" & vbCrLf & reportPath, vbInformation Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    ShowSnapshotInfo "Compare report created:" & vbCrLf & reportPath
     Exit Sub
 EH:
     ShowSnapshotError "Compare 2 snapshots failed", Err.Description
 End Sub
 
+Private Sub ShowSnapshotInfo(ByVal msg As String)
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    AppActivate Application.Caption
+    MsgBox msg, vbInformation Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+End Sub
+
 Private Function PickSnapshotFile(ByVal titleText As String) As Variant
     On Error Resume Next
-    frmExcelNavigator.RestoreNavigatorToFront
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    AppActivate Application.Caption
     On Error GoTo 0
     PickSnapshotFile = Application.GetOpenFilename("Excel Files (*.xlsx),*.xlsx", , titleText)
     On Error Resume Next
@@ -78,8 +83,8 @@ End Function
 Private Sub ShowSnapshotError(ByVal prefix As String, ByVal errMsg As String)
     If Len(errMsg) = 0 Then errMsg = "Unknown error."
     On Error Resume Next
-    frmExcelNavigator.RestoreNavigatorToFront
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    AppActivate Application.Caption
     MsgBox prefix & ": " & errMsg, vbCritical Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
 End Sub

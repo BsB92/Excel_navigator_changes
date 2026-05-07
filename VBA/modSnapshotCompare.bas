@@ -87,7 +87,7 @@ Private Sub CompareBlock(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal s
     Set rngA = wsA.Range(wsA.Cells(startR, startC), wsA.Cells(endR, endC))
     Set rngB = wsB.Range(wsB.Cells(startR, startC), wsB.Cells(endR, endC))
     valsA = rngA.Value2: valsB = rngB.Value2: frmA = rngA.Formula: frmB = rngB.Formula
-    If Hash2D(valsA) = Hash2D(valsB) And Hash2D(frmA) = Hash2D(frmB) Then Exit Sub
+    If BlockArraysEqual(valsA, valsB) And BlockArraysEqual(frmA, frmB) Then Exit Sub
     Dim r As Long, c As Long, addr As String
     For r = 1 To UBound(valsA, 1)
         For c = 1 To UBound(valsA, 2)
@@ -99,25 +99,16 @@ Private Sub CompareBlock(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal s
     Next r
 End Sub
 
-Private Function Hash2D(ByVal data As Variant) As String
-    Const MOD_BASE As Double = 2147483629#
+Private Function BlockArraysEqual(ByVal dataA As Variant, ByVal dataB As Variant) As Boolean
     Dim r As Long, c As Long
-    Dim h As Double, s As String
 
-    h = 1469598103#
-    For r = 1 To UBound(data, 1)
-        For c = 1 To UBound(data, 2)
-            s = CStr(data(r, c))
-            h = ((h * 131#) + (Len(s) * 17#) + ValueCharCode(s)) Mod MOD_BASE
+    For r = 1 To UBound(dataA, 1)
+        For c = 1 To UBound(dataA, 2)
+            If CStr(dataA(r, c)) <> CStr(dataB(r, c)) Then Exit Function
         Next c
     Next r
 
-    Hash2D = CStr(h)
-End Function
-
-Private Function ValueCharCode(ByVal s As String) As Long
-    If Len(s) = 0 Then Exit Function
-    ValueCharCode = AscW(Left$(s, 1))
+    BlockArraysEqual = True
 End Function
 
 Private Sub SaveSnapshotMeta(ByVal snapWb As Workbook, ByVal sourcePath As String)
