@@ -1,0 +1,47 @@
+Excel Navigator - Changelog (branch: work)
+Date: 2026-05-07
+
+Note:
+- Local repository does not contain a `main` branch reference, so this changelog is based on commits available on the current branch history.
+
+Highlights of recent changes
+
+1) New compare capabilities
+- Added top-bar button: "Compare Files" (next to "Snapshot") to compare any two Excel files.
+- Added compare completion prompt with optional "Open report now?" action.
+- Fixed report output path for "Compare 2 Snapshots" (no misleading nested empty `.snapshot` folders).
+
+2) Snapshot compare modes (Settings)
+- Added persistent compare mode setting:
+  - STRICT
+  - VALUE_ONLY (recommended/default)
+  - HYBRID
+- Added Settings UI section with mode selectors.
+- Compare engine now reads mode from Settings and applies mode-aware diff logic.
+
+3) Snapshot format and metadata
+- Snapshot workflow moved to independent `.xlsx` snapshots.
+- Snapshot creation breaks external links in snapshot copy while preserving resulting values.
+- `_snapshot_meta` is visible and includes:
+  - OriginalPath
+  - OriginalName
+  - SnapshotTimestamp
+  - GeneratedUtc
+  - list of worksheets
+
+4) Compare/report robustness
+- Suppressed link-update prompts and restored app state in compare flows.
+- Report cell sanitization for values beginning with `=`, `+`, `-`, `@` to prevent formula execution in report files.
+- Fixed snapshot stamp extraction from file path.
+
+5) UX and documentation
+- Improved foreground prompt handling for dialogs/messages.
+- Updated bilingual help (PL/EN) to describe current `.xlsx` snapshot behavior, compare modes, and metadata.
+
+Files most impacted
+- VBA/frmExcelNavigator.frm
+- VBA/modSnapshotMain.bas
+- VBA/modSnapshotCompare.bas
+- VBA/modSnapshotReport.bas
+- VBA/modNavigatorSettings.bas
+- ExcelNavigator_Help.txt
