@@ -100,22 +100,24 @@ Private Sub CompareBlock(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal s
 End Sub
 
 Private Function Hash2D(ByVal data As Variant) As String
-    Dim r As Long, c As Long, h As Double
-    h = 2166136261#
+    Const MOD_BASE As Double = 2147483629#
+    Dim r As Long, c As Long
+    Dim h As Double, s As String
+
+    h = 1469598103#
     For r = 1 To UBound(data, 1)
         For c = 1 To UBound(data, 2)
-            h = ((h Xor CLng(Crc32Like(CStr(data(r, c))))) * 16777619#)
-            If h > 2147483647# Then h = h - 2147483648#
+            s = CStr(data(r, c))
+            h = ((h * 131#) + (Len(s) * 17#) + ValueCharCode(s)) Mod MOD_BASE
         Next c
     Next r
+
     Hash2D = CStr(h)
 End Function
-Private Function Crc32Like(ByVal s As String) As Long
-    Dim i As Long, v As Long
-    For i = 1 To Len(s)
-        v = ((v * 33) Xor AscW(Mid$(s, i, 1))) And &H7FFFFFFF
-    Next i
-    Crc32Like = v
+
+Private Function ValueCharCode(ByVal s As String) As Long
+    If Len(s) = 0 Then Exit Function
+    ValueCharCode = AscW(Left$(s, 1))
 End Function
 
 Private Sub SaveSnapshotMeta(ByVal snapWb As Workbook, ByVal sourcePath As String)
