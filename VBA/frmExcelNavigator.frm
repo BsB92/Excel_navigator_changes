@@ -104,6 +104,8 @@ Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotCreate As MSForms.CommandButton
 Attribute mBtnSnapshotCreate.VB_VarHelpID = -1
+Private WithEvents mBtnCompareFiles As MSForms.CommandButton
+Attribute mBtnCompareFiles.VB_VarHelpID = -1
 Private mSnapshotMode As Boolean
 Private mSnapshotFrame As MSForms.Frame
 Private WithEvents mBtnSnapshotActionCreate As MSForms.CommandButton
@@ -1064,6 +1066,11 @@ Private Sub EnsureTopLeftButtons()
         If mBtnSnapshotCreate Is Nothing Then Set mBtnSnapshotCreate = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCreate", True)
     End If
 
+    If mBtnCompareFiles Is Nothing Then
+        Set mBtnCompareFiles = GetControlIfExists("btnCompareFiles")
+        If mBtnCompareFiles Is Nothing Then Set mBtnCompareFiles = Me.Controls.Add("Forms.CommandButton.1", "btnCompareFiles", True)
+    End If
+
     With mBtnSettings
         .Caption = "Settings"
         .Top = TOP_LEFT_BUTTON_MARGIN
@@ -1088,6 +1095,15 @@ Private Sub EnsureTopLeftButtons()
         .Height = mBtnSettings.Height
         .Width = 72
         .Left = mBtnHelp.Left + mBtnHelp.Width + TOP_LEFT_BUTTON_GAP
+        .Visible = True
+    End With
+
+    With mBtnCompareFiles
+        .Caption = "Compare Files"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 86
+        .Left = mBtnSnapshotCreate.Left + mBtnSnapshotCreate.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
 
@@ -1279,6 +1295,15 @@ Private Sub mBtnHelp_Click()
     Exit Sub
 EH:
     SafeMsgBox "Could not open help file: " & Err.Description, vbExclamation
+End Sub
+
+
+Private Sub mBtnCompareFiles_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCompareAnyTwoFiles
+    Exit Sub
+EH:
+    SafeMsgBox "Compare Files failed: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub mBtnSnapshotCreate_Click()

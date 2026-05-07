@@ -94,6 +94,41 @@ Private Sub ShowSnapshotInfo(ByVal msg As String)
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
 End Sub
 
+
+Public Sub SnapshotCompareAnyTwoFiles()
+    On Error GoTo EH
+    Dim fpA As Variant, fpB As Variant, reportPath As String
+
+    fpA = PickAnyExcelFile("Select File A")
+    If VarType(fpA) = vbBoolean Then
+        ShowSnapshotInfo "Compare Files canceled (File A not selected)."
+        Exit Sub
+    End If
+
+    fpB = PickAnyExcelFile("Select File B")
+    If VarType(fpB) = vbBoolean Then
+        ShowSnapshotInfo "Compare Files canceled (File B not selected)."
+        Exit Sub
+    End If
+
+    reportPath = CompareTwoSnapshots(CStr(fpA), CStr(fpB))
+    ShowCompareReportCreated reportPath
+    Exit Sub
+EH:
+    ShowSnapshotError "Compare Files failed", Err.Description
+End Sub
+
+Private Function PickAnyExcelFile(ByVal titleText As String) As Variant
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    AppActivate Application.Caption
+    On Error GoTo 0
+    PickAnyExcelFile = Application.GetOpenFilename("Excel Files (*.xls;*.xlsx;*.xlsm;*.xlsb),*.xls;*.xlsx;*.xlsm;*.xlsb", , titleText)
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo 0
+End Function
+
 Private Function PickSnapshotFile(ByVal titleText As String) As Variant
     On Error Resume Next
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
