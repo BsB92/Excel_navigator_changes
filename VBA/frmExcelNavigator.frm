@@ -104,10 +104,6 @@ Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotCreate As MSForms.CommandButton
 Attribute mBtnSnapshotCreate.VB_VarHelpID = -1
-Private WithEvents mBtnSnapshotCompare As MSForms.CommandButton
-Attribute mBtnSnapshotCompare.VB_VarHelpID = -1
-Private WithEvents mBtnSnapshotHistory As MSForms.CommandButton
-Attribute mBtnSnapshotHistory.VB_VarHelpID = -1
 Private mSnapshotMode As Boolean
 Private mSnapshotFrame As MSForms.Frame
 Private WithEvents mBtnSnapshotActionCreate As MSForms.CommandButton
@@ -312,6 +308,7 @@ End Function
 
 Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String, ByRef outPath As String) As Boolean
     Dim copiedWb As Workbook
+    Dim linksBefore As Variant
     Dim prevAskToUpdate As Boolean
     Dim prevDisplayAlerts As Boolean
 
@@ -328,6 +325,8 @@ Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder A
 
     Set copiedWb = Workbooks.Open(fileName:=outPath, UpdateLinks:=0, ReadOnly:=False, IgnoreReadOnlyRecommended:=True)
 
+    linksBefore = copiedWb.LinkSources(Type:=xlExcelLinks)
+    AddExternalLinksAuditSheet copiedWb, linksBefore, srcWb.FullName
     BreakExternalLinks copiedWb, srcWb.FullName
 
     copiedWb.Save
@@ -346,6 +345,91 @@ EH:
     On Error Resume Next
     If Not copiedWb Is Nothing Then copiedWb.Close saveChanges:=False
     CopyAndBreakLinks = False
+End Function
+
+Private Sub AddExternalLinksAuditSheet(ByVal wb As Workbook, ByVal linksBefore As Variant, ByVal sourceWorkbookPath As String)
+    Dim wsLog As Worksheet
+    Dim ws As Worksheet
+    Dim rngFormulas As Range
+    Dim c As Range
+    Dim r As Long
+    Dim i As Long
+    Dim formulaText As String
+    Dim extRef As String
+
+    On Error GoTo EH
+
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    wb.Worksheets("_ExternalLinksLog").Delete
+    Application.DisplayAlerts = True
+    On Error GoTo EH
+
+    Set wsLog = wb.Worksheets.Add(Before:=wb.Worksheets(1))
+    wsLog.Name = "_ExternalLinksLog"
+
+    wsLog.Range("A1:H1").Value = Array("Timestamp", "SourceWorkbook", "Sheet", "CellAddress", "Formula", "ValueAtSnapshot", "ExternalReferenceDetected", "LinkSource")
+    r = 2
+
+    If IsArray(linksBefore) Then
+        For i = LBound(linksBefore) To UBound(linksBefore)
+            wsLog.Cells(r, 1).Value = Now
+            wsLog.Cells(r, 2).Value = sourceWorkbookPath
+            wsLog.Cells(r, 3).Value = "<workbook-link>"
+            wsLog.Cells(r, 4).Value = ""
+            wsLog.Cells(r, 5).Value = ""
+            wsLog.Cells(r, 6).Value = ""
+            wsLog.Cells(r, 7).Value = ""
+            wsLog.Cells(r, 8).Value = CStr(linksBefore(i))
+            r = r + 1
+        Next i
+    End If
+
+    For Each ws In wb.Worksheets
+        If ws.Name <> wsLog.Name Then
+            Set rngFormulas = Nothing
+            On Error Resume Next
+            Set rngFormulas = ws.UsedRange.SpecialCells(xlCellTypeFormulas)
+            On Error GoTo EH
+
+            If Not rngFormulas Is Nothing Then
+                For Each c In rngFormulas.Cells
+                    formulaText = CStr(c.Formula)
+                    If InStr(1, formulaText, "[", vbTextCompare) > 0 Then
+                        extRef = ExtractBracketReference(formulaText)
+                        wsLog.Cells(r, 1).Value = Now
+                        wsLog.Cells(r, 2).Value = sourceWorkbookPath
+                        wsLog.Cells(r, 3).Value = ws.Name
+                        wsLog.Cells(r, 4).Value = c.Address(False, False)
+                        wsLog.Cells(r, 5).Value = formulaText
+                        wsLog.Cells(r, 6).Value = c.Value2
+                        wsLog.Cells(r, 7).Value = extRef
+                        wsLog.Cells(r, 8).Value = ""
+                        r = r + 1
+                    End If
+                Next c
+            End If
+        End If
+    Next ws
+
+    wsLog.Columns("A:H").EntireColumn.AutoFit
+    Exit Sub
+
+EH:
+    On Error Resume Next
+    Application.DisplayAlerts = True
+End Sub
+
+Private Function ExtractBracketReference(ByVal formulaText As String) As String
+    Dim p1 As Long, p2 As Long
+    p1 = InStr(1, formulaText, "[", vbTextCompare)
+    If p1 = 0 Then Exit Function
+    p2 = InStr(p1 + 1, formulaText, "]", vbTextCompare)
+    If p2 = 0 Then
+        ExtractBracketReference = Mid$(formulaText, p1)
+    Else
+        ExtractBracketReference = Mid$(formulaText, p1, p2 - p1 + 1)
+    End If
 End Function
 
 Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As String, ByVal suffix As String) As String
@@ -976,16 +1060,6 @@ Private Sub EnsureTopLeftButtons()
         If mBtnSnapshotCreate Is Nothing Then Set mBtnSnapshotCreate = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCreate", True)
     End If
 
-    If mBtnSnapshotCompare Is Nothing Then
-        Set mBtnSnapshotCompare = GetControlIfExists("btnSnapshotCompare")
-        If mBtnSnapshotCompare Is Nothing Then Set mBtnSnapshotCompare = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCompare", True)
-    End If
-
-    If mBtnSnapshotHistory Is Nothing Then
-        Set mBtnSnapshotHistory = GetControlIfExists("btnSnapshotHistory")
-        If mBtnSnapshotHistory Is Nothing Then Set mBtnSnapshotHistory = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotHistory", True)
-    End If
-
     With mBtnSettings
         .Caption = "Settings"
         .Top = TOP_LEFT_BUTTON_MARGIN
@@ -1013,26 +1087,6 @@ Private Sub EnsureTopLeftButtons()
         .Visible = True
     End With
 
-    mBtnSnapshotCompare.Visible = False
-    mBtnSnapshotHistory.Visible = False
-
-    With mBtnSnapshotCompare
-        .Caption = "Compare Snapshot"
-        .Top = mBtnSettings.Top
-        .Height = mBtnSettings.Height
-        .Width = 96
-        .Left = mBtnSnapshotCreate.Left + mBtnSnapshotCreate.Width + TOP_LEFT_BUTTON_GAP
-        .Visible = True
-    End With
-
-    With mBtnSnapshotHistory
-        .Caption = "Snapshot History"
-        .Top = mBtnSettings.Top
-        .Height = mBtnSettings.Height
-        .Width = 96
-        .Left = mBtnSnapshotCompare.Left + mBtnSnapshotCompare.Width + TOP_LEFT_BUTTON_GAP
-        .Visible = True
-    End With
 End Sub
 
 Private Sub EnsureSettingsOverlay()
@@ -1196,7 +1250,8 @@ Private Sub EnsureSnapshotOverlay()
         .Top = mBtnSnapshotCreate.Top + mBtnSnapshotCreate.Height + 4
         .Width = 170
         .Height = 88
-        .SpecialEffect = fmSpecialEffectFlat
+        .SpecialEffect = fmSpecialEffectSunken
+        .BorderStyle = fmBorderStyleSingle
     End With
 
     With mBtnSnapshotActionCreate
@@ -3129,12 +3184,14 @@ Private Function SafeMsgBox(ByVal Prompt As String, _
                             Optional ByVal Buttons As VbMsgBoxStyle = vbOKOnly, _
                             Optional ByVal Title As String = vbNullString) As VbMsgBoxResult
     On Error Resume Next
+    modWinAPI.BringFormToFront Me.Caption
     modWinAPI.SetTopMostState Me.Caption, False
     On Error GoTo 0
 
-    SafeMsgBox = MsgBox(Prompt, Buttons, Title)
+    SafeMsgBox = MsgBox(Prompt, Buttons Or vbMsgBoxSetForeground, Title)
 
     On Error Resume Next
+    modWinAPI.BringFormToFront Me.Caption
     modWinAPI.SetTopMostState Me.Caption, True
     On Error GoTo 0
 End Function

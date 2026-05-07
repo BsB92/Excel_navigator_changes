@@ -13,7 +13,14 @@ Public Sub SnapshotCreateActiveWorkbook()
     If wb Is Nothing Then Err.Raise vbObjectError + 6101, "SnapshotCreateActiveWorkbook", "No active workbook."
 
     If Len(wb.Path) = 0 Then
-        MsgBox "Workbook must be saved before creating snapshot.", vbExclamation, "ExcelNavigator Snapshot"
+        On Error Resume Next
+        modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+        frmExcelNavigator.RestoreNavigatorToFront
+        On Error GoTo EH
+        MsgBox "Workbook must be saved before creating snapshot.", vbExclamation Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+        On Error Resume Next
+        modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+        On Error GoTo EH
         Exit Sub
     End If
 
@@ -21,11 +28,28 @@ Public Sub SnapshotCreateActiveWorkbook()
     jsonText = modSnapshotJson.SerializeWorkbookSnapshot(snap)
     finalPath = modSnapshotStorage.SaveSnapshotTransactional(wb, jsonText, snap("CreatedBy"))
 
-    MsgBox "Snapshot created:" & vbCrLf & finalPath, vbInformation, "ExcelNavigator Snapshot"
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    frmExcelNavigator.RestoreNavigatorToFront
+    On Error GoTo EH
+    MsgBox "Snapshot created:" & vbCrLf & finalPath, vbInformation Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo EH
     Exit Sub
 
 EH:
-    MsgBox "Snapshot creation failed: " & Err.Description, vbCritical, "ExcelNavigator Snapshot"
+    Dim errMsg As String
+    errMsg = Err.Description
+    If Len(errMsg) = 0 Then errMsg = "Unknown error."
+    On Error Resume Next
+    frmExcelNavigator.RestoreNavigatorToFront
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    On Error GoTo 0
+    MsgBox "Snapshot creation failed: " & errMsg, vbCritical Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo 0
 End Sub
 
 Public Sub SnapshotCompareActiveWorkbook()
@@ -41,7 +65,14 @@ Public Sub SnapshotCompareActiveWorkbook()
     Set wb = ActiveWorkbook
     If wb Is Nothing Then Err.Raise vbObjectError + 6102, "SnapshotCompareActiveWorkbook", "No active workbook."
 
+    On Error Resume Next
+    frmExcelNavigator.RestoreNavigatorToFront
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    On Error GoTo EH
     fp = Application.GetOpenFilename("JSON Files (*.json),*.json", , "Select snapshot JSON")
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo EH
     If VarType(fp) = vbBoolean Then Exit Sub
 
     Set oldSnap = modSnapshotJson.LoadWorkbookSnapshot(CStr(fp))
@@ -57,5 +88,15 @@ Public Sub SnapshotCompareActiveWorkbook()
     Exit Sub
 
 EH:
-    MsgBox "Compare failed: " & Err.Description, vbCritical, "ExcelNavigator Snapshot"
+    Dim compareErr As String
+    compareErr = Err.Description
+    If Len(compareErr) = 0 Then compareErr = "Unknown error."
+    On Error Resume Next
+    frmExcelNavigator.RestoreNavigatorToFront
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    On Error GoTo 0
+    MsgBox "Compare failed: " & compareErr, vbCritical Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot"
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo 0
 End Sub

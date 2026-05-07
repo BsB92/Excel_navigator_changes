@@ -1,4 +1,121 @@
-Excel Navigator - User Guide (v5.0)
+Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
+
+1) Ogólny przepływ pracy
+- Kliknij Reload list, aby odświeżyć listę aktualnie otwartych skoroszytów.
+- Użyj Search, aby filtrować po nazwie/ścieżce skoroszytu.
+- Wybierz skoroszyt z listy i użyj akcji poniżej.
+
+2) Skróty klawiaturowe i myszy
+- Ctrl+A na liście skoroszytów/arkuszy = Zaznacz wszystko (gdy Selection mode jest ON).
+- S = włącz Selection mode.
+- Strzałka w prawo na liście skoroszytów/arkuszy = rozwiń prawy panel Sheets i przenieś fokus na listę Sheets.
+- Strzałka w lewo na liście skoroszytów/arkuszy = zwiń prawy panel Sheets i przenieś fokus z powrotem na listę skoroszytów.
+- Strzałka góra/dół na liście skoroszytów = przejdź do poprzedniego/następnego wiersza.
+- Enter na liście skoroszytów = aktywuj wybrany skoroszyt.
+- Dwuklik na wierszu skoroszytu = aktywuj wybrany skoroszyt.
+- Prawy klik na liście skoroszytów = przełącz Selection mode ON/OFF.
+- W Selection mode na liście skoroszytów:
+  * A = dodaj bieżący wiersz skoroszytu do zaznaczenia.
+  * D = usuń bieżący wiersz skoroszytu z zaznaczenia.
+- Strzałka góra/dół w panelu Sheets (po prawej) = nawigacja po arkuszach.
+- Enter w panelu Sheets = aktywuj wybrany arkusz.
+- Pole pełnej ścieżki obsługuje prawy klik (kopiuj/zaznacz).
+
+3) Kontrolki górnego wiersza
+- Settings: przełącza ramkę Settings ON/OFF.
+  * Stan ON jest podświetlony.
+  * Skonfiguruj dwa foldery:
+    1) domyślny folder kopiowania
+    2) domyślny folder otwierania
+  * Save settings waliduje obie ścieżki i zapisuje je.
+- ?: otwiera ten plik pomocy.
+- Snapshot: otwiera/zamyka ramkę Snapshot / Compare.
+  * W ramce dostępne są akcje: Create Snapshot, Compare Snapshot, Snapshot History.
+
+4) Obszar listy skoroszytów
+- Kolumny: File / Dir / Sync.
+- Wiersz nagłówka nie jest możliwy do zaznaczenia jako cel akcji.
+- Aktywny skoroszyt jest wyróżniony wizualnie.
+
+5) Selection mode i akcje zbiorcze
+- Selection mode OFF: zachowanie jednokrotnego wyboru.
+- Selection mode ON: zachowanie wielokrotnego wyboru i aktywne przyciski akcji zbiorczych.
+- Select All / Clear Selection działają tylko w Selection mode ON.
+
+6) Akcje otwierania i odświeżania
+- Open file: pozwala wybrać jeden lub wiele plików Excel i je otworzyć.
+- Open&Refresh: otwiera wybrane pliki i uruchamia proces odświeżania.
+- Refresh selected: odświeża wybrane otwarte skoroszyty.
+- Save selected: zapisuje wybrane otwarte skoroszyty.
+- Refresh + Save: odświeża, a następnie zapisuje wybrane otwarte skoroszyty.
+- W trakcie batch, Cancel zatrzymuje uruchamianie KOLEJNYCH pozycji (nie da się bezpiecznie przerwać aktywnego RefreshAll).
+
+7) Akcje kopiowania
+- Suffix: sufiks dodawany do operacji kopiowania (używany dokładnie tak, jak wpisano).
+- Copy + Break Links:
+  * wybierz folder docelowy
+  * utwórz kopię
+  * zerwij zewnętrzne linki Excel
+- Copy with suffix:
+  * wybierz folder docelowy
+  * utwórz tylko kopię (bez zrywania linków)
+- Open copied checkbox: opcjonalnie automatycznie otwórz skopiowane pliki po operacji.
+- Open folder: otwiera ostatnio użyty folder docelowy kopiowania.
+
+8) Akcje zamykania
+- Close selected zamyka tylko wybrane skoroszyty.
+- Dodatki i PERSONAL.XLSB są chronione przed zamknięciem.
+- Obsługa niezapisanych zmian wspiera save-all / don't-save-all / ask-each zależnie od promptu.
+- Skoroszyty aktywnie odświeżane są pomijane tam, gdzie to niebezpieczne.
+
+9) Prawy panel Sheets
+- Przycisk przełączania panelu (>>>> / <<<<) pokazuje/ukrywa rozszerzony widok arkuszy.
+- Lista Sheets podąża za aktywnym skoroszytem.
+- Kliknij lub użyj strzałek, aby aktywować wybrany arkusz.
+
+10) Przyciski okna i pozycjonowania
+- Max: maksymalizuje okno aktywnego skoroszytu.
+- 1 / 2 / 3: przenosi aktywny skoroszyt do zdefiniowanych pozycji ekranu.
+- Close: zamyka formularz navigatora.
+
+11) Szczegóły Settings
+- Domyślny folder kopiowania jest używany jako folder startowy przy wyborze folderu docelowego kopiowania.
+- Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh.
+- Jeśli skonfigurowany folder już nie istnieje, navigator wraca do ścieżki skoroszytu dodatku.
+
+12) Snapshoty - co to jest i jak używać
+- Snapshot to zapis "stanu" skoroszytu w pliku JSON (m.in. arkusze, komórki, metadane) w danym momencie.
+- Do czego służy:
+  * audyt zmian między wersjami pliku,
+  * szybkie porównanie bieżącego stanu z wcześniej zapisanym snapshotem,
+  * podgląd historii snapshotów.
+- Jak utworzyć snapshot:
+  1) Upewnij się, że aktywny skoroszyt jest zapisany na dysku (ma ścieżkę).
+  2) Kliknij Snapshot (górny pasek), potem Create Snapshot.
+  3) Po sukcesie dostaniesz komunikat z pełną ścieżką zapisanego pliku .json.
+- Jak porównywać snapshot:
+  1) Otwórz docelowy skoroszyt i ustaw go jako aktywny.
+  2) Snapshot -> Compare Snapshot.
+  3) Wskaż wcześniej zapisany plik .json.
+  4) Narzędzie porówna wybrany snapshot ze stanem bieżącego skoroszytu.
+- Jak sprawdzać historię:
+  1) Snapshot -> Snapshot History.
+  2) W oknie historii możesz przeglądać dostępne snapshoty dla skoroszytu.
+
+13) Snapshot - typowe błędy
+- "Snapshot creation failed: Snapshot JSON validation failed." oznacza, że wygenerowana treść JSON nie przeszła walidacji przed finalnym zapisem.
+- Najczęstsze przyczyny:
+  * nieprawidłowa/niekompletna treść JSON wygenerowana podczas serializacji,
+  * problem z zapisem pliku tymczasowego,
+  * nietypowe dane w skoroszycie powodujące błąd serializacji.
+- Co zrobić:
+  1) Zapisz skoroszyt i spróbuj ponownie.
+  2) Zamknij i otwórz ponownie plik Excel.
+  3) Sprawdź, czy masz uprawnienia zapisu do folderu skoroszytu i `%APPDATA%\\ExcelNavigator\\Snapshots`.
+  4) Jeśli błąd wraca, zgłoś problem z nazwą pliku i godziną błędu (ułatwia diagnostykę).
+
+------------------------------------------------------------
+Excel Navigator - User Guide (v5.0) [EN]
 
 1) General workflow
 - Click Reload list to refresh the list of currently open workbooks.
@@ -80,3 +197,34 @@ Excel Navigator - User Guide (v5.0)
 - Default copy folder is used as initial folder for copy target selection.
 - Default open folder is used as initial folder for Open/Open&Refresh file picker.
 - If configured folder no longer exists, navigator falls back to add-in workbook path.
+
+12) Snapshots - what they are and how to use them
+- A snapshot is a JSON capture of workbook state (e.g., worksheets, cells, metadata) at a specific point in time.
+- Typical use cases:
+  * auditing changes between file versions,
+  * comparing current workbook state against a previously saved snapshot,
+  * reviewing snapshot history.
+- How to create a snapshot:
+  1) Make sure the active workbook is saved to disk (has a valid path).
+  2) Click Snapshot (top row), then Create Snapshot.
+  3) On success, a message shows the full path to the saved .json file.
+- How to compare a snapshot:
+  1) Open the target workbook and make it active.
+  2) Snapshot -> Compare Snapshot.
+  3) Select a previously saved .json snapshot file.
+  4) The tool compares that snapshot with the current workbook state.
+- How to check history:
+  1) Snapshot -> Snapshot History.
+  2) Use the history window to browse available workbook snapshots.
+
+13) Snapshot - common errors
+- "Snapshot creation failed: Snapshot JSON validation failed." means the generated JSON did not pass validation before final save.
+- Most common causes:
+  * malformed/incomplete JSON generated during serialization,
+  * temporary file write issue,
+  * unusual workbook data that breaks serialization.
+- What to do:
+  1) Save workbook and retry.
+  2) Restart Excel/workbook and retry.
+  3) Verify write permissions for the workbook folder and `%APPDATA%\\ExcelNavigator\\Snapshots`.
+  4) If it still fails, report workbook name and timestamp of failure for troubleshooting.
