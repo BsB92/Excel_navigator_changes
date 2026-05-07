@@ -1537,7 +1537,7 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
         End If
     ElseIf KeyCode = vbKeyS Then
         If Shift = 0 Then
-            If Not Me.tglBatchMode.Value Then Me.tglBatchMode.Value = True
+            Me.tglBatchMode.Value = Not Me.tglBatchMode.Value
             KeyCode = 0
             handled = True
         End If

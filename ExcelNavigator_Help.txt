@@ -7,7 +7,7 @@ Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
 
 2) Skróty klawiaturowe i myszy
 - Ctrl+A na liście skoroszytów/arkuszy = Zaznacz wszystko (gdy Selection mode jest ON).
-- S = włącz Selection mode.
+- S = przełącznik Selection mode (1x = ON, 2x = OFF).
 - Strzałka w prawo na liście skoroszytów/arkuszy = rozwiń prawy panel Sheets i przenieś fokus na listę Sheets.
 - Strzałka w lewo na liście skoroszytów/arkuszy = zwiń prawy panel Sheets i przenieś fokus z powrotem na listę skoroszytów.
 - Strzałka góra/dół na liście skoroszytów = przejdź do poprzedniego/następnego wiersza.
@@ -132,7 +132,7 @@ Excel Navigator - User Guide (v5.0) [EN]
 
 2) Keyboard and mouse shortcuts
 - Ctrl+A on workbook/sheets list = Select All (when Selection mode is ON).
-- S = turn Selection mode ON.
+- S = Selection mode toggle (press once = ON, press again = OFF).
 - Arrow Right on workbook/sheets list = expand right-side Sheets panel and move focus to the Sheets list.
 - Arrow Left on workbook/sheets list = collapse right-side Sheets panel and move focus back to workbook list.
 - Arrow Up/Down on workbook list = move current row.
