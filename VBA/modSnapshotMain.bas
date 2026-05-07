@@ -43,7 +43,7 @@ Public Sub SnapshotCompareActiveWorkbook()
     End If
 
     reportPath = CompareCurrentWorkbookToSnapshot(wb, CStr(fp))
-    ShowSnapshotInfo "Compare report created:" & vbCrLf & reportPath
+    ShowCompareReportCreated reportPath
     Exit Sub
 EH:
     ShowSnapshotError "Compare failed", Err.Description
@@ -65,10 +65,25 @@ Public Sub SnapshotCompareTwoSnapshots()
     End If
 
     reportPath = CompareTwoSnapshots(CStr(fpA), CStr(fpB))
-    ShowSnapshotInfo "Compare report created:" & vbCrLf & reportPath
+    ShowCompareReportCreated reportPath
     Exit Sub
 EH:
     ShowSnapshotError "Compare 2 snapshots failed", Err.Description
+End Sub
+
+Private Sub ShowCompareReportCreated(ByVal reportPath As String)
+    Dim resp As VbMsgBoxResult
+
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    AppActivate Application.Caption
+    resp = MsgBox("Compare report created:" & vbCrLf & reportPath & vbCrLf & vbCrLf & "Open report now?", vbQuestion Or vbYesNo Or vbDefaultButton1 Or vbMsgBoxSetForeground, "ExcelNavigator Snapshot")
+
+    If resp = vbYes Then
+        Workbooks.Open Filename:=reportPath, UpdateLinks:=0, ReadOnly:=True
+    End If
+
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
 End Sub
 
 Private Sub ShowSnapshotInfo(ByVal msg As String)
