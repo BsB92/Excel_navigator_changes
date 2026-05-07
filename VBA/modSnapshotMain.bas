@@ -136,17 +136,24 @@ End Function
 
 Private Function PickExcelFileWithInitialFolder(ByVal titleText As String, ByVal fileFilter As String, ByVal initialFolder As String) As Variant
     Dim prevPath As String
+    Dim prevDrive As String
+
     prevPath = CurDir$
+    prevDrive = Left$(prevPath, 2)
 
     On Error Resume Next
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
     AppActivate Application.Caption
-    If Len(initialFolder) > 0 Then ChDir initialFolder
+    If Len(initialFolder) > 0 Then
+        If Mid$(initialFolder, 2, 1) = ":" Then ChDrive Left$(initialFolder, 1)
+        ChDir initialFolder
+    End If
     On Error GoTo 0
 
     PickExcelFileWithInitialFolder = Application.GetOpenFilename(fileFilter, , titleText)
 
     On Error Resume Next
+    If Len(prevDrive) = 2 And Right$(prevDrive, 1) = ":" Then ChDrive Left$(prevDrive, 1)
     If Len(prevPath) > 0 Then ChDir prevPath
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
     On Error GoTo 0
