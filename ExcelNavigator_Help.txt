@@ -83,36 +83,43 @@ Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
 - Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh.
 - Jeśli skonfigurowany folder już nie istnieje, navigator wraca do ścieżki skoroszytu dodatku.
 
-12) Snapshoty - co to jest i jak używać
-- Snapshot to zapis "stanu" skoroszytu w pliku JSON (m.in. arkusze, komórki, metadane) w danym momencie.
-- Do czego służy:
-  * audyt zmian między wersjami pliku,
-  * szybkie porównanie bieżącego stanu z wcześniej zapisanym snapshotem,
-  * podgląd historii snapshotów.
-- Jak utworzyć snapshot:
-  1) Upewnij się, że aktywny skoroszyt jest zapisany na dysku (ma ścieżkę).
-  2) Kliknij Snapshot (górny pasek), potem Create Snapshot.
-  3) Po sukcesie dostaniesz komunikat z pełną ścieżką zapisanego pliku .json.
-- Jak porównywać snapshot:
-  1) Otwórz docelowy skoroszyt i ustaw go jako aktywny.
-  2) Snapshot -> Compare Snapshot.
-  3) Wskaż wcześniej zapisany plik .json.
-  4) Narzędzie porówna wybrany snapshot ze stanem bieżącego skoroszytu.
-- Jak sprawdzać historię:
-  1) Snapshot -> Snapshot History.
-  2) W oknie historii możesz przeglądać dostępne snapshoty dla skoroszytu.
+12) Snapshoty - jak działają (aktualna logika)
+- Snapshot zapisuje niezależny plik `.xlsx` w folderze:
+  `folder_pliku\.snapshot\NazwaPliku\NazwaPliku_snapshot_yymmddhhnnss.xlsx`
+- Tworzenie snapshotu nie modyfikuje oryginalnego skoroszytu.
+- Podczas tworzenia snapshotu zrywane są zewnętrzne linki, a wynikowe wartości zostają zapisane w snapshotcie.
+- Snapshot zawiera arkusz `_snapshot_meta` (widoczny), który przechowuje metadane i listę arkuszy.
 
-13) Snapshot - typowe błędy
-- "Snapshot creation failed: Snapshot JSON validation failed." oznacza, że wygenerowana treść JSON nie przeszła walidacji przed finalnym zapisem.
-- Najczęstsze przyczyny:
-  * nieprawidłowa/niekompletna treść JSON wygenerowana podczas serializacji,
-  * problem z zapisem pliku tymczasowego,
-  * nietypowe dane w skoroszycie powodujące błąd serializacji.
-- Co zrobić:
-  1) Zapisz skoroszyt i spróbuj ponownie.
-  2) Zamknij i otwórz ponownie plik Excel.
-  3) Sprawdź, czy masz uprawnienia zapisu do folderu skoroszytu i `%APPDATA%\\ExcelNavigator\\Snapshots`.
-  4) Jeśli błąd wraca, zgłoś problem z nazwą pliku i godziną błędu (ułatwia diagnostykę).
+- Jak utworzyć snapshot:
+  1) Upewnij się, że aktywny skoroszyt jest zapisany na dysku.
+  2) Kliknij Snapshot -> Create Snapshot.
+  3) Po sukcesie dostaniesz komunikat ze ścieżką do zapisanego pliku `.xlsx`.
+
+- Jak porównywać:
+  A) Compare Snapshot = porównanie aktywnego skoroszytu z jednym snapshotem.
+  B) Compare 2 Snapshots (A/B) = porównanie dwóch snapshotów (najpierw wybór A, potem B).
+  C) Raport compare zapisuje się do folderu `.snapshot\NazwaPliku\`.
+
+13) Tryby porównania Snapshot (Settings)
+- W Settings dostępna jest sekcja "Snapshot compare mode".
+- Dostępne tryby:
+  * Strict (Value + Formula): porównuje wartości i formuły.
+  * Value-only (recommended): porównuje tylko wartości (zalecane dla live vs snapshot z zerwanymi linkami).
+  * Hybrid: porównuje wartości, a różnice samych formuł ignoruje, gdy jedna strona to formuła zewnętrzna i wartości są równe.
+
+14) `_snapshot_meta` - co zawiera
+- Arkusz jest widoczny (nie very hidden).
+- Pola:
+  * `OriginalPath` - pełna ścieżka oryginalnego skoroszytu,
+  * `OriginalName` - oryginalna nazwa pliku,
+  * `SnapshotTimestamp` - znacznik czasu snapshotu,
+  * `GeneratedUtc` - czas UTC wygenerowania.
+- Od wiersza 6 zapisuje listę arkuszy ujętych w snapshotcie.
+
+15) Typowe pytania i problemy Snapshot/Compare
+- Okno "Update Values" nie powinno się pojawiać podczas compare; addin otwiera pliki compare z wyłączoną aktualizacją linków.
+- Jeśli porównujesz live (z linkami) do snapshotu (po zerwaniu linków), wybierz tryb `Value-only` lub `Hybrid`, aby uniknąć nadmiarowych różnic.
+
 
 ------------------------------------------------------------
 Excel Navigator - User Guide (v5.0) [EN]
@@ -198,70 +205,39 @@ Excel Navigator - User Guide (v5.0) [EN]
 - Default open folder is used as initial folder for Open/Open&Refresh file picker.
 - If configured folder no longer exists, navigator falls back to add-in workbook path.
 
-12) Snapshots - what they are and how to use them
-- A snapshot is a JSON capture of workbook state (e.g., worksheets, cells, metadata) at a specific point in time.
-- Typical use cases:
-  * auditing changes between file versions,
-  * comparing current workbook state against a previously saved snapshot,
-  * reviewing snapshot history.
+12) Snapshots - current behavior
+- Snapshot stores an independent `.xlsx` file under:
+  `workbook_folder\.snapshot\WorkbookName\WorkbookName_snapshot_yymmddhhnnss.xlsx`
+- Creating a snapshot does not modify the source workbook.
+- During snapshot creation, external links are broken and resulting values are stored in the snapshot.
+- Snapshot contains a visible `_snapshot_meta` worksheet with metadata and included-sheet list.
+
 - How to create a snapshot:
-  1) Make sure the active workbook is saved to disk (has a valid path).
-  2) Click Snapshot (top row), then Create Snapshot.
-  3) On success, a message shows the full path to the saved .json file.
-- How to compare a snapshot:
-  1) Open the target workbook and make it active.
-  2) Snapshot -> Compare Snapshot.
-  3) Select a previously saved .json snapshot file.
-  4) The tool compares that snapshot with the current workbook state.
-- How to check history:
-  1) Snapshot -> Snapshot History.
-  2) Use the history window to browse available workbook snapshots.
+  1) Ensure the active workbook is saved to disk.
+  2) Click Snapshot -> Create Snapshot.
+  3) On success, a message shows the full path of the saved `.xlsx` snapshot.
 
-13) Snapshot - common errors
-- "Snapshot creation failed: Snapshot JSON validation failed." means the generated JSON did not pass validation before final save.
-- Most common causes:
-  * malformed/incomplete JSON generated during serialization,
-  * temporary file write issue,
-  * unusual workbook data that breaks serialization.
-- What to do:
-  1) Save workbook and retry.
-  2) Restart Excel/workbook and retry.
-  3) Verify write permissions for the workbook folder and `%APPDATA%\\ExcelNavigator\\Snapshots`.
-  4) If it still fails, report workbook name and timestamp of failure for troubleshooting.
+- How to compare:
+  A) Compare Snapshot = active workbook vs one snapshot.
+  B) Compare 2 Snapshots (A/B) = snapshot vs snapshot (pick A, then B).
+  C) Compare reports are saved to `.snapshot\WorkbookName\`.
 
-14) Snapshoty (NOWA LOGIKA)
-- Snapshot zapisuje niezależny plik `.xlsx` w: `folder_pliku\.snapshot\NazwaPliku\NazwaPliku_snapshot_yymmddhhmmss.xlsx`.
-- Tworzenie snapshotu nie modyfikuje oryginalnego skoroszytu (brak zapisu/oraz zmian struktury źródła).
-- Snapshot zawiera techniczny arkusz `_snapshot_meta` (very hidden), pomijany podczas compare.
-- Compare Snapshot porównuje: **current file vs snapshot**.
-- Przycisk Snapshot History działa jako: **Compare 2 Snapshots** (wybór Snapshot A i Snapshot B).
-- Compare używa hashy bloków 20x20 i porównania komórka-po-komórce tylko dla bloków zmienionych.
-- Raporty compare zapisują się do folderu `.snapshot\NazwaPliku\`.
-
-14) Snapshots (NEW LOGIC)
-- Snapshot stores an independent `.xlsx` file in: `workbook_folder\.snapshot\WorkbookName\WorkbookName_snapshot_yymmddhhmmss.xlsx`.
-- Snapshot creation does not modify the original workbook (no save/no structural edits on source).
-- Snapshot includes a technical `_snapshot_meta` sheet (visible) that is ignored in compare.
-- Compare Snapshot runs: **current file vs snapshot**.
-- Snapshot History button now runs: **Compare 2 Snapshots** (pick Snapshot A and Snapshot B).
-- Compare uses 20x20 blocks and mode-aware cell-by-cell checks.
-- Compare reports are saved under `.snapshot\WorkbookName\`.
-
-
-15) Snapshot Compare modes (Settings)
-- Open Settings and set "Snapshot compare mode".
+13) Snapshot compare modes (Settings)
+- Settings contains a "Snapshot compare mode" section.
 - Available modes:
-  * Strict (Value + Formula): compares both displayed values and formulas.
-  * Value-only (recommended): compares only cell values (best for live workbook vs snapshot with broken links).
+  * Strict (Value + Formula): compares values and formulas.
+  * Value-only (recommended): compares values only (best for live workbook vs snapshot with broken links).
   * Hybrid: compares values, and ignores formula-only differences when one side is an external-link formula and values are equal.
-- Why this exists:
-  Snapshot files break external links and keep resulting values. Without mode selection, live files with links can generate excessive false-positive differences.
 
-16) Snapshot metadata (`_snapshot_meta`)
-- The sheet is visible (not hidden) for inspection.
-- Key fields:
-  * `OriginalPath` (source workbook full path)
-  * `OriginalName` (original workbook file name, not temporary copy name)
-  * `SnapshotTimestamp`
-  * `GeneratedUtc`
-- Starting at row 6, it lists worksheet names included in the snapshot.
+14) `_snapshot_meta` contents
+- The sheet is visible (not very hidden).
+- Fields:
+  * `OriginalPath` - full source workbook path,
+  * `OriginalName` - original workbook file name,
+  * `SnapshotTimestamp`,
+  * `GeneratedUtc`.
+- Starting from row 6, it lists worksheets included in the snapshot.
+
+15) Common Snapshot/Compare notes
+- "Update Values" dialog should not appear during compare; compare opens files with link updates disabled.
+- For live-vs-snapshot comparisons with many external links, use `Value-only` or `Hybrid` to reduce formula-noise differences.
