@@ -18,9 +18,9 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
         ws.Cells(i + 1, 1).Resize(1, 7).Value = outRow
     Next i
 
-    folderPath = sourceWb.Path & "\.snapshot\" & modSnapshotStorage.CleanFileName(Left$(sourceWb.Name, InStrRev(sourceWb.Name, ".") - 1))
+    folderPath = ResolveReportFolder(sourceWb)
     modSnapshotStorage.EnsureFolderPath folderPath
-    baseName = modSnapshotStorage.CleanFileName(Left$(sourceWb.Name, InStrRev(sourceWb.Name, ".") - 1)) & "_compare_" & labelA & "_vs_" & labelB & "_report_" & Format$(Now, "yymmddhhnnss") & ".xlsx"
+    baseName = modSnapshotStorage.CleanFileName(Left$(sourceWb.Name, InStrRev(sourceWb.Name, ".") - 1)) & "_compare_" & modSnapshotStorage.CleanFileName(labelA) & "_vs_" & modSnapshotStorage.CleanFileName(labelB) & "_report_" & Format$(Now, "yymmddhhnnss") & ".xlsx"
     outPath = folderPath & "\" & baseName
     Application.DisplayAlerts = False
     rWb.SaveAs Filename:=outPath, FileFormat:=xlOpenXMLWorkbook
@@ -38,4 +38,13 @@ Private Function SanitizeReportCell(ByVal s As String) As String
         End If
     End If
     SanitizeReportCell = s
+End Function
+
+
+Private Function ResolveReportFolder(ByVal sourceWb As Workbook) As String
+    If InStr(1, sourceWb.Path, "\.snapshot\", vbTextCompare) > 0 Then
+        ResolveReportFolder = sourceWb.Path
+    Else
+        ResolveReportFolder = sourceWb.Path & "\.snapshot\" & modSnapshotStorage.CleanFileName(Left$(sourceWb.Name, InStrRev(sourceWb.Name, ".") - 1))
+    End If
 End Function

@@ -224,7 +224,7 @@ Private Function SnapshotBaseName(ByVal wb As Workbook) As String
 End Function
 Private Function ExtractSnapshotStamp(ByVal p As String) As String
     Dim fn As String, x As Long
-    fn = Mid$(p, InStrRev(p, "\\") + 1)
+    fn = Mid$(p, InStrRev(p, "\") + 1)
     x = InStr(1, fn, "_snapshot_")
     If x > 0 Then ExtractSnapshotStamp = Mid$(fn, x + 10, 12) Else ExtractSnapshotStamp = "snapshot"
 End Function
