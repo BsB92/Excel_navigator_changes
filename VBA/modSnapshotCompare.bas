@@ -132,7 +132,7 @@ Private Sub SaveSnapshotMeta(ByVal snapWb As Workbook, ByVal sourcePath As Strin
             r = r + 1
         End If
     Next ws
-    meta.Visible = xlSheetVeryHidden
+    meta.Visible = xlSheetVisible
 End Sub
 
 Private Sub BreakExternalLinks(ByVal wb As Workbook)
