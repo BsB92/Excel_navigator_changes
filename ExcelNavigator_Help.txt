@@ -228,3 +228,21 @@ Excel Navigator - User Guide (v5.0) [EN]
   2) Restart Excel/workbook and retry.
   3) Verify write permissions for the workbook folder and `%APPDATA%\\ExcelNavigator\\Snapshots`.
   4) If it still fails, report workbook name and timestamp of failure for troubleshooting.
+
+14) Snapshoty (NOWA LOGIKA)
+- Snapshot zapisuje niezależny plik `.xlsx` w: `folder_pliku\.snapshot\NazwaPliku\NazwaPliku_snapshot_yymmddhhmmss.xlsx`.
+- Tworzenie snapshotu nie modyfikuje oryginalnego skoroszytu (brak zapisu/oraz zmian struktury źródła).
+- Snapshot zawiera techniczny arkusz `_snapshot_meta` (very hidden), pomijany podczas compare.
+- Compare Snapshot porównuje: **current file vs snapshot**.
+- Przycisk Snapshot History działa jako: **Compare 2 Snapshots** (wybór Snapshot A i Snapshot B).
+- Compare używa hashy bloków 20x20 i porównania komórka-po-komórce tylko dla bloków zmienionych.
+- Raporty compare zapisują się do folderu `.snapshot\NazwaPliku\`.
+
+14) Snapshots (NEW LOGIC)
+- Snapshot stores an independent `.xlsx` file in: `workbook_folder\.snapshot\WorkbookName\WorkbookName_snapshot_yymmddhhmmss.xlsx`.
+- Snapshot creation does not modify the original workbook (no save/no structural edits on source).
+- Snapshot includes a technical `_snapshot_meta` sheet (very hidden) that is ignored in compare.
+- Compare Snapshot runs: **current file vs snapshot**.
+- Snapshot History button now runs: **Compare 2 Snapshots** (pick Snapshot A and Snapshot B).
+- Compare uses 20x20 block hashes and cell-by-cell checks only for changed blocks.
+- Compare reports are saved under `.snapshot\WorkbookName\`.
