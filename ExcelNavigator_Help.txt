@@ -117,6 +117,7 @@ Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
 - Od wiersza 6 zapisuje listę arkuszy ujętych w snapshotcie.
 
 15) Typowe pytania i problemy Snapshot/Compare
+- Okna wyboru plików dla Compare Snapshot / Compare 2 Snapshots / Compare Files startują domyślnie z folderu "default open folder" ustawionego w Settings.
 - Okno "Update Values" nie powinno się pojawiać podczas compare; addin otwiera pliki compare z wyłączoną aktualizacją linków.
 - Jeśli porównujesz live (z linkami) do snapshotu (po zerwaniu linków), wybierz tryb `Value-only` lub `Hybrid`, aby uniknąć nadmiarowych różnic.
 
@@ -239,5 +240,6 @@ Excel Navigator - User Guide (v5.0) [EN]
 - Starting from row 6, it lists worksheets included in the snapshot.
 
 15) Common Snapshot/Compare notes
+- File pickers for Compare Snapshot / Compare 2 Snapshots / Compare Files now default to the "default open folder" configured in Settings.
 - "Update Values" dialog should not appear during compare; compare opens files with link updates disabled.
 - For live-vs-snapshot comparisons with many external links, use `Value-only` or `Hybrid` to reduce formula-noise differences.

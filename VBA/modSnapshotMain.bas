@@ -119,23 +119,35 @@ EH:
 End Sub
 
 Private Function PickAnyExcelFile(ByVal titleText As String) As Variant
-    On Error Resume Next
-    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
-    AppActivate Application.Caption
-    On Error GoTo 0
-    PickAnyExcelFile = Application.GetOpenFilename("Excel Files (*.xls;*.xlsx;*.xlsm;*.xlsb),*.xls;*.xlsx;*.xlsm;*.xlsb", , titleText)
-    On Error Resume Next
-    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
-    On Error GoTo 0
+    PickAnyExcelFile = PickExcelFileWithInitialFolder( _
+        titleText, _
+        "Excel Files (*.xls;*.xlsx;*.xlsm;*.xlsb),*.xls;*.xlsx;*.xlsm;*.xlsb", _
+        modNavigatorSettings.ResolveOpenFilesInitialFolder(ThisWorkbook.Path) _
+    )
 End Function
 
 Private Function PickSnapshotFile(ByVal titleText As String) As Variant
+    PickSnapshotFile = PickExcelFileWithInitialFolder( _
+        titleText, _
+        "Excel Files (*.xlsx),*.xlsx", _
+        modNavigatorSettings.ResolveOpenFilesInitialFolder(ThisWorkbook.Path) _
+    )
+End Function
+
+Private Function PickExcelFileWithInitialFolder(ByVal titleText As String, ByVal fileFilter As String, ByVal initialFolder As String) As Variant
+    Dim prevPath As String
+    prevPath = CurDir$
+
     On Error Resume Next
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
     AppActivate Application.Caption
+    If Len(initialFolder) > 0 Then ChDir initialFolder
     On Error GoTo 0
-    PickSnapshotFile = Application.GetOpenFilename("Excel Files (*.xlsx),*.xlsx", , titleText)
+
+    PickExcelFileWithInitialFolder = Application.GetOpenFilename(fileFilter, , titleText)
+
     On Error Resume Next
+    If Len(prevPath) > 0 Then ChDir prevPath
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
     On Error GoTo 0
 End Function

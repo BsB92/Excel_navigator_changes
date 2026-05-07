@@ -1093,7 +1093,7 @@ Private Sub EnsureTopLeftButtons()
         .Caption = "Snapshot"
         .Top = mBtnSettings.Top
         .Height = mBtnSettings.Height
-        .Width = 72
+        .Width = 66
         .Left = mBtnHelp.Left + mBtnHelp.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
@@ -1102,7 +1102,7 @@ Private Sub EnsureTopLeftButtons()
         .Caption = "Compare Files"
         .Top = mBtnSettings.Top
         .Height = mBtnSettings.Height
-        .Width = 86
+        .Width = 78
         .Left = mBtnSnapshotCreate.Left + mBtnSnapshotCreate.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With

@@ -45,3 +45,7 @@ Files most impacted
 - VBA/modSnapshotReport.bas
 - VBA/modNavigatorSettings.bas
 - ExcelNavigator_Help.txt
+
+7) UI/layout and compare file picker defaults
+- Reduced top-bar button widths for "Snapshot" and "Compare Files" so captions still fit while avoiding overlap with the header image.
+- Compare file-pickers now default to the Settings "open files" folder (same setting used for opening files), including Compare Snapshot, Compare 2 Snapshots, and Compare Files.
