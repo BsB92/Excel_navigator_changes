@@ -30,17 +30,52 @@ End Function
 
 Public Function CompareCurrentWorkbookToSnapshot(ByVal currentWb As Workbook, ByVal snapshotPath As String) As String
     Dim snapWb As Workbook
+    Dim prevAskToUpdateLinks As Boolean, prevAlerts As Boolean
+
+    On Error GoTo CleanFail
+    prevAskToUpdateLinks = Application.AskToUpdateLinks
+    prevAlerts = Application.DisplayAlerts
+    Application.AskToUpdateLinks = False
+    Application.DisplayAlerts = False
+
     Set snapWb = Workbooks.Open(Filename:=snapshotPath, UpdateLinks:=0, ReadOnly:=True)
     CompareCurrentWorkbookToSnapshot = BuildCompareReport(currentWb, snapWb, "Current", ExtractSnapshotStamp(snapshotPath), currentWb)
-    snapWb.Close SaveChanges:=False
+
+CleanExit:
+    On Error Resume Next
+    If Not snapWb Is Nothing Then snapWb.Close SaveChanges:=False
+    Application.DisplayAlerts = prevAlerts
+    Application.AskToUpdateLinks = prevAskToUpdateLinks
+    Exit Function
+
+CleanFail:
+    Resume CleanExit
 End Function
 
 Public Function CompareTwoSnapshots(ByVal pathA As String, ByVal pathB As String) As String
     Dim wbA As Workbook, wbB As Workbook
+    Dim prevAskToUpdateLinks As Boolean, prevAlerts As Boolean
+
+    On Error GoTo CleanFail
+    prevAskToUpdateLinks = Application.AskToUpdateLinks
+    prevAlerts = Application.DisplayAlerts
+    Application.AskToUpdateLinks = False
+    Application.DisplayAlerts = False
+
     Set wbA = Workbooks.Open(Filename:=pathA, UpdateLinks:=0, ReadOnly:=True)
     Set wbB = Workbooks.Open(Filename:=pathB, UpdateLinks:=0, ReadOnly:=True)
     CompareTwoSnapshots = BuildCompareReport(wbA, wbB, ExtractSnapshotStamp(pathA), ExtractSnapshotStamp(pathB), wbA)
-    wbA.Close False: wbB.Close False
+
+CleanExit:
+    On Error Resume Next
+    If Not wbA Is Nothing Then wbA.Close False
+    If Not wbB Is Nothing Then wbB.Close False
+    Application.DisplayAlerts = prevAlerts
+    Application.AskToUpdateLinks = prevAskToUpdateLinks
+    Exit Function
+
+CleanFail:
+    Resume CleanExit
 End Function
 
 Private Function BuildCompareReport(ByVal wbA As Workbook, ByVal wbB As Workbook, ByVal nameA As String, ByVal nameB As String, ByVal reportBaseWb As Workbook) As String
