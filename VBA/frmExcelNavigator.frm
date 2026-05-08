@@ -104,6 +104,8 @@ Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotCreate As MSForms.CommandButton
 Attribute mBtnSnapshotCreate.VB_VarHelpID = -1
+Private WithEvents mBtnCompareFiles As MSForms.CommandButton
+Attribute mBtnCompareFiles.VB_VarHelpID = -1
 Private mSnapshotMode As Boolean
 Private mSnapshotFrame As MSForms.Frame
 Private WithEvents mBtnSnapshotActionCreate As MSForms.CommandButton
@@ -121,6 +123,10 @@ Private mSettingsLblCopy As MSForms.Label
 Private mSettingsTxtCopy As MSForms.TextBox
 Private mSettingsLblOpen As MSForms.Label
 Private mSettingsTxtOpen As MSForms.TextBox
+Private mSettingsLblCompareMode As MSForms.Label
+Private mSettingsOptCompareStrict As MSForms.OptionButton
+Private mSettingsOptCompareValue As MSForms.OptionButton
+Private mSettingsOptCompareHybrid As MSForms.OptionButton
 Private WithEvents mBtnSettingsSave As MSForms.CommandButton
 Attribute mBtnSettingsSave.VB_VarHelpID = -1
 Private WithEvents mBtnSettingsCancel As MSForms.CommandButton
@@ -1060,6 +1066,11 @@ Private Sub EnsureTopLeftButtons()
         If mBtnSnapshotCreate Is Nothing Then Set mBtnSnapshotCreate = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCreate", True)
     End If
 
+    If mBtnCompareFiles Is Nothing Then
+        Set mBtnCompareFiles = GetControlIfExists("btnCompareFiles")
+        If mBtnCompareFiles Is Nothing Then Set mBtnCompareFiles = Me.Controls.Add("Forms.CommandButton.1", "btnCompareFiles", True)
+    End If
+
     With mBtnSettings
         .Caption = "Settings"
         .Top = TOP_LEFT_BUTTON_MARGIN
@@ -1082,8 +1093,17 @@ Private Sub EnsureTopLeftButtons()
         .Caption = "Snapshot"
         .Top = mBtnSettings.Top
         .Height = mBtnSettings.Height
-        .Width = 72
+        .Width = 56
         .Left = mBtnHelp.Left + mBtnHelp.Width + TOP_LEFT_BUTTON_GAP
+        .Visible = True
+    End With
+
+    With mBtnCompareFiles
+        .Caption = "Compare Files"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 66
+        .Left = mBtnSnapshotCreate.Left + mBtnSnapshotCreate.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
 
@@ -1097,6 +1117,10 @@ Private Sub EnsureSettingsOverlay()
         Set mSettingsTxtCopy = mSettingsFrame.Controls.Add("Forms.TextBox.1", "txtSettingsCopy", True)
         Set mSettingsLblOpen = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsOpen", True)
         Set mSettingsTxtOpen = mSettingsFrame.Controls.Add("Forms.TextBox.1", "txtSettingsOpen", True)
+        Set mSettingsLblCompareMode = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsCompareMode", True)
+        Set mSettingsOptCompareStrict = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareStrict", True)
+        Set mSettingsOptCompareValue = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareValue", True)
+        Set mSettingsOptCompareHybrid = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareHybrid", True)
         Set mBtnSettingsSave = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSave", True)
         Set mBtnSettingsCancel = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsCancel", True)
     End If
@@ -1150,6 +1174,38 @@ Private Sub EnsureSettingsOverlay()
         .Height = 22
     End With
 
+    With mSettingsLblCompareMode
+        .Caption = "Snapshot compare mode:"
+        .Left = 8
+        .Top = 138
+        .Width = 220
+        .Height = 16
+    End With
+
+    With mSettingsOptCompareStrict
+        .Caption = "Strict (Value + Formula)"
+        .Left = 12
+        .Top = 154
+        .Width = 210
+        .Height = 16
+    End With
+
+    With mSettingsOptCompareValue
+        .Caption = "Value-only (recommended)"
+        .Left = 12
+        .Top = 170
+        .Width = 210
+        .Height = 16
+    End With
+
+    With mSettingsOptCompareHybrid
+        .Caption = "Hybrid (ignore external-link formula noise)"
+        .Left = 12
+        .Top = 186
+        .Width = mSettingsFrame.Width - 16
+        .Height = 16
+    End With
+
     With mBtnSettingsSave
         .Caption = "Save settings"
         .Width = 72
@@ -1177,6 +1233,11 @@ Private Sub ApplySettingsOverlayVisibility()
         mBtnSettings.Font.Bold = True
         mSettingsTxtCopy.Text = modNavigatorSettings.GetDefaultWorkingFolder()
         mSettingsTxtOpen.Text = modNavigatorSettings.GetOpenFilesFolder()
+        Select Case modNavigatorSettings.GetSnapshotCompareMode()
+            Case modNavigatorSettings.SNAP_COMPARE_MODE_STRICT: mSettingsOptCompareStrict.Value = True
+            Case modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID: mSettingsOptCompareHybrid.Value = True
+            Case Else: mSettingsOptCompareValue.Value = True
+        End Select
         mSettingsFrame.ZOrder 0
     Else
         mBtnSettings.BackColor = vbButtonFace
@@ -1210,6 +1271,14 @@ Private Sub mBtnSettingsSave_Click()
     modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
     modNavigatorSettings.SaveOpenFilesFolder openFolder
 
+    If mSettingsOptCompareStrict.Value Then
+        modNavigatorSettings.SaveSnapshotCompareMode modNavigatorSettings.SNAP_COMPARE_MODE_STRICT
+    ElseIf mSettingsOptCompareHybrid.Value Then
+        modNavigatorSettings.SaveSnapshotCompareMode modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID
+    Else
+        modNavigatorSettings.SaveSnapshotCompareMode modNavigatorSettings.SNAP_COMPARE_MODE_VALUE_ONLY
+    End If
+
     mSettingsMode = False
     ApplySettingsOverlayVisibility
     SafeMsgBox "Settings saved.", vbInformation
@@ -1226,6 +1295,15 @@ Private Sub mBtnHelp_Click()
     Exit Sub
 EH:
     SafeMsgBox "Could not open help file: " & Err.Description, vbExclamation
+End Sub
+
+
+Private Sub mBtnCompareFiles_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCompareAnyTwoFiles
+    Exit Sub
+EH:
+    SafeMsgBox "Compare Files failed: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub mBtnSnapshotCreate_Click()
@@ -1263,7 +1341,7 @@ Private Sub EnsureSnapshotOverlay()
         .Left = 8: .Top = 36: .Width = 150: .Height = 20
     End With
     With mBtnSnapshotActionHistory
-        .Caption = "Compare 2 Snapshots"
+        .Caption = "Compare 2 Snapshots (A/B)"
         .Left = 8: .Top = 58: .Width = 150: .Height = 20
     End With
 End Sub
@@ -1459,7 +1537,7 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
         End If
     ElseIf KeyCode = vbKeyS Then
         If Shift = 0 Then
-            If Not Me.tglBatchMode.Value Then Me.tglBatchMode.Value = True
+            Me.tglBatchMode.Value = Not Me.tglBatchMode.Value
             KeyCode = 0
             handled = True
         End If
