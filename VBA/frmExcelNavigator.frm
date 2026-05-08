@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v5.0"
+   Caption         =   "ExcelNavigator v5.1"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -36,7 +36,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator_v5.0"
+Private Const REG_APP As String = "ExcelNavigator_v5.1"
 Private Const REG_SEC As String = "FormState"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
@@ -73,6 +73,7 @@ Private mOpenCopiedOffsetTop As Single
 Private mOpenCopiedOffsetLeft As Single
 Private Const HEADER_IMAGE_MARGIN As Single = 6
 Private Const KEYBOARD_CTRL_MASK As Integer = 2
+Private Const PATH_COPY_TOAST_SECONDS As Double = 2#
 
 
 ' ========= CONSTANTS =========
@@ -922,11 +923,41 @@ Private Sub txtFullPath_MouseDown(ByVal Button As Integer, ByVal Shift As Intege
     SelectAllFullPath
 End Sub
 
+Private Sub txtFullPath_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
+    CopyFullPathToClipboard
+End Sub
+
 Private Sub SelectAllFullPath()
     On Error Resume Next
     Me.txtFullPath.SelStart = 0
     Me.txtFullPath.SelLength = Len(Me.txtFullPath.Value)
     On Error GoTo 0
+End Sub
+
+Private Sub CopyFullPathToClipboard()
+    Dim fullPathText As String
+    Dim clip As Object
+    Dim clearAt As Double
+
+    fullPathText = CStr(Me.txtFullPath.Value)
+    If Len(fullPathText) = 0 Then Exit Sub
+
+    On Error GoTo EH
+    Set clip = CreateObject("MSForms.DataObject")
+    clip.SetText fullPathText
+    clip.PutInClipboard
+
+    Application.StatusBar = "Copied full path to clipboard."
+    clearAt = Timer + PATH_COPY_TOAST_SECONDS
+    Do While Timer < clearAt
+        DoEvents
+    Loop
+    Application.StatusBar = False
+    Exit Sub
+
+EH:
+    Application.StatusBar = False
+    SafeMsgBox "Could not copy full path to clipboard: " & Err.Description, vbExclamation
 End Sub
 
 Private Function TryHookResize() As Boolean
