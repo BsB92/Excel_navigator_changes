@@ -74,6 +74,28 @@ Private mOpenCopiedOffsetLeft As Single
 Private Const HEADER_IMAGE_MARGIN As Single = 6
 Private Const KEYBOARD_CTRL_MASK As Integer = 2
 Private Const PATH_COPY_TOAST_SECONDS As Double = 2#
+Private Const GMEM_MOVEABLE As Long = &H2
+Private Const CF_UNICODETEXT As Long = 13&
+
+#If VBA7 Then
+    Private Declare PtrSafe Function OpenClipboard Lib "user32" (ByVal hwnd As LongPtr) As Long
+    Private Declare PtrSafe Function CloseClipboard Lib "user32" () As Long
+    Private Declare PtrSafe Function EmptyClipboard Lib "user32" () As Long
+    Private Declare PtrSafe Function SetClipboardData Lib "user32" (ByVal wFormat As Long, ByVal hMem As LongPtr) As LongPtr
+    Private Declare PtrSafe Function GlobalAlloc Lib "kernel32" (ByVal wFlags As Long, ByVal dwBytes As LongPtr) As LongPtr
+    Private Declare PtrSafe Function GlobalLock Lib "kernel32" (ByVal hMem As LongPtr) As LongPtr
+    Private Declare PtrSafe Function GlobalUnlock Lib "kernel32" (ByVal hMem As LongPtr) As Long
+    Private Declare PtrSafe Function lstrcpyW Lib "kernel32" (ByVal lpString1 As LongPtr, ByVal lpString2 As LongPtr) As LongPtr
+#Else
+    Private Declare Function OpenClipboard Lib "user32" (ByVal hwnd As Long) As Long
+    Private Declare Function CloseClipboard Lib "user32" () As Long
+    Private Declare Function EmptyClipboard Lib "user32" () As Long
+    Private Declare Function SetClipboardData Lib "user32" (ByVal wFormat As Long, ByVal hMem As Long) As Long
+    Private Declare Function GlobalAlloc Lib "kernel32" (ByVal wFlags As Long, ByVal dwBytes As Long) As Long
+    Private Declare Function GlobalLock Lib "kernel32" (ByVal hMem As Long) As Long
+    Private Declare Function GlobalUnlock Lib "kernel32" (ByVal hMem As Long) As Long
+    Private Declare Function lstrcpyW Lib "kernel32" (ByVal lpString1 As Long, ByVal lpString2 As Long) As Long
+#End If
 
 
 ' ========= CONSTANTS =========
@@ -936,16 +958,13 @@ End Sub
 
 Private Sub CopyFullPathToClipboard()
     Dim fullPathText As String
-    Dim clip As Object
     Dim clearAt As Double
 
     fullPathText = CStr(Me.txtFullPath.Value)
     If Len(fullPathText) = 0 Then Exit Sub
 
     On Error GoTo EH
-    Set clip = CreateObject("MSForms.DataObject")
-    clip.SetText fullPathText
-    clip.PutInClipboard
+    CopyUnicodeTextToClipboard fullPathText
 
     Application.StatusBar = "Copied full path to clipboard."
     clearAt = Timer + PATH_COPY_TOAST_SECONDS
@@ -958,6 +977,35 @@ Private Sub CopyFullPathToClipboard()
 EH:
     Application.StatusBar = False
     SafeMsgBox "Could not copy full path to clipboard: " & Err.Description, vbExclamation
+End Sub
+
+Private Sub CopyUnicodeTextToClipboard(ByVal textValue As String)
+#If VBA7 Then
+    Dim hMem As LongPtr
+    Dim pMem As LongPtr
+#Else
+    Dim hMem As Long
+    Dim pMem As Long
+#End If
+    Dim bytesCount As Long
+
+    bytesCount = (Len(textValue) + 1) * 2
+    hMem = GlobalAlloc(GMEM_MOVEABLE, bytesCount)
+    If hMem = 0 Then Err.Raise vbObjectError + 710, "CopyUnicodeTextToClipboard", "GlobalAlloc failed."
+
+    pMem = GlobalLock(hMem)
+    If pMem = 0 Then Err.Raise vbObjectError + 711, "CopyUnicodeTextToClipboard", "GlobalLock failed."
+
+    lstrcpyW pMem, StrPtr(textValue)
+    GlobalUnlock hMem
+
+    If OpenClipboard(0) = 0 Then Err.Raise vbObjectError + 712, "CopyUnicodeTextToClipboard", "OpenClipboard failed."
+    EmptyClipboard
+    If SetClipboardData(CF_UNICODETEXT, hMem) = 0 Then
+        CloseClipboard
+        Err.Raise vbObjectError + 713, "CopyUnicodeTextToClipboard", "SetClipboardData failed."
+    End If
+    CloseClipboard
 End Sub
 
 Private Function TryHookResize() As Boolean
