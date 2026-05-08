@@ -16,8 +16,13 @@ Private Sub ShowExcelNavigatorForm()
     frmExcelNavigator.Show vbModeless
 End Sub
 
-Public Sub ExcelNavigator()
+Public Sub ExcelNavigator_v5_1()
     ShowExcelNavigatorForm
+End Sub
+
+' Backward compatibility alias for older button/macro bindings.
+Public Sub ExcelNavigator()
+    ExcelNavigator_v5_1
 End Sub
 
 
