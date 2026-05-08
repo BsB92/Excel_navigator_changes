@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v4.9"
+   Caption         =   "ExcelNavigator v5.0"
    ClientHeight    =   9795.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -36,7 +36,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator_v4.9"
+Private Const REG_APP As String = "ExcelNavigator_v5.0"
 Private Const REG_SEC As String = "FormState"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
@@ -102,6 +102,18 @@ Private WithEvents mBtnSettings As MSForms.CommandButton
 Attribute mBtnSettings.VB_VarHelpID = -1
 Private WithEvents mBtnHelp As MSForms.CommandButton
 Attribute mBtnHelp.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotCreate As MSForms.CommandButton
+Attribute mBtnSnapshotCreate.VB_VarHelpID = -1
+Private WithEvents mBtnCompareFiles As MSForms.CommandButton
+Attribute mBtnCompareFiles.VB_VarHelpID = -1
+Private mSnapshotMode As Boolean
+Private mSnapshotFrame As MSForms.Frame
+Private WithEvents mBtnSnapshotActionCreate As MSForms.CommandButton
+Attribute mBtnSnapshotActionCreate.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotActionCompare As MSForms.CommandButton
+Attribute mBtnSnapshotActionCompare.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotActionHistory As MSForms.CommandButton
+Attribute mBtnSnapshotActionHistory.VB_VarHelpID = -1
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 Private mSettingsMode As Boolean
@@ -111,6 +123,10 @@ Private mSettingsLblCopy As MSForms.Label
 Private mSettingsTxtCopy As MSForms.TextBox
 Private mSettingsLblOpen As MSForms.Label
 Private mSettingsTxtOpen As MSForms.TextBox
+Private mSettingsLblCompareMode As MSForms.Label
+Private mSettingsOptCompareStrict As MSForms.OptionButton
+Private mSettingsOptCompareValue As MSForms.OptionButton
+Private mSettingsOptCompareHybrid As MSForms.OptionButton
 Private WithEvents mBtnSettingsSave As MSForms.CommandButton
 Attribute mBtnSettingsSave.VB_VarHelpID = -1
 Private WithEvents mBtnSettingsCancel As MSForms.CommandButton
@@ -298,6 +314,7 @@ End Function
 
 Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder As String, ByVal suffix As String, ByRef outPath As String) As Boolean
     Dim copiedWb As Workbook
+    Dim linksBefore As Variant
     Dim prevAskToUpdate As Boolean
     Dim prevDisplayAlerts As Boolean
 
@@ -314,6 +331,8 @@ Private Function CopyAndBreakLinks(ByVal srcWb As Workbook, ByVal targetFolder A
 
     Set copiedWb = Workbooks.Open(fileName:=outPath, UpdateLinks:=0, ReadOnly:=False, IgnoreReadOnlyRecommended:=True)
 
+    linksBefore = copiedWb.LinkSources(Type:=xlExcelLinks)
+    AddExternalLinksAuditSheet copiedWb, linksBefore, srcWb.FullName
     BreakExternalLinks copiedWb, srcWb.FullName
 
     copiedWb.Save
@@ -332,6 +351,91 @@ EH:
     On Error Resume Next
     If Not copiedWb Is Nothing Then copiedWb.Close saveChanges:=False
     CopyAndBreakLinks = False
+End Function
+
+Private Sub AddExternalLinksAuditSheet(ByVal wb As Workbook, ByVal linksBefore As Variant, ByVal sourceWorkbookPath As String)
+    Dim wsLog As Worksheet
+    Dim ws As Worksheet
+    Dim rngFormulas As Range
+    Dim c As Range
+    Dim r As Long
+    Dim i As Long
+    Dim formulaText As String
+    Dim extRef As String
+
+    On Error GoTo EH
+
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    wb.Worksheets("_ExternalLinksLog").Delete
+    Application.DisplayAlerts = True
+    On Error GoTo EH
+
+    Set wsLog = wb.Worksheets.Add(Before:=wb.Worksheets(1))
+    wsLog.Name = "_ExternalLinksLog"
+
+    wsLog.Range("A1:H1").Value = Array("Timestamp", "SourceWorkbook", "Sheet", "CellAddress", "Formula", "ValueAtSnapshot", "ExternalReferenceDetected", "LinkSource")
+    r = 2
+
+    If IsArray(linksBefore) Then
+        For i = LBound(linksBefore) To UBound(linksBefore)
+            wsLog.Cells(r, 1).Value = Now
+            wsLog.Cells(r, 2).Value = sourceWorkbookPath
+            wsLog.Cells(r, 3).Value = "<workbook-link>"
+            wsLog.Cells(r, 4).Value = ""
+            wsLog.Cells(r, 5).Value = ""
+            wsLog.Cells(r, 6).Value = ""
+            wsLog.Cells(r, 7).Value = ""
+            wsLog.Cells(r, 8).Value = CStr(linksBefore(i))
+            r = r + 1
+        Next i
+    End If
+
+    For Each ws In wb.Worksheets
+        If ws.Name <> wsLog.Name Then
+            Set rngFormulas = Nothing
+            On Error Resume Next
+            Set rngFormulas = ws.UsedRange.SpecialCells(xlCellTypeFormulas)
+            On Error GoTo EH
+
+            If Not rngFormulas Is Nothing Then
+                For Each c In rngFormulas.Cells
+                    formulaText = CStr(c.Formula)
+                    If InStr(1, formulaText, "[", vbTextCompare) > 0 Then
+                        extRef = ExtractBracketReference(formulaText)
+                        wsLog.Cells(r, 1).Value = Now
+                        wsLog.Cells(r, 2).Value = sourceWorkbookPath
+                        wsLog.Cells(r, 3).Value = ws.Name
+                        wsLog.Cells(r, 4).Value = c.Address(False, False)
+                        wsLog.Cells(r, 5).Value = formulaText
+                        wsLog.Cells(r, 6).Value = c.Value2
+                        wsLog.Cells(r, 7).Value = extRef
+                        wsLog.Cells(r, 8).Value = ""
+                        r = r + 1
+                    End If
+                Next c
+            End If
+        End If
+    Next ws
+
+    wsLog.Columns("A:H").EntireColumn.AutoFit
+    Exit Sub
+
+EH:
+    On Error Resume Next
+    Application.DisplayAlerts = True
+End Sub
+
+Private Function ExtractBracketReference(ByVal formulaText As String) As String
+    Dim p1 As Long, p2 As Long
+    p1 = InStr(1, formulaText, "[", vbTextCompare)
+    If p1 = 0 Then Exit Function
+    p2 = InStr(p1 + 1, formulaText, "]", vbTextCompare)
+    If p2 = 0 Then
+        ExtractBracketReference = Mid$(formulaText, p1)
+    Else
+        ExtractBracketReference = Mid$(formulaText, p1, p2 - p1 + 1)
+    End If
 End Function
 
 Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As String, ByVal suffix As String) As String
@@ -929,6 +1033,8 @@ mIsExpandedView = False
 mPanelWidth = GetSheetPanelWidthPt()
 SetExpandedView False
 EnsureTopLeftButtons
+EnsureSnapshotOverlay
+ApplySnapshotOverlayVisibility
 PositionTopButtons
 
 ' --- layout only (resize hook will be done in Activate when hwnd exists) ---
@@ -955,6 +1061,16 @@ Private Sub EnsureTopLeftButtons()
         End If
     End If
 
+    If mBtnSnapshotCreate Is Nothing Then
+        Set mBtnSnapshotCreate = GetControlIfExists("btnSnapshotCreate")
+        If mBtnSnapshotCreate Is Nothing Then Set mBtnSnapshotCreate = Me.Controls.Add("Forms.CommandButton.1", "btnSnapshotCreate", True)
+    End If
+
+    If mBtnCompareFiles Is Nothing Then
+        Set mBtnCompareFiles = GetControlIfExists("btnCompareFiles")
+        If mBtnCompareFiles Is Nothing Then Set mBtnCompareFiles = Me.Controls.Add("Forms.CommandButton.1", "btnCompareFiles", True)
+    End If
+
     With mBtnSettings
         .Caption = "Settings"
         .Top = TOP_LEFT_BUTTON_MARGIN
@@ -972,6 +1088,25 @@ Private Sub EnsureTopLeftButtons()
         .Left = mBtnSettings.Left + mBtnSettings.Width + TOP_LEFT_BUTTON_GAP
         .Visible = True
     End With
+
+    With mBtnSnapshotCreate
+        .Caption = "Snapshot"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 56
+        .Left = mBtnHelp.Left + mBtnHelp.Width + TOP_LEFT_BUTTON_GAP
+        .Visible = True
+    End With
+
+    With mBtnCompareFiles
+        .Caption = "Compare Files"
+        .Top = mBtnSettings.Top
+        .Height = mBtnSettings.Height
+        .Width = 66
+        .Left = mBtnSnapshotCreate.Left + mBtnSnapshotCreate.Width + TOP_LEFT_BUTTON_GAP
+        .Visible = True
+    End With
+
 End Sub
 
 Private Sub EnsureSettingsOverlay()
@@ -982,6 +1117,10 @@ Private Sub EnsureSettingsOverlay()
         Set mSettingsTxtCopy = mSettingsFrame.Controls.Add("Forms.TextBox.1", "txtSettingsCopy", True)
         Set mSettingsLblOpen = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsOpen", True)
         Set mSettingsTxtOpen = mSettingsFrame.Controls.Add("Forms.TextBox.1", "txtSettingsOpen", True)
+        Set mSettingsLblCompareMode = mSettingsFrame.Controls.Add("Forms.Label.1", "lblSettingsCompareMode", True)
+        Set mSettingsOptCompareStrict = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareStrict", True)
+        Set mSettingsOptCompareValue = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareValue", True)
+        Set mSettingsOptCompareHybrid = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareHybrid", True)
         Set mBtnSettingsSave = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSave", True)
         Set mBtnSettingsCancel = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsCancel", True)
     End If
@@ -1035,9 +1174,41 @@ Private Sub EnsureSettingsOverlay()
         .Height = 22
     End With
 
+    With mSettingsLblCompareMode
+        .Caption = "Snapshot compare mode:"
+        .Left = 8
+        .Top = 138
+        .Width = 220
+        .Height = 16
+    End With
+
+    With mSettingsOptCompareStrict
+        .Caption = "Strict (Value + Formula)"
+        .Left = 12
+        .Top = 154
+        .Width = 210
+        .Height = 16
+    End With
+
+    With mSettingsOptCompareValue
+        .Caption = "Value-only (recommended)"
+        .Left = 12
+        .Top = 170
+        .Width = 210
+        .Height = 16
+    End With
+
+    With mSettingsOptCompareHybrid
+        .Caption = "Hybrid (ignore external-link formula noise)"
+        .Left = 12
+        .Top = 186
+        .Width = mSettingsFrame.Width - 16
+        .Height = 16
+    End With
+
     With mBtnSettingsSave
         .Caption = "Save settings"
-        .Width = 92
+        .Width = 72
         .Height = 24
         .Top = mSettingsFrame.Height - 32
         .Left = (mSettingsFrame.Width / 2) - .Width - 10
@@ -1062,6 +1233,11 @@ Private Sub ApplySettingsOverlayVisibility()
         mBtnSettings.Font.Bold = True
         mSettingsTxtCopy.Text = modNavigatorSettings.GetDefaultWorkingFolder()
         mSettingsTxtOpen.Text = modNavigatorSettings.GetOpenFilesFolder()
+        Select Case modNavigatorSettings.GetSnapshotCompareMode()
+            Case modNavigatorSettings.SNAP_COMPARE_MODE_STRICT: mSettingsOptCompareStrict.Value = True
+            Case modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID: mSettingsOptCompareHybrid.Value = True
+            Case Else: mSettingsOptCompareValue.Value = True
+        End Select
         mSettingsFrame.ZOrder 0
     Else
         mBtnSettings.BackColor = vbButtonFace
@@ -1095,6 +1271,14 @@ Private Sub mBtnSettingsSave_Click()
     modNavigatorSettings.SaveDefaultWorkingFolder copyFolder
     modNavigatorSettings.SaveOpenFilesFolder openFolder
 
+    If mSettingsOptCompareStrict.Value Then
+        modNavigatorSettings.SaveSnapshotCompareMode modNavigatorSettings.SNAP_COMPARE_MODE_STRICT
+    ElseIf mSettingsOptCompareHybrid.Value Then
+        modNavigatorSettings.SaveSnapshotCompareMode modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID
+    Else
+        modNavigatorSettings.SaveSnapshotCompareMode modNavigatorSettings.SNAP_COMPARE_MODE_VALUE_ONLY
+    End If
+
     mSettingsMode = False
     ApplySettingsOverlayVisibility
     SafeMsgBox "Settings saved.", vbInformation
@@ -1114,7 +1298,83 @@ EH:
 End Sub
 
 
+Private Sub mBtnCompareFiles_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCompareAnyTwoFiles
+    Exit Sub
+EH:
+    SafeMsgBox "Compare Files failed: " & Err.Description, vbExclamation
+End Sub
 
+Private Sub mBtnSnapshotCreate_Click()
+    mSnapshotMode = Not mSnapshotMode
+    EnsureSnapshotOverlay
+    ApplySnapshotOverlayVisibility
+End Sub
+
+
+
+Private Sub EnsureSnapshotOverlay()
+    If mSnapshotFrame Is Nothing Then
+        Set mSnapshotFrame = Me.Controls.Add("Forms.Frame.1", "fraSnapshotActions", True)
+        Set mBtnSnapshotActionCreate = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCreate", True)
+        Set mBtnSnapshotActionCompare = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCompare", True)
+        Set mBtnSnapshotActionHistory = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionHistory", True)
+    End If
+
+    With mSnapshotFrame
+        .Caption = "Snapshot / Compare"
+        .Left = mBtnSnapshotCreate.Left
+        .Top = mBtnSnapshotCreate.Top + mBtnSnapshotCreate.Height + 4
+        .Width = 170
+        .Height = 88
+        .SpecialEffect = fmSpecialEffectSunken
+        .BorderStyle = fmBorderStyleSingle
+    End With
+
+    With mBtnSnapshotActionCreate
+        .Caption = "Create Snapshot"
+        .Left = 8: .Top = 14: .Width = 150: .Height = 20
+    End With
+    With mBtnSnapshotActionCompare
+        .Caption = "Compare Snapshot"
+        .Left = 8: .Top = 36: .Width = 150: .Height = 20
+    End With
+    With mBtnSnapshotActionHistory
+        .Caption = "Compare 2 Snapshots (A/B)"
+        .Left = 8: .Top = 58: .Width = 150: .Height = 20
+    End With
+End Sub
+
+Private Sub ApplySnapshotOverlayVisibility()
+    If mSnapshotFrame Is Nothing Then Exit Sub
+    mSnapshotFrame.Visible = mSnapshotMode
+    If mSnapshotMode Then mSnapshotFrame.ZOrder 0
+End Sub
+
+Private Sub mBtnSnapshotActionCreate_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCreateActiveWorkbook
+    Exit Sub
+EH:
+    SafeMsgBox "Create Snapshot failed: " & Err.Description, vbExclamation
+End Sub
+
+Private Sub mBtnSnapshotActionCompare_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCompareActiveWorkbook
+    Exit Sub
+EH:
+    SafeMsgBox "Compare Snapshot failed: " & Err.Description, vbExclamation
+End Sub
+
+Private Sub mBtnSnapshotActionHistory_Click()
+    On Error GoTo EH
+    modSnapshotHistory.SnapshotHistoryManager
+    Exit Sub
+EH:
+    SafeMsgBox "Snapshot History failed: " & Err.Description, vbExclamation
+End Sub
 
 Private Sub PinImage1AndTopRow()
     Dim img As Object
@@ -1277,7 +1537,7 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
         End If
     ElseIf KeyCode = vbKeyS Then
         If Shift = 0 Then
-            If Not Me.tglBatchMode.Value Then Me.tglBatchMode.Value = True
+            Me.tglBatchMode.Value = Not Me.tglBatchMode.Value
             KeyCode = 0
             handled = True
         End If
@@ -3002,12 +3262,14 @@ Private Function SafeMsgBox(ByVal Prompt As String, _
                             Optional ByVal Buttons As VbMsgBoxStyle = vbOKOnly, _
                             Optional ByVal Title As String = vbNullString) As VbMsgBoxResult
     On Error Resume Next
+    modWinAPI.BringFormToFront Me.Caption
     modWinAPI.SetTopMostState Me.Caption, False
     On Error GoTo 0
 
-    SafeMsgBox = MsgBox(Prompt, Buttons, Title)
+    SafeMsgBox = MsgBox(Prompt, Buttons Or vbMsgBoxSetForeground, Title)
 
     On Error Resume Next
+    modWinAPI.BringFormToFront Me.Caption
     modWinAPI.SetTopMostState Me.Caption, True
     On Error GoTo 0
 End Function
@@ -3067,6 +3329,8 @@ Private Sub PositionTopButtons()
     End If
 
     EnsureTopLeftButtons
+    EnsureSnapshotOverlay
+    ApplySnapshotOverlayVisibility
     If mSettingsMode Then EnsureSettingsOverlay
 
     ' Na wierzch (jesli cos przykrywa)
