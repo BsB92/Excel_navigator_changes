@@ -1,25 +1,242 @@
 Attribute VB_Name = "modSnapshotCompare"
 Option Explicit
 
-Public Function CompareSnapshots(ByVal oldSnap As Object, ByVal newSnap As Object, ByVal options As Object) As Object
-    Dim d As Object
+Private Const META_SHEET As String = "_snapshot_meta"
+Private Const BLOCK_SIZE As Long = 20
+
+Public Function CreateWorkbookSnapshotFile(ByVal sourceWb As Workbook) As String
+    Dim workPath As String, targetPath As String, snapRoot As String
+    Dim tempCopy As String, snapWb As Workbook
+    Dim prevAlerts As Boolean
+
+    snapRoot = BuildSnapshotFolder(sourceWb)
+    If Not modSnapshotStorage.EnsureFolderPath(snapRoot) Then Err.Raise vbObjectError + 6401, , "Cannot create snapshot folder."
+
+    targetPath = snapRoot & "\" & SnapshotBaseName(sourceWb) & "_snapshot_" & Format$(Now, "yymmddhhnnss") & ".xlsx"
+    tempCopy = Environ$("TEMP") & "\excelnav_snapshot_" & Format$(Now, "yymmddhhnnss") & ".tmp"
+    sourceWb.SaveCopyAs tempCopy
+
+    prevAlerts = Application.DisplayAlerts
+    Application.DisplayAlerts = False
+    Set snapWb = Workbooks.Open(Filename:=tempCopy, UpdateLinks:=0, ReadOnly:=False)
+    BreakExternalLinks snapWb
+    SaveSnapshotMeta snapWb, sourceWb.FullName, sourceWb.Name
+    snapWb.SaveAs Filename:=targetPath, FileFormat:=xlOpenXMLWorkbook
+    snapWb.Close SaveChanges:=False
+    Kill tempCopy
+    Application.DisplayAlerts = prevAlerts
+    CreateWorkbookSnapshotFile = targetPath
+End Function
+
+Public Function CompareCurrentWorkbookToSnapshot(ByVal currentWb As Workbook, ByVal snapshotPath As String) As String
+    Dim snapWb As Workbook
+    Dim prevAskToUpdateLinks As Boolean, prevAlerts As Boolean
+
+    On Error GoTo CleanFail
+    prevAskToUpdateLinks = Application.AskToUpdateLinks
+    prevAlerts = Application.DisplayAlerts
+    Application.AskToUpdateLinks = False
+    Application.DisplayAlerts = False
+
+    Set snapWb = Workbooks.Open(Filename:=snapshotPath, UpdateLinks:=0, ReadOnly:=True)
+    CompareCurrentWorkbookToSnapshot = BuildCompareReport(currentWb, snapWb, "Current", ExtractSnapshotStamp(snapshotPath), currentWb)
+
+CleanExit:
+    On Error Resume Next
+    If Not snapWb Is Nothing Then snapWb.Close SaveChanges:=False
+    Application.DisplayAlerts = prevAlerts
+    Application.AskToUpdateLinks = prevAskToUpdateLinks
+    Exit Function
+
+CleanFail:
+    Resume CleanExit
+End Function
+
+Public Function CompareTwoSnapshots(ByVal pathA As String, ByVal pathB As String) As String
+    Dim wbA As Workbook, wbB As Workbook
+    Dim prevAskToUpdateLinks As Boolean, prevAlerts As Boolean
+
+    On Error GoTo CleanFail
+    prevAskToUpdateLinks = Application.AskToUpdateLinks
+    prevAlerts = Application.DisplayAlerts
+    Application.AskToUpdateLinks = False
+    Application.DisplayAlerts = False
+
+    Set wbA = Workbooks.Open(Filename:=pathA, UpdateLinks:=0, ReadOnly:=True)
+    Set wbB = Workbooks.Open(Filename:=pathB, UpdateLinks:=0, ReadOnly:=True)
+    CompareTwoSnapshots = BuildCompareReport(wbA, wbB, ExtractSnapshotStamp(pathA), ExtractSnapshotStamp(pathB), wbA)
+
+CleanExit:
+    On Error Resume Next
+    If Not wbA Is Nothing Then wbA.Close False
+    If Not wbB Is Nothing Then wbB.Close False
+    Application.DisplayAlerts = prevAlerts
+    Application.AskToUpdateLinks = prevAskToUpdateLinks
+    Exit Function
+
+CleanFail:
+    Resume CleanExit
+End Function
+
+Private Function BuildCompareReport(ByVal wbA As Workbook, ByVal wbB As Workbook, ByVal nameA As String, ByVal nameB As String, ByVal reportBaseWb As Workbook) As String
+    Dim diff As Object
+    Set diff = CollectDiffs(wbA, wbB, nameA, nameB)
+    BuildCompareReport = modSnapshotReport.GenerateDiffReport(diff, reportBaseWb, nameA, nameB)
+End Function
+
+Private Function CollectDiffs(ByVal wbA As Workbook, ByVal wbB As Workbook, ByVal nameA As String, ByVal nameB As String) As Object
+    Dim d As Object, ws As Worksheet, compareMode As String
     Set d = CreateObject("Scripting.Dictionary")
-    Set d("FormulaChanges") = New Collection
-    Set d("ValueChanges") = New Collection
-    Dim k As Variant, oldItem As String, newItem As String
-    For Each k In oldSnap("Cells").Keys
-        If newSnap("Cells").Exists(k) Then
-            oldItem = CStr(oldSnap("Cells")(k))
-            newItem = CStr(newSnap("Cells")(k))
-            If oldItem <> newItem Then
-                Dim o() As String, n() As String
-                o = Split(oldItem, ChrW(31)): n = Split(newItem, ChrW(31))
-                If o(0) <> n(0) Then d("FormulaChanges").Add Array(Split(CStr(k), "!")(0), Split(CStr(k), "!")(1), o(0), n(0))
-                If o(1) <> n(1) Then d("ValueChanges").Add Array(Split(CStr(k), "!")(0), Split(CStr(k), "!")(1), o(1), n(1))
-            End If
-        Else
-            d("ValueChanges").Add Array(Split(CStr(k), "!")(0), Split(CStr(k), "!")(1), oldSnap("Cells")(k), "<missing>")
+    Set d("Rows") = New Collection
+    compareMode = modNavigatorSettings.GetSnapshotCompareMode()
+    For Each ws In wbA.Worksheets
+        If ws.Name <> META_SHEET Then
+            If WorksheetByName(wbB, ws.Name) Is Nothing Then d("Rows").Add Array("Removed Sheet", ws.Name, "", "", "", "", "") Else CompareSheet ws, WorksheetByName(wbB, ws.Name), d("Rows"), compareMode
         End If
-    Next k
-    Set CompareSnapshots = d
+    Next ws
+    For Each ws In wbB.Worksheets
+        If ws.Name <> META_SHEET Then If WorksheetByName(wbA, ws.Name) Is Nothing Then d("Rows").Add Array("Added Sheet", ws.Name, "", "", "", "", "")
+    Next ws
+    Set CollectDiffs = d
+End Function
+
+Private Sub CompareSheet(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal rows As Collection, ByVal compareMode As String)
+    Dim rgA As Range, rgB As Range, maxRow As Long, maxCol As Long
+    Set rgA = modSnapshotUtils.GetRealUsedRange(wsA)
+    Set rgB = modSnapshotUtils.GetRealUsedRange(wsB)
+    maxRow = MaxLng(GetRangeLastRow(rgA), GetRangeLastRow(rgB))
+    maxCol = MaxLng(GetRangeLastCol(rgA), GetRangeLastCol(rgB))
+    If maxRow = 0 Or maxCol = 0 Then Exit Sub
+    Dim br As Long, bc As Long
+    For br = 1 To maxRow Step BLOCK_SIZE
+        For bc = 1 To maxCol Step BLOCK_SIZE
+            CompareBlock wsA, wsB, br, bc, maxRow, maxCol, rows, compareMode
+        Next bc
+    Next br
+End Sub
+
+Private Sub CompareBlock(ByVal wsA As Worksheet, ByVal wsB As Worksheet, ByVal startR As Long, ByVal startC As Long, ByVal maxRow As Long, ByVal maxCol As Long, ByVal rows As Collection, ByVal compareMode As String)
+    Dim endR As Long, endC As Long
+    endR = WorksheetFunction.Min(startR + BLOCK_SIZE - 1, maxRow)
+    endC = WorksheetFunction.Min(startC + BLOCK_SIZE - 1, maxCol)
+    Dim rngA As Range, rngB As Range, valsA As Variant, valsB As Variant, frmA As Variant, frmB As Variant
+    Set rngA = wsA.Range(wsA.Cells(startR, startC), wsA.Cells(endR, endC))
+    Set rngB = wsB.Range(wsB.Cells(startR, startC), wsB.Cells(endR, endC))
+    valsA = rngA.Value2: valsB = rngB.Value2: frmA = rngA.Formula: frmB = rngB.Formula
+    If BlockEqualByMode(valsA, valsB, frmA, frmB, compareMode) Then Exit Sub
+    Dim r As Long, c As Long, addr As String
+    For r = 1 To UBound(valsA, 1)
+        For c = 1 To UBound(valsA, 2)
+            If CellsDifferentByMode(CStr(valsA(r, c)), CStr(valsB(r, c)), CStr(frmA(r, c)), CStr(frmB(r, c)), compareMode) Then
+                addr = wsA.Cells(startR + r - 1, startC + c - 1).Address(False, False)
+                rows.Add Array("Cell Changed", wsA.Name, addr, CStr(valsA(r, c)), CStr(valsB(r, c)), CStr(frmA(r, c)), CStr(frmB(r, c)))
+            End If
+        Next c
+    Next r
+End Sub
+
+Private Function BlockArraysEqual(ByVal dataA As Variant, ByVal dataB As Variant) As Boolean
+    Dim r As Long, c As Long
+
+    For r = 1 To UBound(dataA, 1)
+        For c = 1 To UBound(dataA, 2)
+            If CStr(dataA(r, c)) <> CStr(dataB(r, c)) Then Exit Function
+        Next c
+    Next r
+
+    BlockArraysEqual = True
+End Function
+
+Private Function BlockEqualByMode(ByVal valsA As Variant, ByVal valsB As Variant, ByVal frmA As Variant, ByVal frmB As Variant, ByVal compareMode As String) As Boolean
+    If Not BlockArraysEqual(valsA, valsB) Then Exit Function
+    If UCase$(compareMode) = modNavigatorSettings.SNAP_COMPARE_MODE_VALUE_ONLY Then
+        BlockEqualByMode = True
+    ElseIf UCase$(compareMode) = modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID Then
+        BlockEqualByMode = True
+    Else
+        BlockEqualByMode = BlockArraysEqual(frmA, frmB)
+    End If
+End Function
+
+Private Function CellsDifferentByMode(ByVal valA As String, ByVal valB As String, ByVal formA As String, ByVal formB As String, ByVal compareMode As String) As Boolean
+    Dim modeU As String
+    modeU = UCase$(compareMode)
+
+    If valA <> valB Then
+        CellsDifferentByMode = True
+        Exit Function
+    End If
+
+    If modeU = modNavigatorSettings.SNAP_COMPARE_MODE_VALUE_ONLY Then Exit Function
+
+    If modeU = modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID Then
+        If IsExternalFormula(formA) Xor IsExternalFormula(formB) Then Exit Function
+    End If
+
+    CellsDifferentByMode = (formA <> formB)
+End Function
+
+Private Function IsExternalFormula(ByVal f As String) As Boolean
+    If Len(f) = 0 Then Exit Function
+    If Left$(f, 1) <> "=" Then Exit Function
+    IsExternalFormula = (InStr(1, f, "[", vbTextCompare) > 0 And InStr(1, f, "]", vbTextCompare) > 0)
+End Function
+
+Private Sub SaveSnapshotMeta(ByVal snapWb As Workbook, ByVal sourcePath As String, ByVal sourceName As String)
+    Dim meta As Worksheet, ws As Worksheet, r As Long
+    On Error Resume Next: Set meta = snapWb.Worksheets(META_SHEET): On Error GoTo 0
+    If meta Is Nothing Then Set meta = snapWb.Worksheets.Add(After:=snapWb.Worksheets(snapWb.Worksheets.Count))
+    meta.Name = META_SHEET: meta.Cells.Clear
+    meta.Cells(1, 1).Value = "OriginalPath": meta.Cells(1, 2).Value = sourcePath
+    meta.Cells(2, 1).Value = "OriginalName": meta.Cells(2, 2).Value = sourceName
+    meta.Cells(3, 1).Value = "SnapshotTimestamp": meta.Cells(3, 2).Value = Format$(Now, "yymmddhhnnss")
+    meta.Cells(4, 1).Value = "GeneratedUtc": meta.Cells(4, 2).Value = Format$(Now, "yyyy-mm-dd\Thh:nn:ss\Z")
+    r = 6
+    For Each ws In snapWb.Worksheets
+        If ws.Name <> META_SHEET Then
+            meta.Cells(r, 1).Value = "Sheet"
+            meta.Cells(r, 2).Value = ws.Name
+            r = r + 1
+        End If
+    Next ws
+    meta.Visible = xlSheetVisible
+End Sub
+
+Private Sub BreakExternalLinks(ByVal wb As Workbook)
+    Dim links As Variant, i As Long
+    links = wb.LinkSources(xlLinkTypeExcelLinks)
+    If IsArray(links) Then
+        For i = LBound(links) To UBound(links)
+            wb.BreakLink Name:=CStr(links(i)), Type:=xlLinkTypeExcelLinks
+        Next i
+    End If
+End Sub
+Private Function WorksheetByName(ByVal wb As Workbook, ByVal nm As String) As Worksheet
+    On Error Resume Next
+    Set WorksheetByName = wb.Worksheets(nm)
+    On Error GoTo 0
+End Function
+Private Function BuildSnapshotFolder(ByVal wb As Workbook) As String
+    BuildSnapshotFolder = wb.Path & "\.snapshot\" & modSnapshotStorage.CleanFileName(Left$(wb.Name, InStrRev(wb.Name, ".") - 1))
+End Function
+Private Function SnapshotBaseName(ByVal wb As Workbook) As String
+    SnapshotBaseName = modSnapshotStorage.CleanFileName(Left$(wb.Name, InStrRev(wb.Name, ".") - 1))
+End Function
+Private Function ExtractSnapshotStamp(ByVal p As String) As String
+    Dim fn As String, x As Long
+    fn = Mid$(p, InStrRev(p, "\") + 1)
+    x = InStr(1, fn, "_snapshot_")
+    If x > 0 Then ExtractSnapshotStamp = Mid$(fn, x + 10, 12) Else ExtractSnapshotStamp = "snapshot"
+End Function
+Private Function MaxLng(ByVal a As Long, ByVal b As Long) As Long
+    If a > b Then MaxLng = a Else MaxLng = b
+End Function
+
+Private Function GetRangeLastRow(ByVal rg As Range) As Long
+    If rg Is Nothing Then Exit Function
+    GetRangeLastRow = rg.Row + rg.Rows.Count - 1
+End Function
+Private Function GetRangeLastCol(ByVal rg As Range) As Long
+    If rg Is Nothing Then Exit Function
+    GetRangeLastCol = rg.Column + rg.Columns.Count - 1
 End Function
