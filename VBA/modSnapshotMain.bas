@@ -152,10 +152,23 @@ Public Sub SnapshotCompareLatestTwo()
     If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6114, "SnapshotCompareLatestTwo", "Workbook must be saved before compare."
 
     folderPath = BuildSnapshotFolderForWorkbook(wb)
+    If Len(Dir$(folderPath, vbDirectory)) = 0 Then
+        ShowSnapshotInfo "No snapshots found for this workbook yet." & vbCrLf & _
+                         "Create at least 2 snapshots first." & vbCrLf & folderPath
+        Exit Sub
+    End If
+
     GetTwoLatestSnapshotFiles folderPath, latestA, latestB
 
-    If Len(latestA) = 0 Or Len(latestB) = 0 Then
-        ShowSnapshotInfo "Need at least 2 snapshots in:" & vbCrLf & folderPath
+    If Len(latestA) = 0 Then
+        ShowSnapshotInfo "No snapshots found for this workbook yet." & vbCrLf & _
+                         "Create at least 2 snapshots first." & vbCrLf & folderPath
+        Exit Sub
+    End If
+
+    If Len(latestB) = 0 Then
+        ShowSnapshotInfo "Only one snapshot found." & vbCrLf & _
+                         "Create one more snapshot, then run Compare Latest 2." & vbCrLf & folderPath
         Exit Sub
     End If
 
