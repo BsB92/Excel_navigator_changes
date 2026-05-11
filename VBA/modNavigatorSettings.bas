@@ -1,7 +1,7 @@
 Attribute VB_Name = "modNavigatorSettings"
 Option Explicit
 
-Private Const REG_APP As String = "ExcelNavigator_v5.0"
+Private Const REG_APP As String = "ExcelNavigator_v5.1"
 Private Const REG_SEC_SETTINGS As String = "Settings"
 Private Const KEY_DEFAULT_FOLDER As String = "DefaultFolder"
 Private Const KEY_OPEN_FILES_FOLDER As String = "OpenFilesFolder"

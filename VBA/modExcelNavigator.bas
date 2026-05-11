@@ -16,9 +16,10 @@ Private Sub ShowExcelNavigatorForm()
     frmExcelNavigator.Show vbModeless
 End Sub
 
-Public Sub ExcelNavigator()
+Public Sub ExcelNavigator_v5_1()
     ShowExcelNavigatorForm
 End Sub
+
 
 
 Public Sub ExcelNavigatorCreateSnapshot()

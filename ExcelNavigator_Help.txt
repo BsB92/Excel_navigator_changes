@@ -1,4 +1,4 @@
-Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
+Excel Navigator - Instrukcja użytkownika (v5.1) [PL]
 
 1) Ogólny przepływ pracy
 - Kliknij Reload list, aby odświeżyć listę aktualnie otwartych skoroszytów.
@@ -20,6 +20,8 @@ Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
 - Strzałka góra/dół w panelu Sheets (po prawej) = nawigacja po arkuszach.
 - Enter w panelu Sheets = aktywuj wybrany arkusz.
 - Pole pełnej ścieżki obsługuje prawy klik (kopiuj/zaznacz).
+- Dwuklik w polu pełnej ścieżki kopiuje całą ścieżkę do schowka.
+- Po skopiowaniu ścieżki pojawia się krótka informacja (ok. 2 sek.) na pasku statusu Excel (bez okna z przyciskiem OK).
 
 3) Kontrolki górnego wiersza
 - Settings: przełącza ramkę Settings ON/OFF.
@@ -123,7 +125,7 @@ Excel Navigator - Instrukcja użytkownika (v5.0) [PL]
 
 
 ------------------------------------------------------------
-Excel Navigator - User Guide (v5.0) [EN]
+Excel Navigator - User Guide (v5.1) [EN]
 
 1) General workflow
 - Click Reload list to refresh the list of currently open workbooks.
@@ -145,6 +147,8 @@ Excel Navigator - User Guide (v5.0) [EN]
 - Arrow Up/Down on Sheets panel (right side) = navigate sheets.
 - Enter on Sheets panel = activate selected sheet.
 - Full path box supports right-click copy/select behavior.
+- Double-clicking the full path box copies the entire path to clipboard.
+- After copying, a short notification (about 2 seconds) appears in Excel status bar (no extra OK popup window).
 
 3) Top row controls
 - Settings: toggles Settings frame ON/OFF.

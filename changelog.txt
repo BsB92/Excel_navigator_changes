@@ -51,3 +51,9 @@ Files most impacted
 - Compare file-pickers now default to the Settings "open files" folder (same setting used for opening files), including Compare Snapshot, Compare 2 Snapshots, and Compare Files.
 
 - Changed keyboard shortcut on lists: `S` now toggles Selection mode (press once = ON, press again = OFF).
+
+8) v5.1 - full path clipboard UX
+- Updated add-in version to v5.1 in navigator caption and settings registry scope.
+- Added double-click action on the full path textbox (`txtFullPath`) to copy full path to clipboard.
+- Replaced modal "copied" popup with a short, non-blocking notification on Excel status bar (about 2 seconds).
+- Updated bilingual help (PL/EN) to document the new double-click copy behavior and non-modal notification.
