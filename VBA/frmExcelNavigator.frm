@@ -1314,16 +1314,16 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsTxtCopy
         .Left = 8
         .Top = 58
-        .Width = mSettingsFrame.Width - 146
+        .Width = mSettingsFrame.Width - 16
         .Height = 22
     End With
 
     With mBtnSettingsUseActiveForCopy
         .Caption = "Use active"
-        .Width = 126
-        .Height = 22
-        .Left = mSettingsTxtCopy.Left + mSettingsTxtCopy.Width + 8
-        .Top = mSettingsTxtCopy.Top
+        .Width = 54
+        .Height = 16
+        .Left = mSettingsFrame.Width - .Width - 8
+        .Top = mSettingsLblCopy.Top
     End With
 
     With mSettingsLblOpen
@@ -1337,16 +1337,16 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsTxtOpen
         .Left = 8
         .Top = 108
-        .Width = mSettingsFrame.Width - 146
+        .Width = mSettingsFrame.Width - 16
         .Height = 22
     End With
 
     With mBtnSettingsUseActiveForOpen
         .Caption = "Use active"
-        .Width = 126
-        .Height = 22
-        .Left = mSettingsTxtOpen.Left + mSettingsTxtOpen.Width + 8
-        .Top = mSettingsTxtOpen.Top
+        .Width = 54
+        .Height = 16
+        .Left = mSettingsFrame.Width - .Width - 8
+        .Top = mSettingsLblOpen.Top
     End With
 
     With mSettingsLblCompareMode
