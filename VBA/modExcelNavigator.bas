@@ -16,10 +16,6 @@ Private Sub ShowExcelNavigatorForm()
     frmExcelNavigator.Show vbModeless
 End Sub
 
-Public Sub ExcelNavigator_v5_1()
-    ShowExcelNavigatorForm
-End Sub
-
 Public Sub ExcelNavigator_v5_2()
     ShowExcelNavigatorForm
 End Sub

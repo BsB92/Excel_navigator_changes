@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
    Caption         =   "ExcelNavigator v5.2"
-   ClientHeight    =   9795.001
+   ClientHeight    =   10095.001
    ClientLeft      =   120
    ClientTop       =   465
    ClientWidth     =   5715
@@ -3288,42 +3288,33 @@ Private Sub ApplyLayout()
         End If
     End If
 
+    Dim postCopyTop As Single
+
+    postCopyTop = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + 2
+
+    If Not ctlPostCopyLabel Is Nothing Then
+        ctlPostCopyLabel.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
+        ctlPostCopyLabel.TOP = postCopyTop
+    End If
+
     If Not ctlOpenCopied Is Nothing Then
-        Dim gapTop As Single
-        Dim gapHeight As Single
-
         ctlOpenCopied.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
-
-        If Not ctlMax Is Nothing Then
-            gapTop = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height
-            gapHeight = ctlMax.TOP - gapTop
-
-            If gapHeight > ctlOpenCopied.Height Then
-                ctlOpenCopied.TOP = gapTop + ((gapHeight - ctlOpenCopied.Height) / 2)
-            Else
-                ctlOpenCopied.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
-            End If
+        If Not ctlPostCopyLabel Is Nothing Then
+            ctlOpenCopied.TOP = ctlPostCopyLabel.TOP + ctlPostCopyLabel.Height + 1
         Else
-            ctlOpenCopied.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
+            ctlOpenCopied.TOP = postCopyTop + 1
         End If
     End If
+
     If Not ctlOpenCopiedFolder Is Nothing Then
         ctlOpenCopiedFolder.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedFolderOffsetLeft
         If Not ctlOpenCopied Is Nothing Then
             ctlOpenCopiedFolder.TOP = ctlOpenCopied.TOP
             ctlOpenCopiedFolder.Height = ctlOpenCopied.Height
+        ElseIf Not ctlPostCopyLabel Is Nothing Then
+            ctlOpenCopiedFolder.TOP = ctlPostCopyLabel.TOP + ctlPostCopyLabel.Height + 1
         Else
-            ctlOpenCopiedFolder.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
-        End If
-    End If
-
-    If Not ctlPostCopyLabel Is Nothing Then
-        If Not ctlOpenCopied Is Nothing Then
-            ctlPostCopyLabel.Left = ctlOpenCopied.Left
-            ctlPostCopyLabel.TOP = ctlOpenCopied.TOP - ctlPostCopyLabel.Height - 1
-        Else
-            ctlPostCopyLabel.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
-            ctlPostCopyLabel.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop - ctlPostCopyLabel.Height - 1
+            ctlOpenCopiedFolder.TOP = postCopyTop + 1
         End If
     End If
 
