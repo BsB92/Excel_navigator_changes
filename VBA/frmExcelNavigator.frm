@@ -154,8 +154,10 @@ Private mSettingsLblCompareMode As MSForms.Label
 Private mSettingsOptCompareStrict As MSForms.OptionButton
 Private mSettingsOptCompareValue As MSForms.OptionButton
 Private mSettingsOptCompareHybrid As MSForms.OptionButton
-Private WithEvents mBtnSettingsSetActiveFolder As MSForms.CommandButton
-Attribute mBtnSettingsSetActiveFolder.VB_VarHelpID = -1
+Private WithEvents mBtnSettingsUseActiveForCopy As MSForms.CommandButton
+Attribute mBtnSettingsUseActiveForCopy.VB_VarHelpID = -1
+Private WithEvents mBtnSettingsUseActiveForOpen As MSForms.CommandButton
+Attribute mBtnSettingsUseActiveForOpen.VB_VarHelpID = -1
 Private WithEvents mBtnSettingsSave As MSForms.CommandButton
 Attribute mBtnSettingsSave.VB_VarHelpID = -1
 Private WithEvents mBtnSettingsCancel As MSForms.CommandButton
@@ -1277,7 +1279,8 @@ Private Sub EnsureSettingsOverlay()
         Set mSettingsOptCompareStrict = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareStrict", True)
         Set mSettingsOptCompareValue = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareValue", True)
         Set mSettingsOptCompareHybrid = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareHybrid", True)
-        Set mBtnSettingsSetActiveFolder = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSetActiveFolder", True)
+        Set mBtnSettingsUseActiveForCopy = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsUseActiveForCopy", True)
+        Set mBtnSettingsUseActiveForOpen = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsUseActiveForOpen", True)
         Set mBtnSettingsSave = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSave", True)
         Set mBtnSettingsCancel = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsCancel", True)
     End If
@@ -1311,8 +1314,16 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsTxtCopy
         .Left = 8
         .Top = 58
-        .Width = mSettingsFrame.Width - 16
+        .Width = mSettingsFrame.Width - 146
         .Height = 22
+    End With
+
+    With mBtnSettingsUseActiveForCopy
+        .Caption = "Use active"
+        .Width = 126
+        .Height = 22
+        .Left = mSettingsTxtCopy.Left + mSettingsTxtCopy.Width + 8
+        .Top = mSettingsTxtCopy.Top
     End With
 
     With mSettingsLblOpen
@@ -1326,22 +1337,22 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsTxtOpen
         .Left = 8
         .Top = 108
-        .Width = mSettingsFrame.Width - 16
+        .Width = mSettingsFrame.Width - 146
         .Height = 22
     End With
 
-    With mBtnSettingsSetActiveFolder
-        .Caption = "Set active folder directory"
-        .Left = 8
-        .Top = 134
-        .Width = 160
+    With mBtnSettingsUseActiveForOpen
+        .Caption = "Use active"
+        .Width = 126
         .Height = 22
+        .Left = mSettingsTxtOpen.Left + mSettingsTxtOpen.Width + 8
+        .Top = mSettingsTxtOpen.Top
     End With
 
     With mSettingsLblCompareMode
         .Caption = "Snapshot compare mode:"
         .Left = 8
-        .Top = 164
+        .Top = 148
         .Width = 220
         .Height = 16
     End With
@@ -1349,7 +1360,7 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareStrict
         .Caption = "Strict (Value + Formula)"
         .Left = 12
-        .Top = 180
+        .Top = 164
         .Width = 210
         .Height = 16
     End With
@@ -1357,7 +1368,7 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareValue
         .Caption = "Value-only (recommended)"
         .Left = 12
-        .Top = 196
+        .Top = 180
         .Width = 210
         .Height = 16
     End With
@@ -1365,7 +1376,7 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareHybrid
         .Caption = "Hybrid (ignore external-link formula noise)"
         .Left = 12
-        .Top = 212
+        .Top = 196
         .Width = mSettingsFrame.Width - 16
         .Height = 16
     End With
@@ -1402,7 +1413,8 @@ Private Sub ApplySettingsOverlayFontSizing()
     mSettingsOptCompareStrict.Font.Size = uniformSize
     mSettingsOptCompareValue.Font.Size = uniformSize
     mSettingsOptCompareHybrid.Font.Size = uniformSize
-    mBtnSettingsSetActiveFolder.Font.Size = uniformSize
+    mBtnSettingsUseActiveForCopy.Font.Size = uniformSize
+    mBtnSettingsUseActiveForOpen.Font.Size = uniformSize
     mBtnSettingsSave.Font.Size = uniformSize
     mBtnSettingsCancel.Font.Size = uniformSize
 End Sub
@@ -1488,64 +1500,19 @@ Private Sub mBtnSettingsSave_Click()
     SafeMsgBox "Settings saved.", vbInformation
 End Sub
 
-Private Sub mBtnSettingsSetActiveFolder_Click()
+Private Sub mBtnSettingsUseActiveForCopy_Click()
     Dim activeFolder As String
-    Dim targetChoice As Long
-
     activeFolder = GetActiveWorkbookFolder()
     If Len(activeFolder) = 0 Then Exit Sub
-
-    targetChoice = SelectActiveFolderTarget()
-
-    Select Case targetChoice
-        Case 1
-            mSettingsTxtCopy.Text = activeFolder
-            mSettingsTxtOpen.Text = activeFolder
-        Case 2
-            mSettingsTxtCopy.Text = activeFolder
-        Case 3
-            mSettingsTxtOpen.Text = activeFolder
-        Case Else
-            Exit Sub
-    End Select
+    mSettingsTxtCopy.Text = activeFolder
 End Sub
 
-Private Function SelectActiveFolderTarget() As Long
-    Dim firstChoice As VbMsgBoxResult
-    Dim secondChoice As VbMsgBoxResult
-
-    firstChoice = SafeMsgBox( _
-        "Set active folder for BOTH copy and open operations?" & vbCrLf & vbCrLf & _
-        "Yes = set BOTH" & vbCrLf & _
-        "No = choose single target" & vbCrLf & _
-        "Cancel = do nothing", _
-        vbYesNoCancel Or vbQuestion, _
-        "Set active folder directory")
-
-    If firstChoice = vbYes Then
-        SelectActiveFolderTarget = 1
-        Exit Function
-    End If
-
-    If firstChoice = vbCancel Then
-        SelectActiveFolderTarget = 4
-        Exit Function
-    End If
-
-    secondChoice = SafeMsgBox( _
-        "Set active folder for COPY operations?" & vbCrLf & vbCrLf & _
-        "Yes = copy" & vbCrLf & _
-        "No = open" & vbCrLf & _
-        "Cancel = do nothing", _
-        vbYesNoCancel Or vbQuestion, _
-        "Set active folder directory")
-
-    Select Case secondChoice
-        Case vbYes: SelectActiveFolderTarget = 2
-        Case vbNo: SelectActiveFolderTarget = 3
-        Case Else: SelectActiveFolderTarget = 4
-    End Select
-End Function
+Private Sub mBtnSettingsUseActiveForOpen_Click()
+    Dim activeFolder As String
+    activeFolder = GetActiveWorkbookFolder()
+    If Len(activeFolder) = 0 Then Exit Sub
+    mSettingsTxtOpen.Text = activeFolder
+End Sub
 
 Private Function GetActiveWorkbookFolder() As String
     Dim wb As Workbook
