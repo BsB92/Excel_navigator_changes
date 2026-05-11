@@ -128,7 +128,10 @@ Public Sub SnapshotOpenActiveWorkbookFolder()
     If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6111, "SnapshotOpenActiveWorkbookFolder", "Workbook must be saved before opening snapshot folder."
 
     snapFolder = BuildSnapshotFolderForWorkbook(wb)
-    If Not modSnapshotStorage.EnsureFolderPath(snapFolder) Then Err.Raise vbObjectError + 6112, "SnapshotOpenActiveWorkbookFolder", "Cannot create snapshot folder."
+    If Len(Dir$(snapFolder, vbDirectory)) = 0 Then
+        ShowSnapshotInfo "No snapshot folder found for this workbook yet." & vbCrLf & snapFolder
+        Exit Sub
+    End If
 
     OpenFolderInExplorer snapFolder
     Exit Sub
