@@ -33,42 +33,48 @@ End Function
 
 Private Sub ApplyFormulaDifferenceBold(ByVal formulaCellA As Range, ByVal formulaCellB As Range)
     Dim formulaA As String, formulaB As String
-    Dim diffStart As Long, diffLenA As Long, diffLenB As Long
+    Dim i As Long, maxLen As Long
+    Dim runStartA As Long, runStartB As Long
+    Dim runLenA As Long, runLenB As Long
+    Dim isDifferent As Boolean
 
     formulaA = DisplayCellText(formulaCellA)
     formulaB = DisplayCellText(formulaCellB)
 
     If Len(formulaA) = 0 Or Len(formulaB) = 0 Then Exit Sub
+    If Left$(formulaA, 1) <> "=" Or Left$(formulaB, 1) <> "=" Then Exit Sub
     If StrComp(formulaA, formulaB, vbBinaryCompare) = 0 Then Exit Sub
 
-    FindDifferenceBounds formulaA, formulaB, diffStart, diffLenA, diffLenB
-    If diffLenA > 0 Then formulaCellA.Characters(diffStart, diffLenA).Font.Bold = True
-    If diffLenB > 0 Then formulaCellB.Characters(diffStart, diffLenB).Font.Bold = True
+    formulaCellA.Font.Bold = False
+    formulaCellB.Font.Bold = False
+
+    maxLen = IIf(Len(formulaA) > Len(formulaB), Len(formulaA), Len(formulaB))
+    runStartA = 0: runStartB = 0: runLenA = 0: runLenB = 0
+
+    For i = 1 To maxLen + 1
+        isDifferent = IsCharDifferent(formulaA, formulaB, i)
+
+        If isDifferent Then
+            If runStartA = 0 And i <= Len(formulaA) Then runStartA = i
+            If runStartB = 0 And i <= Len(formulaB) Then runStartB = i
+            If i <= Len(formulaA) Then runLenA = runLenA + 1
+            If i <= Len(formulaB) Then runLenB = runLenB + 1
+        ElseIf runStartA > 0 Or runStartB > 0 Then
+            If runLenA > 0 Then formulaCellA.Characters(runStartA, runLenA).Font.Bold = True
+            If runLenB > 0 Then formulaCellB.Characters(runStartB, runLenB).Font.Bold = True
+            runStartA = 0: runStartB = 0: runLenA = 0: runLenB = 0
+        End If
+    Next i
 End Sub
 
 
-Private Sub FindDifferenceBounds(ByVal textA As String, ByVal textB As String, ByRef startPos As Long, ByRef changeLenA As Long, ByRef changeLenB As Long)
-    Dim leftMatch As Long, rightMatch As Long
-    Dim maxLeft As Long, maxRight As Long
-
-    maxLeft = IIf(Len(textA) < Len(textB), Len(textA), Len(textB))
-    leftMatch = 0
-    Do While leftMatch < maxLeft
-        If Mid$(textA, leftMatch + 1, 1) <> Mid$(textB, leftMatch + 1, 1) Then Exit Do
-        leftMatch = leftMatch + 1
-    Loop
-
-    maxRight = IIf((Len(textA) - leftMatch) < (Len(textB) - leftMatch), (Len(textA) - leftMatch), (Len(textB) - leftMatch))
-    rightMatch = 0
-    Do While rightMatch < maxRight
-        If Mid$(textA, Len(textA) - rightMatch, 1) <> Mid$(textB, Len(textB) - rightMatch, 1) Then Exit Do
-        rightMatch = rightMatch + 1
-    Loop
-
-    startPos = leftMatch + 1
-    changeLenA = Len(textA) - leftMatch - rightMatch
-    changeLenB = Len(textB) - leftMatch - rightMatch
-End Sub
+Private Function IsCharDifferent(ByVal textA As String, ByVal textB As String, ByVal position As Long) As Boolean
+    If position > Len(textA) Or position > Len(textB) Then
+        IsCharDifferent = True
+    Else
+        IsCharDifferent = (Mid$(textA, position, 1) <> Mid$(textB, position, 1))
+    End If
+End Function
 
 
 Private Function DisplayCellText(ByVal targetCell As Range) As String
