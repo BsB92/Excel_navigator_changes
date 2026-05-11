@@ -118,6 +118,122 @@ EH:
     ShowSnapshotError "Compare Files failed", Err.Description
 End Sub
 
+Public Sub SnapshotOpenActiveWorkbookFolder()
+    On Error GoTo EH
+    Dim wb As Workbook
+    Dim snapFolder As String
+
+    Set wb = ActiveWorkbook
+    If wb Is Nothing Then Err.Raise vbObjectError + 6110, "SnapshotOpenActiveWorkbookFolder", "No active workbook."
+    If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6111, "SnapshotOpenActiveWorkbookFolder", "Workbook must be saved before opening snapshot folder."
+
+    snapFolder = BuildSnapshotFolderForWorkbook(wb)
+    If Len(Dir$(snapFolder, vbDirectory)) = 0 Then
+        ShowSnapshotInfo "No snapshot folder found for this workbook yet." & vbCrLf & snapFolder
+        Exit Sub
+    End If
+
+    OpenFolderInExplorer snapFolder
+    Exit Sub
+EH:
+    ShowSnapshotError "Open snapshot folder failed", Err.Description
+End Sub
+
+Public Sub SnapshotCompareLatestTwo()
+    On Error GoTo EH
+    Dim wb As Workbook
+    Dim folderPath As String
+    Dim latestA As String
+    Dim latestB As String
+    Dim reportPath As String
+
+    Set wb = ActiveWorkbook
+    If wb Is Nothing Then Err.Raise vbObjectError + 6113, "SnapshotCompareLatestTwo", "No active workbook."
+    If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6114, "SnapshotCompareLatestTwo", "Workbook must be saved before compare."
+
+    folderPath = BuildSnapshotFolderForWorkbook(wb)
+    If Len(Dir$(folderPath, vbDirectory)) = 0 Then
+        ShowSnapshotInfo "No snapshots found for this workbook yet." & vbCrLf & _
+                         "Create at least 2 snapshots first." & vbCrLf & folderPath
+        Exit Sub
+    End If
+
+    GetTwoLatestSnapshotFiles folderPath, latestA, latestB
+
+    If Len(latestA) = 0 Then
+        ShowSnapshotInfo "No snapshots found for this workbook yet." & vbCrLf & _
+                         "Create at least 2 snapshots first." & vbCrLf & folderPath
+        Exit Sub
+    End If
+
+    If Len(latestB) = 0 Then
+        ShowSnapshotInfo "Only one snapshot found." & vbCrLf & _
+                         "Create one more snapshot, then run Compare Latest 2." & vbCrLf & folderPath
+        Exit Sub
+    End If
+
+    reportPath = CompareTwoSnapshots(latestA, latestB)
+    ShowCompareReportCreated reportPath
+    Exit Sub
+EH:
+    ShowSnapshotError "Compare latest snapshots failed", Err.Description
+End Sub
+
+Private Sub GetTwoLatestSnapshotFiles(ByVal folderPath As String, ByRef latestA As String, ByRef latestB As String)
+    Dim fn As String
+    Dim fullPath As String
+    Dim dt As Date
+    Dim best1 As Date, best2 As Date
+
+    latestA = ""
+    latestB = ""
+    If Len(Dir$(folderPath, vbDirectory)) = 0 Then Exit Sub
+
+    fn = Dir$(folderPath & "\*_snapshot_*.xlsx")
+    Do While Len(fn) > 0
+        fullPath = folderPath & "\" & fn
+        On Error Resume Next
+        dt = FileDateTime(fullPath)
+        On Error GoTo 0
+
+        If dt >= best1 Then
+            best2 = best1
+            latestB = latestA
+            best1 = dt
+            latestA = fullPath
+        ElseIf dt > best2 Then
+            best2 = dt
+            latestB = fullPath
+        End If
+
+        fn = Dir$
+    Loop
+End Sub
+
+Private Sub OpenFolderInExplorer(ByVal folderPath As String)
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, False
+    On Error GoTo 0
+    Shell "explorer.exe """ & folderPath & """", vbNormalFocus
+    On Error Resume Next
+    modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
+    On Error GoTo 0
+End Sub
+
+Private Function BuildSnapshotFolderForWorkbook(ByVal wb As Workbook) As String
+    Dim baseName As String
+
+    If wb Is Nothing Then Exit Function
+    If Len(wb.Path) = 0 Then Exit Function
+
+    baseName = wb.Name
+    If InStrRev(baseName, ".") > 0 Then
+        baseName = Left$(baseName, InStrRev(baseName, ".") - 1)
+    End If
+
+    BuildSnapshotFolderForWorkbook = wb.Path & "\.snapshot\" & modSnapshotStorage.CleanFileName(baseName)
+End Function
+
 Private Function PickAnyExcelFile(ByVal titleText As String) As Variant
     PickAnyExcelFile = PickExcelFileWithInitialFolder( _
         titleText, _

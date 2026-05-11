@@ -97,10 +97,11 @@ Excel Navigator - Instrukcja użytkownika (v5.1) [PL]
   2) Kliknij Snapshot -> Create Snapshot.
   3) Po sukcesie dostaniesz komunikat ze ścieżką do zapisanego pliku `.xlsx`.
 
-- Jak porównywać:
-  A) Compare Snapshot = porównanie aktywnego skoroszytu z jednym snapshotem.
-  B) Compare 2 Snapshots (A/B) = porównanie dwóch snapshotów (najpierw wybór A, potem B).
-  C) Raport compare zapisuje się do folderu `.snapshot\NazwaPliku\`.
+- Snapshot menu:
+  A) Open Snapshot Folder = otwiera folder `.snapshot\NazwaPliku\`.
+  B) Compare Latest 2 = automatycznie porównuje dwa najnowsze snapshoty aktywnego skoroszytu.
+  C) Compare Files (przycisk główny) = porównanie dowolnych dwóch plików Excel.
+  D) Raport compare zapisuje się do folderu `.snapshot\NazwaPliku\`.
 
 13) Tryby porównania Snapshot (Settings)
 - W Settings dostępna jest sekcja "Snapshot compare mode".
@@ -222,10 +223,11 @@ Excel Navigator - User Guide (v5.1) [EN]
   2) Click Snapshot -> Create Snapshot.
   3) On success, a message shows the full path of the saved `.xlsx` snapshot.
 
-- How to compare:
-  A) Compare Snapshot = active workbook vs one snapshot.
-  B) Compare 2 Snapshots (A/B) = snapshot vs snapshot (pick A, then B).
-  C) Compare reports are saved to `.snapshot\WorkbookName\`.
+- Snapshot menu:
+  A) Open Snapshot Folder = opens `.snapshot\WorkbookName\`.
+  B) Compare Latest 2 = automatically compares the two newest snapshots of the active workbook.
+  C) Compare Files (main button) = compare any two Excel files.
+  D) Compare reports are saved to `.snapshot\WorkbookName\`.
 
 13) Snapshot compare modes (Settings)
 - Settings contains a "Snapshot compare mode" section.
