@@ -688,7 +688,7 @@ Private Sub OpenFilesAndOptionalRefresh(ByVal doRefresh As Boolean)
     If doRefresh Then
         SafeMsgBox "Done. Opened: " & openedCount & ", refreshed: " & refOK & ", timed out: " & refTO & ".", vbInformation
     Else
-        SafeMsgBox "Done. Opened: " & openedCount & ".", vbInformation
+        ShowTransientStatus "Done. Opened: " & openedCount & ".", 2#
     End If
 
 FINALLY:
@@ -985,7 +985,6 @@ End Sub
 
 Private Sub CopyFullPathToClipboard()
     Dim fullPathText As String
-    Dim clearAt As Double
 
     fullPathText = CStr(Me.txtFullPath.Value)
     If Len(fullPathText) = 0 Then Exit Sub
@@ -993,17 +992,33 @@ Private Sub CopyFullPathToClipboard()
     On Error GoTo EH
     CopyUnicodeTextToClipboard fullPathText
 
-    Application.StatusBar = "Copied full path to clipboard."
-    clearAt = Timer + PATH_COPY_TOAST_SECONDS
-    Do While Timer < clearAt
-        DoEvents
-    Loop
-    Application.StatusBar = False
+    ShowTransientStatus "Copied full path to clipboard.", PATH_COPY_TOAST_SECONDS
     Exit Sub
 
 EH:
     Application.StatusBar = False
     SafeMsgBox "Could not copy full path to clipboard: " & Err.Description, vbExclamation
+End Sub
+
+Private Sub ShowTransientStatus(ByVal messageText As String, ByVal durationSeconds As Double)
+    Dim t0 As Double
+    Dim tNow As Double
+
+    If durationSeconds <= 0 Then
+        Application.StatusBar = messageText
+        Exit Sub
+    End If
+
+    Application.StatusBar = messageText
+    t0 = Timer
+
+    Do
+        DoEvents
+        tNow = Timer
+        If tNow < t0 Then tNow = tNow + 86400#
+    Loop While (tNow - t0) < durationSeconds
+
+    Application.StatusBar = False
 End Sub
 
 Private Sub CopyUnicodeTextToClipboard(ByVal textValue As String)
