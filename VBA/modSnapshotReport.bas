@@ -7,6 +7,10 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     Dim rowData As Variant, outRow(1 To 1, 1 To 7) As Variant
     Set ws = rWb.Worksheets(1): ws.Name = "Summary"
     ws.Range("A1:B5").Value = Array(Array("Source Workbook", sourceWb.FullName), Array("Side A", labelA), Array("Side B", labelB), Array("Differences", d("Rows").Count), Array("Generated", Now))
+    ws.Range("A7").Value = "Legend"
+    ws.Range("A8").Value = "Changed formula fragment"
+    ws.Range("A8").Characters(1, Len(ws.Range("A8").Value2)).Font.Bold = True
+    ws.Range("A8").Characters(1, Len(ws.Range("A8").Value2)).Font.Color = RGB(192, 0, 0)
 
     Set ws = rWb.Worksheets.Add(After:=rWb.Worksheets(rWb.Worksheets.Count)): ws.Name = "Differences"
     ws.Range("A1:G1").Value = Array("Difference Type", "Worksheet", "Cell", "Snapshot A Value", "Snapshot B Value", "Snapshot A Formula", "Snapshot B Formula")
@@ -60,8 +64,8 @@ Private Sub ApplyFormulaDifferenceBold(ByVal formulaCellA As Range, ByVal formul
             If i <= Len(formulaA) Then runLenA = runLenA + 1
             If i <= Len(formulaB) Then runLenB = runLenB + 1
         ElseIf runStartA > 0 Or runStartB > 0 Then
-            If runLenA > 0 Then formulaCellA.Characters(runStartA, runLenA).Font.Bold = True
-            If runLenB > 0 Then formulaCellB.Characters(runStartB, runLenB).Font.Bold = True
+            If runLenA > 0 Then MarkChangedFragment formulaCellA, runStartA, runLenA
+            If runLenB > 0 Then MarkChangedFragment formulaCellB, runStartB, runLenB
             runStartA = 0: runStartB = 0: runLenA = 0: runLenB = 0
         End If
     Next i
@@ -75,6 +79,14 @@ Private Function IsCharDifferent(ByVal textA As String, ByVal textB As String, B
         IsCharDifferent = (Mid$(textA, position, 1) <> Mid$(textB, position, 1))
     End If
 End Function
+
+
+Private Sub MarkChangedFragment(ByVal targetCell As Range, ByVal startPos As Long, ByVal fragmentLen As Long)
+    With targetCell.Characters(startPos, fragmentLen).Font
+        .Bold = True
+        .Color = RGB(192, 0, 0)
+    End With
+End Sub
 
 
 Private Function DisplayCellText(ByVal targetCell As Range) As String
