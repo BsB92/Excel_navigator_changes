@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
    Caption         =   "ExcelNavigator v5.2"
-   ClientHeight    =   9795.001
+   ClientHeight    =   10095.001
    ClientLeft      =   120
    ClientTop       =   465
    ClientWidth     =   5715
@@ -140,6 +140,7 @@ Private WithEvents mBtnSnapshotActionHistory As MSForms.CommandButton
 Attribute mBtnSnapshotActionHistory.VB_VarHelpID = -1
 Private WithEvents mChkOpenCopiedFolder As MSForms.CheckBox
 Attribute mChkOpenCopiedFolder.VB_VarHelpID = -1
+Private mLblPostCopyOptions As MSForms.Label
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 Private mSettingsMode As Boolean
@@ -153,8 +154,10 @@ Private mSettingsLblCompareMode As MSForms.Label
 Private mSettingsOptCompareStrict As MSForms.OptionButton
 Private mSettingsOptCompareValue As MSForms.OptionButton
 Private mSettingsOptCompareHybrid As MSForms.OptionButton
-Private WithEvents mBtnSettingsSetActiveFolder As MSForms.CommandButton
-Attribute mBtnSettingsSetActiveFolder.VB_VarHelpID = -1
+Private WithEvents mBtnSettingsUseActiveForCopy As MSForms.CommandButton
+Attribute mBtnSettingsUseActiveForCopy.VB_VarHelpID = -1
+Private WithEvents mBtnSettingsUseActiveForOpen As MSForms.CommandButton
+Attribute mBtnSettingsUseActiveForOpen.VB_VarHelpID = -1
 Private WithEvents mBtnSettingsSave As MSForms.CommandButton
 Attribute mBtnSettingsSave.VB_VarHelpID = -1
 Private WithEvents mBtnSettingsCancel As MSForms.CommandButton
@@ -1178,10 +1181,26 @@ Private Sub EnsureCopyOptionsControls()
         End If
     End If
 
+    If mLblPostCopyOptions Is Nothing Then
+        Set mLblPostCopyOptions = GetControlIfExists("lblPostCopyOptions")
+        If mLblPostCopyOptions Is Nothing Then
+            Set mLblPostCopyOptions = Me.Controls.Add("Forms.Label.1", "lblPostCopyOptions", True)
+        End If
+    End If
+
     With mChkOpenCopiedFolder
         .Caption = "Open target folder"
         .Visible = True
         .Value = False
+    End With
+
+    With mLblPostCopyOptions
+        .Caption = "Post-copy options:"
+        .Visible = True
+        .BackStyle = fmBackStyleTransparent
+        .AutoSize = False
+        .Height = 12
+        .Width = 130
     End With
 End Sub
 
@@ -1260,7 +1279,8 @@ Private Sub EnsureSettingsOverlay()
         Set mSettingsOptCompareStrict = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareStrict", True)
         Set mSettingsOptCompareValue = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareValue", True)
         Set mSettingsOptCompareHybrid = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareHybrid", True)
-        Set mBtnSettingsSetActiveFolder = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSetActiveFolder", True)
+        Set mBtnSettingsUseActiveForCopy = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsUseActiveForCopy", True)
+        Set mBtnSettingsUseActiveForOpen = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsUseActiveForOpen", True)
         Set mBtnSettingsSave = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSave", True)
         Set mBtnSettingsCancel = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsCancel", True)
     End If
@@ -1270,7 +1290,7 @@ Private Sub EnsureSettingsOverlay()
         .Left = 4
         .Top = Me.Image1.Top + Me.Image1.Height + 2
         .Width = Me.InsideWidth - 8
-        .Height = Me.btnClose.Top - .Top - 6
+        .Height = Me.btnClose.Top - .Top - 3
         .SpecialEffect = fmSpecialEffectFlat
     End With
 
@@ -1298,6 +1318,14 @@ Private Sub EnsureSettingsOverlay()
         .Height = 22
     End With
 
+    With mBtnSettingsUseActiveForCopy
+        .Caption = "Use active"
+        .Width = 54
+        .Height = 18
+        .Left = mSettingsFrame.Width - .Width - 8
+        .Top = mSettingsLblCopy.Top - 1
+    End With
+
     With mSettingsLblOpen
         .Caption = "Set default path for open operations:"
         .Left = 8
@@ -1313,18 +1341,18 @@ Private Sub EnsureSettingsOverlay()
         .Height = 22
     End With
 
-    With mBtnSettingsSetActiveFolder
-        .Caption = "Set active folder directory"
-        .Left = 8
-        .Top = 134
-        .Width = 160
-        .Height = 22
+    With mBtnSettingsUseActiveForOpen
+        .Caption = "Use active"
+        .Width = 54
+        .Height = 18
+        .Left = mSettingsFrame.Width - .Width - 8
+        .Top = mSettingsLblOpen.Top - 1
     End With
 
     With mSettingsLblCompareMode
         .Caption = "Snapshot compare mode:"
         .Left = 8
-        .Top = 164
+        .Top = 148
         .Width = 220
         .Height = 16
     End With
@@ -1332,7 +1360,7 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareStrict
         .Caption = "Strict (Value + Formula)"
         .Left = 12
-        .Top = 180
+        .Top = 164
         .Width = 210
         .Height = 16
     End With
@@ -1340,7 +1368,7 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareValue
         .Caption = "Value-only (recommended)"
         .Left = 12
-        .Top = 196
+        .Top = 180
         .Width = 210
         .Height = 16
     End With
@@ -1348,7 +1376,7 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareHybrid
         .Caption = "Hybrid (ignore external-link formula noise)"
         .Left = 12
-        .Top = 212
+        .Top = 196
         .Width = mSettingsFrame.Width - 16
         .Height = 16
     End With
@@ -1385,7 +1413,8 @@ Private Sub ApplySettingsOverlayFontSizing()
     mSettingsOptCompareStrict.Font.Size = uniformSize
     mSettingsOptCompareValue.Font.Size = uniformSize
     mSettingsOptCompareHybrid.Font.Size = uniformSize
-    mBtnSettingsSetActiveFolder.Font.Size = uniformSize
+    mBtnSettingsUseActiveForCopy.Font.Size = uniformSize
+    mBtnSettingsUseActiveForOpen.Font.Size = uniformSize
     mBtnSettingsSave.Font.Size = uniformSize
     mBtnSettingsCancel.Font.Size = uniformSize
 End Sub
@@ -1397,7 +1426,6 @@ Private Sub ApplySettingsOverlayVisibility()
 
     If mSettingsMode Then
         mBtnSettings.Font.Bold = True
-        mBtnSettings.SpecialEffect = fmSpecialEffectSunken
         mSettingsTxtCopy.Text = modNavigatorSettings.GetDefaultWorkingFolder()
         mSettingsTxtOpen.Text = modNavigatorSettings.GetOpenFilesFolder()
         Select Case modNavigatorSettings.GetSnapshotCompareMode()
@@ -1405,16 +1433,37 @@ Private Sub ApplySettingsOverlayVisibility()
             Case modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID: mSettingsOptCompareHybrid.Value = True
             Case Else: mSettingsOptCompareValue.Value = True
         End Select
-        mSettingsFrame.ZOrder 0
     Else
         mBtnSettings.Font.Bold = False
-        mBtnSettings.SpecialEffect = fmSpecialEffectRaised
     End If
+End Sub
+
+Private Sub ApplyUniformFontSizeAcrossAddin()
+    Dim ctl As Object
+    Dim nestedCtl As Object
+    Dim uniformSize As Single
+
+    uniformSize = Me.Font.Size
+
+    For Each ctl In Me.Controls
+        On Error Resume Next
+        ctl.Font.Size = uniformSize
+        On Error GoTo 0
+
+        If TypeName(ctl) = "Frame" Then
+            For Each nestedCtl In ctl.Controls
+                On Error Resume Next
+                nestedCtl.Font.Size = uniformSize
+                On Error GoTo 0
+            Next nestedCtl
+        End If
+    Next ctl
 End Sub
 
 Private Sub mBtnSettings_Click()
     mSettingsMode = Not mSettingsMode
     EnsureSettingsOverlay
+    ApplyUniformFontSizeAcrossAddin
     ApplySettingsOverlayVisibility
 End Sub
 
@@ -1451,39 +1500,18 @@ Private Sub mBtnSettingsSave_Click()
     SafeMsgBox "Settings saved.", vbInformation
 End Sub
 
-Private Sub mBtnSettingsSetActiveFolder_Click()
+Private Sub mBtnSettingsUseActiveForCopy_Click()
     Dim activeFolder As String
-    Dim choice As Variant
-
     activeFolder = GetActiveWorkbookFolder()
     If Len(activeFolder) = 0 Then Exit Sub
+    mSettingsTxtCopy.Text = activeFolder
+End Sub
 
-    choice = Application.InputBox( _
-        Prompt:="Select action:" & vbCrLf & _
-                "1 - Set in both" & vbCrLf & _
-                "2 - Set for copy operations" & vbCrLf & _
-                "3 - Set for open operations" & vbCrLf & _
-                "4 - Cancel", _
-        Title:="Set active folder directory", _
-        Type:=1)
-
-    If choice = False Then Exit Sub
-    If choice < 1 Or choice > 4 Then
-        SafeMsgBox "Invalid selection. Choose 1, 2, 3 or 4.", vbExclamation
-        Exit Sub
-    End If
-
-    Select Case CLng(choice)
-        Case 1
-            mSettingsTxtCopy.Text = activeFolder
-            mSettingsTxtOpen.Text = activeFolder
-        Case 2
-            mSettingsTxtCopy.Text = activeFolder
-        Case 3
-            mSettingsTxtOpen.Text = activeFolder
-        Case Else
-            Exit Sub
-    End Select
+Private Sub mBtnSettingsUseActiveForOpen_Click()
+    Dim activeFolder As String
+    activeFolder = GetActiveWorkbookFolder()
+    If Len(activeFolder) = 0 Then Exit Sub
+    mSettingsTxtOpen.Text = activeFolder
 End Sub
 
 Private Function GetActiveWorkbookFolder() As String
@@ -3096,6 +3124,7 @@ Private Sub ApplyLayout()
     Dim ctlS3 As Object
     Dim ctlOpenCopied As Object
     Dim ctlOpenCopiedFolder As Object
+    Dim ctlPostCopyLabel As Object
     Dim reservedRight As Single
     Dim sheetBottom As Single
 
@@ -3198,6 +3227,7 @@ Private Sub ApplyLayout()
     Set ctlOpenCopied = GetControlIfExists("ChckBox1")
     If ctlOpenCopied Is Nothing Then Set ctlOpenCopied = GetControlIfExists("CheckBox1")
     Set ctlOpenCopiedFolder = mChkOpenCopiedFolder
+    Set ctlPostCopyLabel = mLblPostCopyOptions
 
     If Not ctlMax Is Nothing Then
         ctlMax.TOP = actionTop
@@ -3225,32 +3255,33 @@ Private Sub ApplyLayout()
         End If
     End If
 
+    Dim postCopyTop As Single
+
+    postCopyTop = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + 2
+
+    If Not ctlPostCopyLabel Is Nothing Then
+        ctlPostCopyLabel.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
+        ctlPostCopyLabel.TOP = postCopyTop
+    End If
+
     If Not ctlOpenCopied Is Nothing Then
-        Dim gapTop As Single
-        Dim gapHeight As Single
-
         ctlOpenCopied.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
-
-        If Not ctlMax Is Nothing Then
-            gapTop = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height
-            gapHeight = ctlMax.TOP - gapTop
-
-            If gapHeight > ctlOpenCopied.Height Then
-                ctlOpenCopied.TOP = gapTop + ((gapHeight - ctlOpenCopied.Height) / 2)
-            Else
-                ctlOpenCopied.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
-            End If
+        If Not ctlPostCopyLabel Is Nothing Then
+            ctlOpenCopied.TOP = ctlPostCopyLabel.TOP + ctlPostCopyLabel.Height + 1
         Else
-            ctlOpenCopied.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
+            ctlOpenCopied.TOP = postCopyTop + 1
         End If
     End If
+
     If Not ctlOpenCopiedFolder Is Nothing Then
         ctlOpenCopiedFolder.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedFolderOffsetLeft
         If Not ctlOpenCopied Is Nothing Then
             ctlOpenCopiedFolder.TOP = ctlOpenCopied.TOP
             ctlOpenCopiedFolder.Height = ctlOpenCopied.Height
+        ElseIf Not ctlPostCopyLabel Is Nothing Then
+            ctlOpenCopiedFolder.TOP = ctlPostCopyLabel.TOP + ctlPostCopyLabel.Height + 1
         Else
-            ctlOpenCopiedFolder.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
+            ctlOpenCopiedFolder.TOP = postCopyTop + 1
         End If
     End If
 
