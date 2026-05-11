@@ -127,7 +127,7 @@ Public Sub SnapshotOpenActiveWorkbookFolder()
     If wb Is Nothing Then Err.Raise vbObjectError + 6110, "SnapshotOpenActiveWorkbookFolder", "No active workbook."
     If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6111, "SnapshotOpenActiveWorkbookFolder", "Workbook must be saved before opening snapshot folder."
 
-    snapFolder = BuildSnapshotFolder(wb)
+    snapFolder = BuildSnapshotFolderForWorkbook(wb)
     If Not modSnapshotStorage.EnsureFolderPath(snapFolder) Then Err.Raise vbObjectError + 6112, "SnapshotOpenActiveWorkbookFolder", "Cannot create snapshot folder."
 
     OpenFolderInExplorer snapFolder
@@ -148,7 +148,7 @@ Public Sub SnapshotCompareLatestTwo()
     If wb Is Nothing Then Err.Raise vbObjectError + 6113, "SnapshotCompareLatestTwo", "No active workbook."
     If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6114, "SnapshotCompareLatestTwo", "Workbook must be saved before compare."
 
-    folderPath = BuildSnapshotFolder(wb)
+    folderPath = BuildSnapshotFolderForWorkbook(wb)
     GetTwoLatestSnapshotFiles folderPath, latestA, latestB
 
     If Len(latestA) = 0 Or Len(latestB) = 0 Then
@@ -203,6 +203,20 @@ Private Sub OpenFolderInExplorer(ByVal folderPath As String)
     modWinAPI.SetTopMostState frmExcelNavigator.Caption, True
     On Error GoTo 0
 End Sub
+
+Private Function BuildSnapshotFolderForWorkbook(ByVal wb As Workbook) As String
+    Dim baseName As String
+
+    If wb Is Nothing Then Exit Function
+    If Len(wb.Path) = 0 Then Exit Function
+
+    baseName = wb.Name
+    If InStrRev(baseName, ".") > 0 Then
+        baseName = Left$(baseName, InStrRev(baseName, ".") - 1)
+    End If
+
+    BuildSnapshotFolderForWorkbook = wb.Path & "\.snapshot\" & modSnapshotStorage.CleanFileName(baseName)
+End Function
 
 Private Function PickAnyExcelFile(ByVal titleText As String) As Variant
     PickAnyExcelFile = PickExcelFileWithInitialFolder( _
