@@ -1290,7 +1290,7 @@ Private Sub EnsureSettingsOverlay()
         .Left = 4
         .Top = Me.Image1.Top + Me.Image1.Height + 2
         .Width = Me.InsideWidth - 8
-        .Height = Me.btnClose.Top - .Top - 6
+        .Height = Me.btnClose.Top - .Top - 3
         .SpecialEffect = fmSpecialEffectFlat
     End With
 
@@ -1321,9 +1321,9 @@ Private Sub EnsureSettingsOverlay()
     With mBtnSettingsUseActiveForCopy
         .Caption = "Use active"
         .Width = 54
-        .Height = 16
+        .Height = 18
         .Left = mSettingsFrame.Width - .Width - 8
-        .Top = mSettingsLblCopy.Top
+        .Top = mSettingsLblCopy.Top - 1
     End With
 
     With mSettingsLblOpen
@@ -1344,9 +1344,9 @@ Private Sub EnsureSettingsOverlay()
     With mBtnSettingsUseActiveForOpen
         .Caption = "Use active"
         .Width = 54
-        .Height = 16
+        .Height = 18
         .Left = mSettingsFrame.Width - .Width - 8
-        .Top = mSettingsLblOpen.Top
+        .Top = mSettingsLblOpen.Top - 1
     End With
 
     With mSettingsLblCompareMode
