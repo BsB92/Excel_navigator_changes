@@ -1473,27 +1473,14 @@ End Sub
 
 Private Sub mBtnSettingsSetActiveFolder_Click()
     Dim activeFolder As String
-    Dim choice As Variant
+    Dim targetChoice As Long
 
     activeFolder = GetActiveWorkbookFolder()
     If Len(activeFolder) = 0 Then Exit Sub
 
-    choice = Application.InputBox( _
-        Prompt:="Select action:" & vbCrLf & _
-                "1 - Set in both" & vbCrLf & _
-                "2 - Set for copy operations" & vbCrLf & _
-                "3 - Set for open operations" & vbCrLf & _
-                "4 - Cancel", _
-        Title:="Set active folder directory", _
-        Type:=1)
+    targetChoice = SelectActiveFolderTarget()
 
-    If choice = False Then Exit Sub
-    If choice < 1 Or choice > 4 Then
-        SafeMsgBox "Invalid selection. Choose 1, 2, 3 or 4.", vbExclamation
-        Exit Sub
-    End If
-
-    Select Case CLng(choice)
+    Select Case targetChoice
         Case 1
             mSettingsTxtCopy.Text = activeFolder
             mSettingsTxtOpen.Text = activeFolder
@@ -1505,6 +1492,43 @@ Private Sub mBtnSettingsSetActiveFolder_Click()
             Exit Sub
     End Select
 End Sub
+
+Private Function SelectActiveFolderTarget() As Long
+    Dim firstChoice As VbMsgBoxResult
+    Dim secondChoice As VbMsgBoxResult
+
+    firstChoice = SafeMsgBox( _
+        "Set active folder for BOTH copy and open operations?" & vbCrLf & vbCrLf & _
+        "Yes = set BOTH" & vbCrLf & _
+        "No = choose single target" & vbCrLf & _
+        "Cancel = do nothing", _
+        vbYesNoCancel Or vbQuestion, _
+        "Set active folder directory")
+
+    If firstChoice = vbYes Then
+        SelectActiveFolderTarget = 1
+        Exit Function
+    End If
+
+    If firstChoice = vbCancel Then
+        SelectActiveFolderTarget = 4
+        Exit Function
+    End If
+
+    secondChoice = SafeMsgBox( _
+        "Set active folder for COPY operations?" & vbCrLf & vbCrLf & _
+        "Yes = copy" & vbCrLf & _
+        "No = open" & vbCrLf & _
+        "Cancel = do nothing", _
+        vbYesNoCancel Or vbQuestion, _
+        "Set active folder directory")
+
+    Select Case secondChoice
+        Case vbYes: SelectActiveFolderTarget = 2
+        Case vbNo: SelectActiveFolderTarget = 3
+        Case Else: SelectActiveFolderTarget = 4
+    End Select
+End Function
 
 Private Function GetActiveWorkbookFolder() As String
     Dim wb As Workbook
