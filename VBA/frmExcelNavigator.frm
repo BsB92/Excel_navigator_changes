@@ -1162,7 +1162,7 @@ Private Sub EnsureCopyOptionsControls()
     End If
 
     With mChkOpenCopiedFolder
-        .Caption = "Open folder"
+        .Caption = "Open target folder"
         .Visible = True
         .Value = False
     End With
@@ -3149,6 +3149,7 @@ Private Sub ApplyLayout()
         ctlOpenCopiedFolder.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedFolderOffsetLeft
         If Not ctlOpenCopied Is Nothing Then
             ctlOpenCopiedFolder.TOP = ctlOpenCopied.TOP
+            ctlOpenCopiedFolder.Height = ctlOpenCopied.Height
         Else
             ctlOpenCopiedFolder.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
         End If
