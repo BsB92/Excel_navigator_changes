@@ -71,6 +71,7 @@ Private mMinTrackH As Long
 Private mHookReady As Boolean
 Private mOpenCopiedOffsetTop As Single
 Private mOpenCopiedOffsetLeft As Single
+Private mOpenCopiedFolderOffsetLeft As Single
 Private Const HEADER_IMAGE_MARGIN As Single = 6
 Private Const KEYBOARD_CTRL_MASK As Integer = 2
 Private Const PATH_COPY_TOAST_SECONDS As Double = 2#
@@ -137,6 +138,8 @@ Private WithEvents mBtnSnapshotActionCompare As MSForms.CommandButton
 Attribute mBtnSnapshotActionCompare.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotActionHistory As MSForms.CommandButton
 Attribute mBtnSnapshotActionHistory.VB_VarHelpID = -1
+Private WithEvents mChkOpenCopiedFolder As MSForms.CheckBox
+Attribute mChkOpenCopiedFolder.VB_VarHelpID = -1
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 Private mSettingsMode As Boolean
@@ -309,6 +312,9 @@ Private Sub btnCopyBreakLinks_Click()
         Me.btnOpenCopyFolder.enabled = True
         If ShouldOpenCopiedFiles() Then
             OpenCopiedFiles copiedPaths
+        End If
+        If ShouldOpenCopiedFolder() Then
+            OpenCopiedFolder targetFolder
         End If
     End If
 
@@ -615,6 +621,9 @@ Private Sub btnCopyWithSuffix_Click()
         If ShouldOpenCopiedFiles() Then
             OpenCopiedFiles copiedPaths
         End If
+        If ShouldOpenCopiedFolder() Then
+            OpenCopiedFolder targetFolder
+        End If
     End If
 
     SafeMsgBox "Done. Copied: " & copiedCount & " file(s).", vbInformation
@@ -898,6 +907,13 @@ Private Function ShouldOpenCopiedFiles() As Boolean
     On Error GoTo 0
 End Function
 
+Private Function ShouldOpenCopiedFolder() As Boolean
+    If mChkOpenCopiedFolder Is Nothing Then Exit Function
+    On Error Resume Next
+    ShouldOpenCopiedFolder = CBool(mChkOpenCopiedFolder.Value)
+    On Error GoTo 0
+End Function
+
 Private Sub OpenCopiedFiles(ByVal copiedPaths As Collection)
     Dim fp As Variant
     Dim wb As Workbook
@@ -931,6 +947,17 @@ Private Sub OpenCopiedFiles(ByVal copiedPaths As Collection)
         SafeMsgBox "Opened " & openedCount & " copied file(s)." & vbCrLf & _
                    "Could not open " & failedCount & " file(s).", vbExclamation
     End If
+End Sub
+
+Private Sub OpenCopiedFolder(ByVal folderPath As String)
+    If Len(folderPath) = 0 Then Exit Sub
+    On Error Resume Next
+    modWinAPI.SetTopMostState Me.Caption, False
+    On Error GoTo 0
+    Shell "explorer.exe """ & folderPath & """", vbNormalFocus
+    On Error Resume Next
+    modWinAPI.SetTopMostState Me.Caption, True
+    On Error GoTo 0
 End Sub
 
 Private Sub Label3_Click()
@@ -1113,6 +1140,7 @@ mPanelWidth = GetSheetPanelWidthPt()
 SetExpandedView False
 EnsureTopLeftButtons
 EnsureSnapshotOverlay
+EnsureCopyOptionsControls
 ApplySnapshotOverlayVisibility
 PositionTopButtons
 
@@ -1123,6 +1151,21 @@ ApplyLayout
 
 
 
+End Sub
+
+Private Sub EnsureCopyOptionsControls()
+    If mChkOpenCopiedFolder Is Nothing Then
+        Set mChkOpenCopiedFolder = GetControlIfExists("chkOpenCopiedFolder")
+        If mChkOpenCopiedFolder Is Nothing Then
+            Set mChkOpenCopiedFolder = Me.Controls.Add("Forms.CheckBox.1", "chkOpenCopiedFolder", True)
+        End If
+    End If
+
+    With mChkOpenCopiedFolder
+        .Caption = "Open folder"
+        .Visible = True
+        .Value = False
+    End With
 End Sub
 
 Private Sub EnsureTopLeftButtons()
@@ -1416,11 +1459,11 @@ Private Sub EnsureSnapshotOverlay()
         .Left = 8: .Top = 14: .Width = 150: .Height = 20
     End With
     With mBtnSnapshotActionCompare
-        .Caption = "Compare Snapshot"
+        .Caption = "Open Snapshot Folder"
         .Left = 8: .Top = 36: .Width = 150: .Height = 20
     End With
     With mBtnSnapshotActionHistory
-        .Caption = "Compare 2 Snapshots (A/B)"
+        .Caption = "Compare Latest 2"
         .Left = 8: .Top = 58: .Width = 150: .Height = 20
     End With
 End Sub
@@ -1441,18 +1484,18 @@ End Sub
 
 Private Sub mBtnSnapshotActionCompare_Click()
     On Error GoTo EH
-    modSnapshotMain.SnapshotCompareActiveWorkbook
+    modSnapshotMain.SnapshotOpenActiveWorkbookFolder
     Exit Sub
 EH:
-    SafeMsgBox "Compare Snapshot failed: " & Err.Description, vbExclamation
+    SafeMsgBox "Open Snapshot Folder failed: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub mBtnSnapshotActionHistory_Click()
     On Error GoTo EH
-    modSnapshotHistory.SnapshotHistoryManager
+    modSnapshotMain.SnapshotCompareLatestTwo
     Exit Sub
 EH:
-    SafeMsgBox "Snapshot History failed: " & Err.Description, vbExclamation
+    SafeMsgBox "Compare Latest 2 failed: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub PinImage1AndTopRow()
@@ -2928,6 +2971,9 @@ Private Sub CacheLayout()
     mCtlTop(21) = GetOptionalControlTop("ChckBox1", GetOptionalControlTop("CheckBox1", mCtlTop(16)))
     mOpenCopiedOffsetTop = mCtlTop(21) - mCtlTop(16)
     mOpenCopiedOffsetLeft = GetOptionalControlLeft("ChckBox1", GetOptionalControlLeft("CheckBox1", Me.btnCopyWithSuffix.Left)) - Me.btnCopyWithSuffix.Left
+    If Not mChkOpenCopiedFolder Is Nothing Then
+        mOpenCopiedFolderOffsetLeft = (mOpenCopiedOffsetLeft + 90)
+    End If
 
     
     mBottomBlockTop = Me.tglBatchMode.TOP
@@ -2950,6 +2996,7 @@ Private Sub ApplyLayout()
     Dim ctlS2 As Object
     Dim ctlS3 As Object
     Dim ctlOpenCopied As Object
+    Dim ctlOpenCopiedFolder As Object
     Dim reservedRight As Single
     Dim sheetBottom As Single
 
@@ -3051,6 +3098,7 @@ Private Sub ApplyLayout()
     Set ctlS3 = GetControlIfExists("btnScreen3")
     Set ctlOpenCopied = GetControlIfExists("ChckBox1")
     If ctlOpenCopied Is Nothing Then Set ctlOpenCopied = GetControlIfExists("CheckBox1")
+    Set ctlOpenCopiedFolder = mChkOpenCopiedFolder
 
     If Not ctlMax Is Nothing Then
         ctlMax.TOP = actionTop
@@ -3095,6 +3143,14 @@ Private Sub ApplyLayout()
             End If
         Else
             ctlOpenCopied.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
+        End If
+    End If
+    If Not ctlOpenCopiedFolder Is Nothing Then
+        ctlOpenCopiedFolder.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedFolderOffsetLeft
+        If Not ctlOpenCopied Is Nothing Then
+            ctlOpenCopiedFolder.TOP = ctlOpenCopied.TOP
+        Else
+            ctlOpenCopiedFolder.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
         End If
     End If
 
