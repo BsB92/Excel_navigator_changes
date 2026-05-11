@@ -153,6 +153,8 @@ Private mSettingsLblCompareMode As MSForms.Label
 Private mSettingsOptCompareStrict As MSForms.OptionButton
 Private mSettingsOptCompareValue As MSForms.OptionButton
 Private mSettingsOptCompareHybrid As MSForms.OptionButton
+Private WithEvents mBtnSettingsSetActiveFolder As MSForms.CommandButton
+Attribute mBtnSettingsSetActiveFolder.VB_VarHelpID = -1
 Private WithEvents mBtnSettingsSave As MSForms.CommandButton
 Attribute mBtnSettingsSave.VB_VarHelpID = -1
 Private WithEvents mBtnSettingsCancel As MSForms.CommandButton
@@ -1258,6 +1260,7 @@ Private Sub EnsureSettingsOverlay()
         Set mSettingsOptCompareStrict = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareStrict", True)
         Set mSettingsOptCompareValue = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareValue", True)
         Set mSettingsOptCompareHybrid = mSettingsFrame.Controls.Add("Forms.OptionButton.1", "optCompareHybrid", True)
+        Set mBtnSettingsSetActiveFolder = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSetActiveFolder", True)
         Set mBtnSettingsSave = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsSave", True)
         Set mBtnSettingsCancel = mSettingsFrame.Controls.Add("Forms.CommandButton.1", "btnSettingsCancel", True)
     End If
@@ -1278,7 +1281,6 @@ Private Sub EnsureSettingsOverlay()
         .Width = 220
         .Height = 20
         .Font.Bold = True
-        .Font.Size = 11
     End With
 
     With mSettingsLblCopy
@@ -1311,10 +1313,18 @@ Private Sub EnsureSettingsOverlay()
         .Height = 22
     End With
 
+    With mBtnSettingsSetActiveFolder
+        .Caption = "Set active folder directory"
+        .Left = 8
+        .Top = 134
+        .Width = 160
+        .Height = 22
+    End With
+
     With mSettingsLblCompareMode
         .Caption = "Snapshot compare mode:"
         .Left = 8
-        .Top = 138
+        .Top = 164
         .Width = 220
         .Height = 16
     End With
@@ -1322,7 +1332,7 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareStrict
         .Caption = "Strict (Value + Formula)"
         .Left = 12
-        .Top = 154
+        .Top = 180
         .Width = 210
         .Height = 16
     End With
@@ -1330,7 +1340,7 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareValue
         .Caption = "Value-only (recommended)"
         .Left = 12
-        .Top = 170
+        .Top = 196
         .Width = 210
         .Height = 16
     End With
@@ -1338,10 +1348,12 @@ Private Sub EnsureSettingsOverlay()
     With mSettingsOptCompareHybrid
         .Caption = "Hybrid (ignore external-link formula noise)"
         .Left = 12
-        .Top = 186
+        .Top = 212
         .Width = mSettingsFrame.Width - 16
         .Height = 16
     End With
+
+    ApplySettingsOverlayFontSizing
 
     With mBtnSettingsSave
         .Caption = "Save settings"
@@ -1358,6 +1370,24 @@ Private Sub EnsureSettingsOverlay()
         .Top = mSettingsFrame.Height - 32
         .Left = (mSettingsFrame.Width / 2) + 10
     End With
+End Sub
+
+Private Sub ApplySettingsOverlayFontSizing()
+    Dim uniformSize As Single
+    uniformSize = mSettingsLblCopy.Font.Size
+
+    mSettingsLblTitle.Font.Size = uniformSize
+    mSettingsLblCopy.Font.Size = uniformSize
+    mSettingsLblOpen.Font.Size = uniformSize
+    mSettingsLblCompareMode.Font.Size = uniformSize
+    mSettingsTxtCopy.Font.Size = uniformSize
+    mSettingsTxtOpen.Font.Size = uniformSize
+    mSettingsOptCompareStrict.Font.Size = uniformSize
+    mSettingsOptCompareValue.Font.Size = uniformSize
+    mSettingsOptCompareHybrid.Font.Size = uniformSize
+    mBtnSettingsSetActiveFolder.Font.Size = uniformSize
+    mBtnSettingsSave.Font.Size = uniformSize
+    mBtnSettingsCancel.Font.Size = uniformSize
 End Sub
 
 Private Sub ApplySettingsOverlayVisibility()
@@ -1420,6 +1450,60 @@ Private Sub mBtnSettingsSave_Click()
     ApplySettingsOverlayVisibility
     SafeMsgBox "Settings saved.", vbInformation
 End Sub
+
+Private Sub mBtnSettingsSetActiveFolder_Click()
+    Dim activeFolder As String
+    Dim choice As Variant
+
+    activeFolder = GetActiveWorkbookFolder()
+    If Len(activeFolder) = 0 Then Exit Sub
+
+    choice = Application.InputBox( _
+        Prompt:="Select action:" & vbCrLf & _
+                "1 - Set in both" & vbCrLf & _
+                "2 - Set for copy operations" & vbCrLf & _
+                "3 - Set for open operations" & vbCrLf & _
+                "4 - Cancel", _
+        Title:="Set active folder directory", _
+        Type:=1)
+
+    If choice = False Then Exit Sub
+    If choice < 1 Or choice > 4 Then
+        SafeMsgBox "Invalid selection. Choose 1, 2, 3 or 4.", vbExclamation
+        Exit Sub
+    End If
+
+    Select Case CLng(choice)
+        Case 1
+            mSettingsTxtCopy.Text = activeFolder
+            mSettingsTxtOpen.Text = activeFolder
+        Case 2
+            mSettingsTxtCopy.Text = activeFolder
+        Case 3
+            mSettingsTxtOpen.Text = activeFolder
+        Case Else
+            Exit Sub
+    End Select
+End Sub
+
+Private Function GetActiveWorkbookFolder() As String
+    Dim wb As Workbook
+    On Error Resume Next
+    Set wb = ActiveWorkbook
+    On Error GoTo 0
+
+    If wb Is Nothing Then
+        SafeMsgBox "No active workbook found.", vbExclamation
+        Exit Function
+    End If
+
+    If Len(Trim$(wb.Path)) = 0 Then
+        SafeMsgBox "Active workbook is not saved yet, so it has no folder path.", vbExclamation
+        Exit Function
+    End If
+
+    GetActiveWorkbookFolder = wb.Path
+End Function
 
 Private Sub mBtnSettingsCancel_Click()
     mSettingsMode = False
