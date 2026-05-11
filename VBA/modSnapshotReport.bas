@@ -37,10 +37,8 @@ End Function
 
 Private Sub ApplyFormulaDifferenceBold(ByVal formulaCellA As Range, ByVal formulaCellB As Range)
     Dim formulaA As String, formulaB As String
-    Dim i As Long, maxLen As Long
-    Dim runStartA As Long, runStartB As Long
-    Dim runLenA As Long, runLenB As Long
-    Dim isDifferent As Boolean
+    Dim prefixLen As Long, suffixLen As Long
+    Dim diffStart As Long, diffLenA As Long, diffLenB As Long
 
     formulaA = DisplayCellText(formulaCellA)
     formulaB = DisplayCellText(formulaCellB)
@@ -52,32 +50,44 @@ Private Sub ApplyFormulaDifferenceBold(ByVal formulaCellA As Range, ByVal formul
     formulaCellA.Font.Bold = False
     formulaCellB.Font.Bold = False
 
-    maxLen = IIf(Len(formulaA) > Len(formulaB), Len(formulaA), Len(formulaB))
-    runStartA = 0: runStartB = 0: runLenA = 0: runLenB = 0
+    prefixLen = CommonPrefixLength(formulaA, formulaB)
+    suffixLen = CommonSuffixLength(formulaA, formulaB, prefixLen)
 
-    For i = 1 To maxLen + 1
-        isDifferent = IsCharDifferent(formulaA, formulaB, i)
+    diffStart = prefixLen + 1
+    diffLenA = Len(formulaA) - prefixLen - suffixLen
+    diffLenB = Len(formulaB) - prefixLen - suffixLen
 
-        If isDifferent Then
-            If runStartA = 0 And i <= Len(formulaA) Then runStartA = i
-            If runStartB = 0 And i <= Len(formulaB) Then runStartB = i
-            If i <= Len(formulaA) Then runLenA = runLenA + 1
-            If i <= Len(formulaB) Then runLenB = runLenB + 1
-        ElseIf runStartA > 0 Or runStartB > 0 Then
-            If runLenA > 0 Then MarkChangedFragment formulaCellA, runStartA, runLenA
-            If runLenB > 0 Then MarkChangedFragment formulaCellB, runStartB, runLenB
-            runStartA = 0: runStartB = 0: runLenA = 0: runLenB = 0
-        End If
-    Next i
+    If diffLenA > 0 Then MarkChangedFragment formulaCellA, diffStart, diffLenA
+    If diffLenB > 0 Then MarkChangedFragment formulaCellB, diffStart, diffLenB
 End Sub
 
 
-Private Function IsCharDifferent(ByVal textA As String, ByVal textB As String, ByVal position As Long) As Boolean
-    If position > Len(textA) Or position > Len(textB) Then
-        IsCharDifferent = True
-    Else
-        IsCharDifferent = (Mid$(textA, position, 1) <> Mid$(textB, position, 1))
-    End If
+Private Function CommonPrefixLength(ByVal textA As String, ByVal textB As String) As Long
+    Dim i As Long, limitLen As Long
+
+    limitLen = Len(textA)
+    If Len(textB) < limitLen Then limitLen = Len(textB)
+
+    For i = 1 To limitLen
+        If Mid$(textA, i, 1) <> Mid$(textB, i, 1) Then Exit For
+    Next i
+
+    CommonPrefixLength = i - 1
+End Function
+
+
+Private Function CommonSuffixLength(ByVal textA As String, ByVal textB As String, ByVal prefixLen As Long) As Long
+    Dim i As Long
+    Dim maxSuffix As Long
+
+    maxSuffix = Len(textA) - prefixLen
+    If Len(textB) - prefixLen < maxSuffix Then maxSuffix = Len(textB) - prefixLen
+
+    For i = 1 To maxSuffix
+        If Mid$(textA, Len(textA) - i + 1, 1) <> Mid$(textB, Len(textB) - i + 1, 1) Then Exit For
+    Next i
+
+    CommonSuffixLength = i - 1
 End Function
 
 
