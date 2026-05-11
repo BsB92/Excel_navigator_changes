@@ -16,6 +16,7 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
             outRow(1, j) = SanitizeReportCell(CStr(rowData(j - 1)))
         Next j
         ws.Cells(i + 1, 1).Resize(1, 7).Value = outRow
+        ApplyFormulaDifferenceBold ws.Cells(i + 1, 6), ws.Cells(i + 1, 7)
     Next i
 
     folderPath = ResolveReportFolder(sourceWb)
@@ -27,6 +28,52 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     rWb.Close SaveChanges:=False
     Application.DisplayAlerts = True
     GenerateDiffReport = outPath
+End Function
+
+
+Private Sub ApplyFormulaDifferenceBold(ByVal formulaCellA As Range, ByVal formulaCellB As Range)
+    Dim formulaA As String, formulaB As String
+    Dim diffStart As Long, diffLenA As Long, diffLenB As Long
+
+    formulaA = DisplayCellText(formulaCellA)
+    formulaB = DisplayCellText(formulaCellB)
+
+    If Len(formulaA) = 0 Or Len(formulaB) = 0 Then Exit Sub
+    If StrComp(formulaA, formulaB, vbBinaryCompare) = 0 Then Exit Sub
+
+    FindDifferenceBounds formulaA, formulaB, diffStart, diffLenA, diffLenB
+    If diffLenA > 0 Then formulaCellA.Characters(diffStart, diffLenA).Font.Bold = True
+    If diffLenB > 0 Then formulaCellB.Characters(diffStart, diffLenB).Font.Bold = True
+End Sub
+
+
+Private Sub FindDifferenceBounds(ByVal textA As String, ByVal textB As String, ByRef startPos As Long, ByRef changeLenA As Long, ByRef changeLenB As Long)
+    Dim leftMatch As Long, rightMatch As Long
+    Dim maxLeft As Long, maxRight As Long
+
+    maxLeft = IIf(Len(textA) < Len(textB), Len(textA), Len(textB))
+    leftMatch = 0
+    Do While leftMatch < maxLeft
+        If Mid$(textA, leftMatch + 1, 1) <> Mid$(textB, leftMatch + 1, 1) Then Exit Do
+        leftMatch = leftMatch + 1
+    Loop
+
+    maxRight = IIf((Len(textA) - leftMatch) < (Len(textB) - leftMatch), (Len(textA) - leftMatch), (Len(textB) - leftMatch))
+    rightMatch = 0
+    Do While rightMatch < maxRight
+        If Mid$(textA, Len(textA) - rightMatch, 1) <> Mid$(textB, Len(textB) - rightMatch, 1) Then Exit Do
+        rightMatch = rightMatch + 1
+    Loop
+
+    startPos = leftMatch + 1
+    changeLenA = Len(textA) - leftMatch - rightMatch
+    changeLenB = Len(textB) - leftMatch - rightMatch
+End Sub
+
+
+Private Function DisplayCellText(ByVal targetCell As Range) As String
+    DisplayCellText = CStr(targetCell.Value2)
+    If Left$(DisplayCellText, 1) = "'" Then DisplayCellText = Mid$(DisplayCellText, 2)
 End Function
 
 
