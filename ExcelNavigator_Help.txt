@@ -25,7 +25,7 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
 
 3) Kontrolki górnego wiersza
 - Settings: przełącza ramkę Settings ON/OFF.
-  * Stan ON jest podświetlony.
+  * Stan ON jest sygnalizowany pogrubieniem napisu na przycisku (bez zmiany koloru i bez dopisku [ON]).
   * Skonfiguruj dwa foldery:
     1) domyślny folder kopiowania
     2) domyślny folder otwierania
@@ -153,7 +153,7 @@ Excel Navigator - User Guide (v5.2) [EN]
 
 3) Top row controls
 - Settings: toggles Settings frame ON/OFF.
-  * ON state is highlighted.
+  * ON state is indicated only by bold button caption (no color change and no [ON] suffix).
   * Configure two folders:
     1) default copy folder
     2) default open folder

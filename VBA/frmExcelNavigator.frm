@@ -1397,7 +1397,6 @@ Private Sub ApplySettingsOverlayVisibility()
 
     If mSettingsMode Then
         mBtnSettings.Font.Bold = True
-        mBtnSettings.SpecialEffect = fmSpecialEffectSunken
         mSettingsTxtCopy.Text = modNavigatorSettings.GetDefaultWorkingFolder()
         mSettingsTxtOpen.Text = modNavigatorSettings.GetOpenFilesFolder()
         Select Case modNavigatorSettings.GetSnapshotCompareMode()
@@ -1405,16 +1404,37 @@ Private Sub ApplySettingsOverlayVisibility()
             Case modNavigatorSettings.SNAP_COMPARE_MODE_HYBRID: mSettingsOptCompareHybrid.Value = True
             Case Else: mSettingsOptCompareValue.Value = True
         End Select
-        mSettingsFrame.ZOrder 0
     Else
         mBtnSettings.Font.Bold = False
-        mBtnSettings.SpecialEffect = fmSpecialEffectRaised
     End If
+End Sub
+
+Private Sub ApplyUniformFontSizeAcrossAddin()
+    Dim ctl As Object
+    Dim nestedCtl As Object
+    Dim uniformSize As Single
+
+    uniformSize = Me.Font.Size
+
+    For Each ctl In Me.Controls
+        On Error Resume Next
+        ctl.Font.Size = uniformSize
+        On Error GoTo 0
+
+        If TypeName(ctl) = "Frame" Then
+            For Each nestedCtl In ctl.Controls
+                On Error Resume Next
+                nestedCtl.Font.Size = uniformSize
+                On Error GoTo 0
+            Next nestedCtl
+        End If
+    Next ctl
 End Sub
 
 Private Sub mBtnSettings_Click()
     mSettingsMode = Not mSettingsMode
     EnsureSettingsOverlay
+    ApplyUniformFontSizeAcrossAddin
     ApplySettingsOverlayVisibility
 End Sub
 
