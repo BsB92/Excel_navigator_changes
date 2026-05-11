@@ -1396,8 +1396,8 @@ Private Sub ApplySettingsOverlayVisibility()
     mSettingsFrame.Visible = mSettingsMode
 
     If mSettingsMode Then
-        mBtnSettings.BackColor = RGB(0, 176, 80)
         mBtnSettings.Font.Bold = True
+        mBtnSettings.SpecialEffect = fmSpecialEffectSunken
         mSettingsTxtCopy.Text = modNavigatorSettings.GetDefaultWorkingFolder()
         mSettingsTxtOpen.Text = modNavigatorSettings.GetOpenFilesFolder()
         Select Case modNavigatorSettings.GetSnapshotCompareMode()
@@ -1407,8 +1407,8 @@ Private Sub ApplySettingsOverlayVisibility()
         End Select
         mSettingsFrame.ZOrder 0
     Else
-        mBtnSettings.BackColor = vbButtonFace
         mBtnSettings.Font.Bold = False
+        mBtnSettings.SpecialEffect = fmSpecialEffectRaised
     End If
 End Sub
 
