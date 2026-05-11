@@ -140,6 +140,7 @@ Private WithEvents mBtnSnapshotActionHistory As MSForms.CommandButton
 Attribute mBtnSnapshotActionHistory.VB_VarHelpID = -1
 Private WithEvents mChkOpenCopiedFolder As MSForms.CheckBox
 Attribute mChkOpenCopiedFolder.VB_VarHelpID = -1
+Private mLblPostCopyOptions As MSForms.Label
 Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 Private mSettingsMode As Boolean
@@ -1178,10 +1179,26 @@ Private Sub EnsureCopyOptionsControls()
         End If
     End If
 
+    If mLblPostCopyOptions Is Nothing Then
+        Set mLblPostCopyOptions = GetControlIfExists("lblPostCopyOptions")
+        If mLblPostCopyOptions Is Nothing Then
+            Set mLblPostCopyOptions = Me.Controls.Add("Forms.Label.1", "lblPostCopyOptions", True)
+        End If
+    End If
+
     With mChkOpenCopiedFolder
         .Caption = "Open target folder"
         .Visible = True
         .Value = False
+    End With
+
+    With mLblPostCopyOptions
+        .Caption = "Post-copy options:"
+        .Visible = True
+        .BackStyle = fmBackStyleTransparent
+        .AutoSize = False
+        .Height = 12
+        .Width = 130
     End With
 End Sub
 
@@ -3140,6 +3157,7 @@ Private Sub ApplyLayout()
     Dim ctlS3 As Object
     Dim ctlOpenCopied As Object
     Dim ctlOpenCopiedFolder As Object
+    Dim ctlPostCopyLabel As Object
     Dim reservedRight As Single
     Dim sheetBottom As Single
 
@@ -3242,6 +3260,7 @@ Private Sub ApplyLayout()
     Set ctlOpenCopied = GetControlIfExists("ChckBox1")
     If ctlOpenCopied Is Nothing Then Set ctlOpenCopied = GetControlIfExists("CheckBox1")
     Set ctlOpenCopiedFolder = mChkOpenCopiedFolder
+    Set ctlPostCopyLabel = mLblPostCopyOptions
 
     If Not ctlMax Is Nothing Then
         ctlMax.TOP = actionTop
@@ -3295,6 +3314,16 @@ Private Sub ApplyLayout()
             ctlOpenCopiedFolder.Height = ctlOpenCopied.Height
         Else
             ctlOpenCopiedFolder.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop
+        End If
+    End If
+
+    If Not ctlPostCopyLabel Is Nothing Then
+        If Not ctlOpenCopied Is Nothing Then
+            ctlPostCopyLabel.Left = ctlOpenCopied.Left
+            ctlPostCopyLabel.TOP = ctlOpenCopied.TOP - ctlPostCopyLabel.Height - 1
+        Else
+            ctlPostCopyLabel.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
+            ctlPostCopyLabel.TOP = Me.btnCopyWithSuffix.TOP + mOpenCopiedOffsetTop - ctlPostCopyLabel.Height - 1
         End If
     End If
 
