@@ -52,6 +52,10 @@ Files most impacted
 
 - Changed keyboard shortcut on lists: `S` now toggles Selection mode (press once = ON, press again = OFF).
 
+9) v5.2 - hard version bump (no backward compatibility)
+- Updated add-in version identifiers to v5.2 in form caption and registry scope keys.
+- Updated help document headers to v5.2.
+
 8) v5.1 - full path clipboard UX
 - Updated add-in version to v5.1 in navigator caption and settings registry scope.
 - Added double-click action on the full path textbox (`txtFullPath`) to copy full path to clipboard.

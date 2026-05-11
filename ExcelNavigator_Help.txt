@@ -1,4 +1,4 @@
-Excel Navigator - Instrukcja użytkownika (v5.1) [PL]
+Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
 
 1) Ogólny przepływ pracy
 - Kliknij Reload list, aby odświeżyć listę aktualnie otwartych skoroszytów.
@@ -126,7 +126,7 @@ Excel Navigator - Instrukcja użytkownika (v5.1) [PL]
 
 
 ------------------------------------------------------------
-Excel Navigator - User Guide (v5.1) [EN]
+Excel Navigator - User Guide (v5.2) [EN]
 
 1) General workflow
 - Click Reload list to refresh the list of currently open workbooks.
