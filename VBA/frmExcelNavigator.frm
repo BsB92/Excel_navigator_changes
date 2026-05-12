@@ -493,7 +493,35 @@ Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As S
         ext = ".xlsx"
     End If
 
-    BuildOutputPath = normalizedFolder & Application.PathSeparator & baseName & suffix & ext
+    BuildOutputPath = normalizedFolder & GetPathSeparatorForFolder(normalizedFolder) & baseName & suffix & ext
+End Function
+
+
+Private Function GetPathSeparatorForFolder(ByVal folderPath As String) As String
+    If IsWebPath(folderPath) Then
+        GetPathSeparatorForFolder = "/"
+    Else
+        GetPathSeparatorForFolder = Application.PathSeparator
+    End If
+End Function
+
+Private Function IsWebPath(ByVal folderPath As String) As Boolean
+    Dim v As String
+    v = LCase$(Trim$(folderPath))
+    IsWebPath = (Left$(v, 7) = "http://" Or Left$(v, 8) = "https://")
+End Function
+
+Private Function IsUsableFolderPath(ByVal folderPath As String) As Boolean
+    Dim p As String
+    p = Trim$(folderPath)
+    If Len(p) = 0 Then Exit Function
+
+    If IsWebPath(p) Then
+        IsUsableFolderPath = True
+        Exit Function
+    End If
+
+    IsUsableFolderPath = (Len(Dir$(p, vbDirectory)) > 0)
 End Function
 
 Private Sub ForceBreakExternalFormulas(ByVal wb As Workbook)
@@ -1476,13 +1504,13 @@ Private Sub mBtnSettingsSave_Click()
     copyFolder = Trim$(mSettingsTxtCopy.Text)
     openFolder = Trim$(mSettingsTxtOpen.Text)
 
-    If Len(copyFolder) = 0 Or Len(Dir$(copyFolder, vbDirectory)) = 0 Then
-        SafeMsgBox "Copy folder does not exist: " & copyFolder, vbExclamation
+    If Not IsUsableFolderPath(copyFolder) Then
+        SafeMsgBox "Copy folder does not exist or is invalid: " & copyFolder, vbExclamation
         Exit Sub
     End If
 
-    If Len(openFolder) = 0 Or Len(Dir$(openFolder, vbDirectory)) = 0 Then
-        SafeMsgBox "Open folder does not exist: " & openFolder, vbExclamation
+    If Not IsUsableFolderPath(openFolder) Then
+        SafeMsgBox "Open folder does not exist or is invalid: " & openFolder, vbExclamation
         Exit Sub
     End If
 
@@ -1922,9 +1950,10 @@ Private Sub ActivateWorkbookFromListIndex(ByVal idx As Long)
     If wb Is Nothing Then GoTo SafeExit
 
     On Error Resume Next
+    modWinAPI.SetTopMostState Me.Caption, False
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
-    Me.lstWorkbooks.SetFocus
+    AppActivate Application.Caption
     On Error GoTo 0
 
 SafeExit:
@@ -3027,14 +3056,15 @@ Private Sub ActivateSheetFromSheetList()
     If ws Is Nothing Then GoTo SafeExit
 
     On Error Resume Next
+    modWinAPI.SetTopMostState Me.Caption, False
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
     ws.Activate
+    AppActivate Application.Caption
     On Error GoTo 0
 
     RefreshVisuals
     On Error Resume Next
-    mLstSheets.SetFocus
     On Error GoTo 0
 
 SafeExit:

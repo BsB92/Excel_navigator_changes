@@ -31,6 +31,7 @@ End Function
 Public Function CompareCurrentWorkbookToSnapshot(ByVal currentWb As Workbook, ByVal snapshotPath As String) As String
     Dim snapWb As Workbook
     Dim prevAskToUpdateLinks As Boolean, prevAlerts As Boolean
+    Dim openedByThisRoutine As Boolean
 
     On Error GoTo CleanFail
     prevAskToUpdateLinks = Application.AskToUpdateLinks
@@ -38,12 +39,18 @@ Public Function CompareCurrentWorkbookToSnapshot(ByVal currentWb As Workbook, By
     Application.AskToUpdateLinks = False
     Application.DisplayAlerts = False
 
-    Set snapWb = Workbooks.Open(Filename:=snapshotPath, UpdateLinks:=0, ReadOnly:=True)
+    Set snapWb = GetOpenWorkbookByPath(snapshotPath)
+    If snapWb Is Nothing Then
+        Set snapWb = Workbooks.Open(Filename:=snapshotPath, UpdateLinks:=0, ReadOnly:=True)
+        openedByThisRoutine = True
+    End If
     CompareCurrentWorkbookToSnapshot = BuildCompareReport(currentWb, snapWb, "Current", ExtractSnapshotStamp(snapshotPath), currentWb, currentWb.FullName, snapshotPath)
 
 CleanExit:
     On Error Resume Next
-    If Not snapWb Is Nothing Then snapWb.Close SaveChanges:=False
+    If openedByThisRoutine Then
+        If Not snapWb Is Nothing Then snapWb.Close SaveChanges:=False
+    End If
     Application.DisplayAlerts = prevAlerts
     Application.AskToUpdateLinks = prevAskToUpdateLinks
     Exit Function
@@ -55,6 +62,7 @@ End Function
 Public Function CompareTwoSnapshots(ByVal pathA As String, ByVal pathB As String) As String
     Dim wbA As Workbook, wbB As Workbook
     Dim prevAskToUpdateLinks As Boolean, prevAlerts As Boolean
+    Dim openedA As Boolean, openedB As Boolean
 
     On Error GoTo CleanFail
     prevAskToUpdateLinks = Application.AskToUpdateLinks
@@ -62,14 +70,27 @@ Public Function CompareTwoSnapshots(ByVal pathA As String, ByVal pathB As String
     Application.AskToUpdateLinks = False
     Application.DisplayAlerts = False
 
-    Set wbA = Workbooks.Open(Filename:=pathA, UpdateLinks:=0, ReadOnly:=True)
-    Set wbB = Workbooks.Open(Filename:=pathB, UpdateLinks:=0, ReadOnly:=True)
+    Set wbA = GetOpenWorkbookByPath(pathA)
+    If wbA Is Nothing Then
+        Set wbA = Workbooks.Open(Filename:=pathA, UpdateLinks:=0, ReadOnly:=True)
+        openedA = True
+    End If
+
+    Set wbB = GetOpenWorkbookByPath(pathB)
+    If wbB Is Nothing Then
+        Set wbB = Workbooks.Open(Filename:=pathB, UpdateLinks:=0, ReadOnly:=True)
+        openedB = True
+    End If
     CompareTwoSnapshots = BuildCompareReport(wbA, wbB, ExtractSnapshotStamp(pathA), ExtractSnapshotStamp(pathB), wbA, pathA, pathB)
 
 CleanExit:
     On Error Resume Next
-    If Not wbA Is Nothing Then wbA.Close False
-    If Not wbB Is Nothing Then wbB.Close False
+    If openedA Then
+        If Not wbA Is Nothing Then wbA.Close False
+    End If
+    If openedB Then
+        If Not wbB Is Nothing Then wbB.Close False
+    End If
     Application.DisplayAlerts = prevAlerts
     Application.AskToUpdateLinks = prevAskToUpdateLinks
     Exit Function
@@ -211,6 +232,20 @@ Private Sub BreakExternalLinks(ByVal wb As Workbook)
         Next i
     End If
 End Sub
+
+Private Function GetOpenWorkbookByPath(ByVal filePath As String) As Workbook
+    Dim wb As Workbook
+    Dim normalizedTarget As String
+
+    normalizedTarget = LCase$(Replace$(Trim$(filePath), "/", "\"))
+    For Each wb In Application.Workbooks
+        If LCase$(Replace$(wb.FullName, "/", "\")) = normalizedTarget Then
+            Set GetOpenWorkbookByPath = wb
+            Exit Function
+        End If
+    Next wb
+End Function
+
 Private Function WorksheetByName(ByVal wb As Workbook, ByVal nm As String) As Worksheet
     On Error Resume Next
     Set WorksheetByName = wb.Worksheets(nm)
