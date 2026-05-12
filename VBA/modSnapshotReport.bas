@@ -1,16 +1,16 @@
 Attribute VB_Name = "modSnapshotReport"
 Option Explicit
 
-Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook, ByVal labelA As String, ByVal labelB As String) As String
+Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook, ByVal labelA As String, ByVal labelB As String, Optional ByVal fileA As String = "", Optional ByVal fileB As String = "") As String
     Dim rWb As Workbook: Set rWb = Workbooks.Add(xlWBATWorksheet)
     Dim ws As Worksheet, i As Long, j As Long, outPath As String, folderPath As String, baseName As String
     Dim rowData As Variant, outRow(1 To 1, 1 To 7) As Variant
     Set ws = rWb.Worksheets(1): ws.Name = "Summary"
-    ws.Range("A1:B5").Value = Array(Array("Source Workbook", sourceWb.FullName), Array("Side A", labelA), Array("Side B", labelB), Array("Differences", d("Rows").Count), Array("Generated", Now))
-    ws.Range("A7").Value = "Legend"
-    ws.Range("A8").Value = "Changed formula fragment"
-    ws.Range("A8").Characters(1, Len(ws.Range("A8").Value2)).Font.Bold = True
-    ws.Range("A8").Characters(1, Len(ws.Range("A8").Value2)).Font.Color = RGB(192, 0, 0)
+    ws.Range("A1:B7").Value = Array(Array("Source Workbook", sourceWb.FullName), Array("Side A", labelA), Array("Side B", labelB), Array("File A", ResolveDisplayFileName(fileA, labelA)), Array("File B", ResolveDisplayFileName(fileB, labelB)), Array("Differences", d("Rows").Count), Array("Generated", Now))
+    ws.Range("A9").Value = "Legend"
+    ws.Range("A10").Value = "Changed formula fragment"
+    ws.Range("A10").Characters(1, Len(ws.Range("A10").Value2)).Font.Bold = True
+    ws.Range("A10").Characters(1, Len(ws.Range("A10").Value2)).Font.Color = RGB(192, 0, 0)
 
     Set ws = rWb.Worksheets.Add(After:=rWb.Worksheets(rWb.Worksheets.Count)): ws.Name = "Differences"
     ws.Range("A1:G1").Value = Array("Difference Type", "Worksheet", "Cell", "Snapshot A Value", "Snapshot B Value", "Snapshot A Formula", "Snapshot B Formula")
@@ -113,6 +113,16 @@ Private Function SanitizeReportCell(ByVal s As String) As String
         End If
     End If
     SanitizeReportCell = s
+End Function
+
+
+
+Private Function ResolveDisplayFileName(ByVal filePath As String, ByVal fallbackLabel As String) As String
+    If Len(Trim$(filePath)) > 0 Then
+        ResolveDisplayFileName = filePath
+    Else
+        ResolveDisplayFileName = fallbackLabel
+    End If
 End Function
 
 

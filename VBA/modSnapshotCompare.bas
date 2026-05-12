@@ -39,7 +39,7 @@ Public Function CompareCurrentWorkbookToSnapshot(ByVal currentWb As Workbook, By
     Application.DisplayAlerts = False
 
     Set snapWb = Workbooks.Open(Filename:=snapshotPath, UpdateLinks:=0, ReadOnly:=True)
-    CompareCurrentWorkbookToSnapshot = BuildCompareReport(currentWb, snapWb, "Current", ExtractSnapshotStamp(snapshotPath), currentWb)
+    CompareCurrentWorkbookToSnapshot = BuildCompareReport(currentWb, snapWb, "Current", ExtractSnapshotStamp(snapshotPath), currentWb, currentWb.FullName, snapshotPath)
 
 CleanExit:
     On Error Resume Next
@@ -64,7 +64,7 @@ Public Function CompareTwoSnapshots(ByVal pathA As String, ByVal pathB As String
 
     Set wbA = Workbooks.Open(Filename:=pathA, UpdateLinks:=0, ReadOnly:=True)
     Set wbB = Workbooks.Open(Filename:=pathB, UpdateLinks:=0, ReadOnly:=True)
-    CompareTwoSnapshots = BuildCompareReport(wbA, wbB, ExtractSnapshotStamp(pathA), ExtractSnapshotStamp(pathB), wbA)
+    CompareTwoSnapshots = BuildCompareReport(wbA, wbB, ExtractSnapshotStamp(pathA), ExtractSnapshotStamp(pathB), wbA, pathA, pathB)
 
 CleanExit:
     On Error Resume Next
@@ -78,10 +78,10 @@ CleanFail:
     Resume CleanExit
 End Function
 
-Private Function BuildCompareReport(ByVal wbA As Workbook, ByVal wbB As Workbook, ByVal nameA As String, ByVal nameB As String, ByVal reportBaseWb As Workbook) As String
+Private Function BuildCompareReport(ByVal wbA As Workbook, ByVal wbB As Workbook, ByVal nameA As String, ByVal nameB As String, ByVal reportBaseWb As Workbook, Optional ByVal fileA As String = "", Optional ByVal fileB As String = "") As String
     Dim diff As Object
     Set diff = CollectDiffs(wbA, wbB, nameA, nameB)
-    BuildCompareReport = modSnapshotReport.GenerateDiffReport(diff, reportBaseWb, nameA, nameB)
+    BuildCompareReport = modSnapshotReport.GenerateDiffReport(diff, reportBaseWb, nameA, nameB, fileA, fileB)
 End Function
 
 Private Function CollectDiffs(ByVal wbA As Workbook, ByVal wbB As Workbook, ByVal nameA As String, ByVal nameB As String) As Object
