@@ -138,6 +138,8 @@ Private WithEvents mBtnSnapshotActionCompare As MSForms.CommandButton
 Attribute mBtnSnapshotActionCompare.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotActionHistory As MSForms.CommandButton
 Attribute mBtnSnapshotActionHistory.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotActionCompareWithSnapshot As MSForms.CommandButton
+Attribute mBtnSnapshotActionCompareWithSnapshot.VB_VarHelpID = -1
 Private WithEvents mChkOpenCopiedFolder As MSForms.CheckBox
 Attribute mChkOpenCopiedFolder.VB_VarHelpID = -1
 Private mLblPostCopyOptions As MSForms.Label
@@ -1569,6 +1571,7 @@ Private Sub EnsureSnapshotOverlay()
         Set mBtnSnapshotActionCreate = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCreate", True)
         Set mBtnSnapshotActionCompare = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCompare", True)
         Set mBtnSnapshotActionHistory = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionHistory", True)
+        Set mBtnSnapshotActionCompareWithSnapshot = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCompareWithSnapshot", True)
     End If
 
     With mSnapshotFrame
@@ -1576,7 +1579,7 @@ Private Sub EnsureSnapshotOverlay()
         .Left = mBtnSnapshotCreate.Left
         .Top = mBtnSnapshotCreate.Top + mBtnSnapshotCreate.Height + 4
         .Width = 170
-        .Height = 88
+        .Height = 110
         .SpecialEffect = fmSpecialEffectSunken
         .BorderStyle = fmBorderStyleSingle
     End With
@@ -1592,6 +1595,10 @@ Private Sub EnsureSnapshotOverlay()
     With mBtnSnapshotActionHistory
         .Caption = "Compare Latest 2"
         .Left = 8: .Top = 58: .Width = 150: .Height = 20
+    End With
+    With mBtnSnapshotActionCompareWithSnapshot
+        .Caption = "Compare with Snapshot"
+        .Left = 8: .Top = 80: .Width = 150: .Height = 20
     End With
 End Sub
 
@@ -1623,6 +1630,15 @@ Private Sub mBtnSnapshotActionHistory_Click()
     Exit Sub
 EH:
     SafeMsgBox "Compare Latest 2 failed: " & Err.Description, vbExclamation
+End Sub
+
+
+Private Sub mBtnSnapshotActionCompareWithSnapshot_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCompareActiveWithSelectedSnapshot
+    Exit Sub
+EH:
+    SafeMsgBox "Compare with Snapshot failed: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub PinImage1AndTopRow()
