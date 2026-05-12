@@ -68,3 +68,10 @@ Files most impacted
 - Added global uniform font-size application across form controls (including nested controls in frames).
 - Preserved "Set active folder directory" action with 4-way prompt (both/copy/open/cancel).
 - Added launcher macro `ExcelNavigator_v5_2` in `modExcelNavigator`.
+
+
+11) Snapshot folder compatibility + formula diff highlight
+- Fixed "Open Snapshot Folder" to support both current `.snapshot\WorkbookName\` and legacy `.snapshots\WorkbookName\` paths.
+- Compare report now visually marks changed formula fragments using bold + red text.
+- Added legend note in the report summary sheet for changed formula fragment styling.
+- Updated bilingual help (PL/EN) with legacy-folder fallback note and formula-fragment highlight behavior.

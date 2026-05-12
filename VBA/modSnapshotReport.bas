@@ -7,6 +7,10 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     Dim rowData As Variant, outRow(1 To 1, 1 To 7) As Variant
     Set ws = rWb.Worksheets(1): ws.Name = "Summary"
     ws.Range("A1:B5").Value = Array(Array("Source Workbook", sourceWb.FullName), Array("Side A", labelA), Array("Side B", labelB), Array("Differences", d("Rows").Count), Array("Generated", Now))
+    ws.Range("A7").Value = "Legend"
+    ws.Range("A8").Value = "Changed formula fragment"
+    ws.Range("A8").Characters(1, Len(ws.Range("A8").Value2)).Font.Bold = True
+    ws.Range("A8").Characters(1, Len(ws.Range("A8").Value2)).Font.Color = RGB(192, 0, 0)
 
     Set ws = rWb.Worksheets.Add(After:=rWb.Worksheets(rWb.Worksheets.Count)): ws.Name = "Differences"
     ws.Range("A1:G1").Value = Array("Difference Type", "Worksheet", "Cell", "Snapshot A Value", "Snapshot B Value", "Snapshot A Formula", "Snapshot B Formula")
@@ -16,6 +20,7 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
             outRow(1, j) = SanitizeReportCell(CStr(rowData(j - 1)))
         Next j
         ws.Cells(i + 1, 1).Resize(1, 7).Value = outRow
+        ApplyFormulaDifferenceBold ws.Cells(i + 1, 6), ws.Cells(i + 1, 7)
     Next i
 
     folderPath = ResolveReportFolder(sourceWb)
@@ -27,6 +32,76 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     rWb.Close SaveChanges:=False
     Application.DisplayAlerts = True
     GenerateDiffReport = outPath
+End Function
+
+
+Private Sub ApplyFormulaDifferenceBold(ByVal formulaCellA As Range, ByVal formulaCellB As Range)
+    Dim formulaA As String, formulaB As String
+    Dim prefixLen As Long, suffixLen As Long
+    Dim diffStart As Long, diffLenA As Long, diffLenB As Long
+
+    formulaA = DisplayCellText(formulaCellA)
+    formulaB = DisplayCellText(formulaCellB)
+
+    If Len(formulaA) = 0 Or Len(formulaB) = 0 Then Exit Sub
+    If Left$(formulaA, 1) <> "=" Or Left$(formulaB, 1) <> "=" Then Exit Sub
+    If StrComp(formulaA, formulaB, vbBinaryCompare) = 0 Then Exit Sub
+
+    formulaCellA.Font.Bold = False
+    formulaCellB.Font.Bold = False
+
+    prefixLen = CommonPrefixLength(formulaA, formulaB)
+    suffixLen = CommonSuffixLength(formulaA, formulaB, prefixLen)
+
+    diffStart = prefixLen + 1
+    diffLenA = Len(formulaA) - prefixLen - suffixLen
+    diffLenB = Len(formulaB) - prefixLen - suffixLen
+
+    If diffLenA > 0 Then MarkChangedFragment formulaCellA, diffStart, diffLenA
+    If diffLenB > 0 Then MarkChangedFragment formulaCellB, diffStart, diffLenB
+End Sub
+
+
+Private Function CommonPrefixLength(ByVal textA As String, ByVal textB As String) As Long
+    Dim i As Long, limitLen As Long
+
+    limitLen = Len(textA)
+    If Len(textB) < limitLen Then limitLen = Len(textB)
+
+    For i = 1 To limitLen
+        If Mid$(textA, i, 1) <> Mid$(textB, i, 1) Then Exit For
+    Next i
+
+    CommonPrefixLength = i - 1
+End Function
+
+
+Private Function CommonSuffixLength(ByVal textA As String, ByVal textB As String, ByVal prefixLen As Long) As Long
+    Dim i As Long
+    Dim maxSuffix As Long
+
+    maxSuffix = Len(textA) - prefixLen
+    If Len(textB) - prefixLen < maxSuffix Then maxSuffix = Len(textB) - prefixLen
+
+    For i = 1 To maxSuffix
+        If Mid$(textA, Len(textA) - i + 1, 1) <> Mid$(textB, Len(textB) - i + 1, 1) Then Exit For
+    Next i
+
+    CommonSuffixLength = i - 1
+End Function
+
+
+Private Sub MarkChangedFragment(ByVal targetCell As Range, ByVal startPos As Long, ByVal fragmentLen As Long)
+    With targetCell.Characters(startPos, fragmentLen).Font
+        .Bold = True
+        .Color = RGB(192, 0, 0)
+    End With
+End Sub
+
+
+Private Function DisplayCellText(ByVal targetCell As Range) As String
+    DisplayCellText = CStr(targetCell.Value2)
+    If Left$(DisplayCellText, 1) = "'" Then DisplayCellText = Mid$(DisplayCellText, 2)
 End Function
 
 

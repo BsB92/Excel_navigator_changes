@@ -122,15 +122,22 @@ Public Sub SnapshotOpenActiveWorkbookFolder()
     On Error GoTo EH
     Dim wb As Workbook
     Dim snapFolder As String
+    Dim legacyFolder As String
 
     Set wb = ActiveWorkbook
     If wb Is Nothing Then Err.Raise vbObjectError + 6110, "SnapshotOpenActiveWorkbookFolder", "No active workbook."
     If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6111, "SnapshotOpenActiveWorkbookFolder", "Workbook must be saved before opening snapshot folder."
 
     snapFolder = BuildSnapshotFolderForWorkbook(wb)
+    legacyFolder = BuildLegacySnapshotFolderForWorkbook(wb)
+
     If Len(Dir$(snapFolder, vbDirectory)) = 0 Then
-        ShowSnapshotInfo "No snapshot folder found for this workbook yet." & vbCrLf & snapFolder
-        Exit Sub
+        If Len(Dir$(legacyFolder, vbDirectory)) > 0 Then
+            snapFolder = legacyFolder
+        Else
+            ShowSnapshotInfo "No snapshot folder found for this workbook yet." & vbCrLf & snapFolder
+            Exit Sub
+        End If
     End If
 
     OpenFolderInExplorer snapFolder
@@ -232,6 +239,21 @@ Private Function BuildSnapshotFolderForWorkbook(ByVal wb As Workbook) As String
     End If
 
     BuildSnapshotFolderForWorkbook = wb.Path & "\.snapshot\" & modSnapshotStorage.CleanFileName(baseName)
+End Function
+
+
+Private Function BuildLegacySnapshotFolderForWorkbook(ByVal wb As Workbook) As String
+    Dim baseName As String
+
+    If wb Is Nothing Then Exit Function
+    If Len(wb.Path) = 0 Then Exit Function
+
+    baseName = wb.Name
+    If InStrRev(baseName, ".") > 0 Then
+        baseName = Left$(baseName, InStrRev(baseName, ".") - 1)
+    End If
+
+    BuildLegacySnapshotFolderForWorkbook = wb.Path & "\.snapshots\" & modSnapshotStorage.CleanFileName(baseName)
 End Function
 
 Private Function PickAnyExcelFile(ByVal titleText As String) As Variant
