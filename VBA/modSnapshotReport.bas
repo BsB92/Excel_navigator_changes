@@ -5,15 +5,28 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     Dim rWb As Workbook: Set rWb = Workbooks.Add(xlWBATWorksheet)
     Dim ws As Worksheet, i As Long, j As Long, outPath As String, folderPath As String, baseName As String
     Dim rowData As Variant, outRow(1 To 1, 1 To 7) As Variant
+    Dim resolvedFileA As String, resolvedFileB As String
+
+    resolvedFileA = ResolveDisplayFileName(fileA, labelA)
+    resolvedFileB = ResolveDisplayFileName(fileB, labelB)
+
     Set ws = rWb.Worksheets(1): ws.Name = "Summary"
-    ws.Range("A1:B7").Value = Array(Array("Source Workbook", sourceWb.FullName), Array("Side A", labelA), Array("Side B", labelB), Array("File A", ResolveDisplayFileName(fileA, labelA)), Array("File B", ResolveDisplayFileName(fileB, labelB)), Array("Differences", d("Rows").Count), Array("Generated", Now))
+    ws.Range("A1:B7").Value = Array(Array("Source Workbook", sourceWb.FullName), Array("Side A", labelA), Array("Side B", labelB), Array("File A", resolvedFileA), Array("File B", resolvedFileB), Array("Differences", d("Rows").Count), Array("Generated", Now))
     ws.Range("A9").Value = "Legend"
     ws.Range("A10").Value = "Changed formula fragment"
     ws.Range("A10").Characters(1, Len(ws.Range("A10").Value2)).Font.Bold = True
     ws.Range("A10").Characters(1, Len(ws.Range("A10").Value2)).Font.Color = RGB(192, 0, 0)
 
     Set ws = rWb.Worksheets.Add(After:=rWb.Worksheets(rWb.Worksheets.Count)): ws.Name = "Differences"
-    ws.Range("A1:G1").Value = Array("Difference Type", "Worksheet", "Cell", "Snapshot A Value", "Snapshot B Value", "Snapshot A Formula", "Snapshot B Formula")
+    ws.Range("A1:G1").Value = Array( _
+        "Difference Type", _
+        "Worksheet", _
+        "Cell", _
+        "A Value (" & GetShortFileLabel(resolvedFileA) & ")", _
+        "B Value (" & GetShortFileLabel(resolvedFileB) & ")", _
+        "A Formula (" & GetShortFileLabel(resolvedFileA) & ")", _
+        "B Formula (" & GetShortFileLabel(resolvedFileB) & ")" _
+    )
     For i = 1 To d("Rows").Count
         rowData = d("Rows")(i)
         For j = 1 To 7
@@ -115,6 +128,22 @@ Private Function SanitizeReportCell(ByVal s As String) As String
     SanitizeReportCell = s
 End Function
 
+
+
+
+Private Function GetShortFileLabel(ByVal valueText As String) As String
+    Dim normalized As String
+    Dim p As Long
+
+    normalized = Replace$(Trim$(valueText), "/", "\")
+    p = InStrRev(normalized, "\")
+
+    If p > 0 And p < Len(normalized) Then
+        GetShortFileLabel = Mid$(normalized, p + 1)
+    Else
+        GetShortFileLabel = valueText
+    End If
+End Function
 
 
 Private Function ResolveDisplayFileName(ByVal filePath As String, ByVal fallbackLabel As String) As String
