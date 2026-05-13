@@ -5,17 +5,30 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     Dim rWb As Workbook: Set rWb = Workbooks.Add(xlWBATWorksheet)
     Dim ws As Worksheet, i As Long, j As Long, outPath As String, folderPath As String, baseName As String
     Dim rowData As Variant, outRow(1 To 1, 1 To 7) As Variant
-    Dim resolvedFileA As String, resolvedFileB As String
+    Dim resolvedFileA As String, resolvedFileB As String, compareMode As String
 
     resolvedFileA = ResolveDisplayFileName(fileA, labelA)
     resolvedFileB = ResolveDisplayFileName(fileB, labelB)
+    compareMode = modNavigatorSettings.GetSnapshotCompareMode()
 
     Set ws = rWb.Worksheets(1): ws.Name = "Summary"
-    ws.Range("A1:B7").Value = Array(Array("Source Workbook", sourceWb.FullName), Array("Side A", labelA), Array("Side B", labelB), Array("File A", resolvedFileA), Array("File B", resolvedFileB), Array("Differences", d("Rows").Count), Array("Generated", Now))
-    ws.Range("A9").Value = "Legend"
-    ws.Range("A10").Value = "Changed formula fragment"
-    ws.Range("A10").Characters(1, Len(ws.Range("A10").Value2)).Font.Bold = True
-    ws.Range("A10").Characters(1, Len(ws.Range("A10").Value2)).Font.Color = RGB(192, 0, 0)
+    ws.Range("A1:B9").Value = Array( _
+        Array("Source Workbook", sourceWb.FullName), _
+        Array("Compare Mode", compareMode), _
+        Array("Side A", labelA), _
+        Array("Side B", labelB), _
+        Array("Plik A (nazwa + sciezka)", GetShortFileLabel(resolvedFileA) & " | " & resolvedFileA), _
+        Array("Plik B (nazwa + sciezka)", GetShortFileLabel(resolvedFileB) & " | " & resolvedFileB), _
+        Array("File A", resolvedFileA), _
+        Array("File B", resolvedFileB), _
+        Array("Differences", d("Rows").Count) _
+    )
+    ws.Range("A10").Value = "Generated"
+    ws.Range("B10").Value = Now
+    ws.Range("A12").Value = "Legend"
+    ws.Range("A13").Value = "Changed formula fragment"
+    ws.Range("A13").Characters(1, Len(ws.Range("A13").Value2)).Font.Bold = True
+    ws.Range("A13").Characters(1, Len(ws.Range("A13").Value2)).Font.Color = RGB(192, 0, 0)
 
     Set ws = rWb.Worksheets.Add(After:=rWb.Worksheets(rWb.Worksheets.Count)): ws.Name = "Differences"
     ws.Range("A1:G1").Value = Array( _
@@ -38,7 +51,7 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
 
     folderPath = ResolveReportFolder(sourceWb)
     modSnapshotStorage.EnsureFolderPath folderPath
-    baseName = modSnapshotStorage.CleanFileName(Left$(sourceWb.Name, InStrRev(sourceWb.Name, ".") - 1)) & "_compare_" & modSnapshotStorage.CleanFileName(labelA) & "_vs_" & modSnapshotStorage.CleanFileName(labelB) & "_report_" & Format$(Now, "yymmddhhnnss") & ".xlsx"
+    baseName = BuildReportFileName(sourceWb.Name, compareMode, resolvedFileA, resolvedFileB)
     outPath = folderPath & "\" & baseName
     Application.DisplayAlerts = False
     rWb.SaveAs Filename:=outPath, FileFormat:=xlOpenXMLWorkbook
@@ -152,6 +165,26 @@ Private Function ResolveDisplayFileName(ByVal filePath As String, ByVal fallback
     Else
         ResolveDisplayFileName = fallbackLabel
     End If
+End Function
+
+
+
+Private Function BuildReportFileName(ByVal sourceWorkbookName As String, ByVal compareMode As String, ByVal fileA As String, ByVal fileB As String) As String
+    Dim sourceBase As String
+    Dim aShort As String
+    Dim bShort As String
+
+    sourceBase = sourceWorkbookName
+    If InStrRev(sourceBase, ".") > 0 Then sourceBase = Left$(sourceBase, InStrRev(sourceBase, ".") - 1)
+
+    aShort = GetShortFileLabel(fileA)
+    bShort = GetShortFileLabel(fileB)
+
+    BuildReportFileName = modSnapshotStorage.CleanFileName(sourceBase) & _
+        "_compare_" & modSnapshotStorage.CleanFileName(compareMode) & _
+        "_" & modSnapshotStorage.CleanFileName(aShort) & _
+        "_vs_" & modSnapshotStorage.CleanFileName(bShort) & _
+        "_report_" & Format$(Now, "yymmdd_hhnnss") & ".xlsx"
 End Function
 
 
