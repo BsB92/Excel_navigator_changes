@@ -39,6 +39,11 @@ End Function
 
 Private Function ResolveExistingFolder(ByVal configuredFolder As String, ByVal fallbackFolder As String) As String
     If Len(configuredFolder) > 0 Then
+        If IsWebPath(configuredFolder) Then
+            ResolveExistingFolder = configuredFolder
+            Exit Function
+        End If
+
         If Len(Dir$(configuredFolder, vbDirectory)) > 0 Then
             ResolveExistingFolder = configuredFolder
             Exit Function
@@ -64,3 +69,9 @@ End Function
 Public Sub SaveSnapshotCompareMode(ByVal modeValue As String)
     SaveSetting REG_APP, REG_SEC_SETTINGS, KEY_SNAPSHOT_COMPARE_MODE, UCase$(Trim$(modeValue))
 End Sub
+
+Private Function IsWebPath(ByVal folderPath As String) As Boolean
+    Dim v As String
+    v = LCase$(Trim$(folderPath))
+    IsWebPath = (Left$(v, 7) = "http://" Or Left$(v, 8) = "https://")
+End Function
