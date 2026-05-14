@@ -12,20 +12,23 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     compareMode = modNavigatorSettings.GetSnapshotCompareMode()
 
     Set ws = rWb.Worksheets(1): ws.Name = "Summary"
-    ws.Cells(1, 1).Value = "Source Workbook": ws.Cells(1, 2).Value = sourceWb.FullName
-    ws.Cells(2, 1).Value = "Compare Mode": ws.Cells(2, 2).Value = compareMode
-    ws.Cells(3, 1).Value = "Side A": ws.Cells(3, 2).Value = labelA
-    ws.Cells(4, 1).Value = "Side B": ws.Cells(4, 2).Value = labelB
-    ws.Cells(5, 1).Value = "Plik A (nazwa + sciezka)": ws.Cells(5, 2).Value = GetShortFileLabel(resolvedFileA) & " | " & resolvedFileA
-    ws.Cells(6, 1).Value = "Plik B (nazwa + sciezka)": ws.Cells(6, 2).Value = GetShortFileLabel(resolvedFileB) & " | " & resolvedFileB
-    ws.Cells(7, 1).Value = "File A": ws.Cells(7, 2).Value = resolvedFileA
-    ws.Cells(8, 1).Value = "File B": ws.Cells(8, 2).Value = resolvedFileB
-    ws.Cells(9, 1).Value = "Differences": ws.Cells(9, 2).Value = d("Rows").Count
-    ws.Cells(10, 1).Value = "Generated": ws.Cells(10, 2).Value = Now
-    ws.Cells(11, 1).Value = "Legend"
-    ws.Cells(12, 1).Value = "Changed formula fragment"
-    ws.Cells(12, 1).Characters(1, Len(ws.Cells(12, 1).Value2)).Font.Bold = True
-    ws.Cells(12, 1).Characters(1, Len(ws.Cells(12, 1).Value2)).Font.Color = RGB(192, 0, 0)
+    ws.Range("A1:B9").Value = Array( _
+        Array("Source Workbook", sourceWb.FullName), _
+        Array("Compare Mode", compareMode), _
+        Array("Side A", labelA), _
+        Array("Side B", labelB), _
+        Array("Plik A (nazwa + sciezka)", GetShortFileLabel(resolvedFileA) & " | " & resolvedFileA), _
+        Array("Plik B (nazwa + sciezka)", GetShortFileLabel(resolvedFileB) & " | " & resolvedFileB), _
+        Array("File A", resolvedFileA), _
+        Array("File B", resolvedFileB), _
+        Array("Differences", d("Rows").Count) _
+    )
+    ws.Range("A10").Value = "Generated"
+    ws.Range("B10").Value = Now
+    ws.Range("A12").Value = "Legend"
+    ws.Range("A13").Value = "Changed formula fragment"
+    ws.Range("A13").Characters(1, Len(ws.Range("A13").Value2)).Font.Bold = True
+    ws.Range("A13").Characters(1, Len(ws.Range("A13").Value2)).Font.Color = RGB(192, 0, 0)
 
     Set ws = rWb.Worksheets.Add(After:=rWb.Worksheets(rWb.Worksheets.Count)): ws.Name = "Differences"
     ws.Range("A1:G1").Value = Array( _
