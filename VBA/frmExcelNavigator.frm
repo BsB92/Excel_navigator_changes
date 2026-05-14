@@ -1560,7 +1560,23 @@ Private Function GetActiveWorkbookFolder() As String
         Exit Function
     End If
 
-    GetActiveWorkbookFolder = modNavigatorSettings.NormalizeUserFolderPath(wb.Path, ThisWorkbook.Path)
+    GetActiveWorkbookFolder = ResolvePreferredActiveFolder(wb.Path)
+End Function
+
+Private Function ResolvePreferredActiveFolder(ByVal workbookFolder As String) As String
+    Dim normalized As String
+    Dim snapshotMarker As String
+    Dim markerPos As Long
+
+    normalized = modNavigatorSettings.NormalizeUserFolderPath(workbookFolder, ThisWorkbook.Path)
+    snapshotMarker = "\.snapshot\"
+    markerPos = InStr(1, normalized, snapshotMarker, vbTextCompare)
+
+    If markerPos > 1 Then
+        ResolvePreferredActiveFolder = Left$(normalized, markerPos - 1)
+    Else
+        ResolvePreferredActiveFolder = normalized
+    End If
 End Function
 
 Private Sub mBtnSettingsCancel_Click()

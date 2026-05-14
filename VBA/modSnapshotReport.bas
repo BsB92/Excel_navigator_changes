@@ -29,6 +29,8 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     ws.Range("A13").Value = "Changed formula fragment"
     ws.Range("A13").Characters(1, Len(ws.Range("A13").Value2)).Font.Bold = True
     ws.Range("A13").Characters(1, Len(ws.Range("A13").Value2)).Font.Color = RGB(192, 0, 0)
+    ws.Range("A15").Value = "Compare Mode (report)"
+    ws.Range("B15").Value = compareMode
 
     Set ws = rWb.Worksheets.Add(After:=rWb.Worksheets(rWb.Worksheets.Count)): ws.Name = "Differences"
     ws.Range("A1:G1").Value = Array( _
@@ -53,6 +55,8 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     modSnapshotStorage.EnsureFolderPath folderPath
     baseName = BuildReportFileName(sourceWb.Name, compareMode, resolvedFileA, resolvedFileB)
     outPath = folderPath & "\" & baseName
+    rWb.Worksheets("Summary").Activate
+    rWb.Worksheets("Summary").Range("A1").Select
     Application.DisplayAlerts = False
     rWb.SaveAs Filename:=outPath, FileFormat:=xlOpenXMLWorkbook
     rWb.Close SaveChanges:=False
@@ -176,7 +180,7 @@ Private Function BuildReportFileName(ByVal sourceWorkbookName As String, ByVal c
     aShort = GetShortFileLabel(fileA)
     bShort = GetShortFileLabel(fileB)
 
-    BuildReportFileName = "Compare_" & modSnapshotStorage.CleanFileName(compareMode) & _
+    BuildReportFileName = "CompareMode_" & modSnapshotStorage.CleanFileName(compareMode) & _
         "_" & modSnapshotStorage.CleanFileName(aShort) & _
         "_vs_" & modSnapshotStorage.CleanFileName(bShort) & _
         "_" & Format$(Now, "yymmdd_hhnnss") & ".xlsx"
