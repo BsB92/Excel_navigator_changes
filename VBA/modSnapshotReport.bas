@@ -170,21 +170,16 @@ End Function
 
 
 Private Function BuildReportFileName(ByVal sourceWorkbookName As String, ByVal compareMode As String, ByVal fileA As String, ByVal fileB As String) As String
-    Dim sourceBase As String
     Dim aShort As String
     Dim bShort As String
-
-    sourceBase = sourceWorkbookName
-    If InStrRev(sourceBase, ".") > 0 Then sourceBase = Left$(sourceBase, InStrRev(sourceBase, ".") - 1)
 
     aShort = GetShortFileLabel(fileA)
     bShort = GetShortFileLabel(fileB)
 
-    BuildReportFileName = modSnapshotStorage.CleanFileName(sourceBase) & _
-        "_compare_" & modSnapshotStorage.CleanFileName(compareMode) & _
+    BuildReportFileName = "Compare_" & modSnapshotStorage.CleanFileName(compareMode) & _
         "_" & modSnapshotStorage.CleanFileName(aShort) & _
         "_vs_" & modSnapshotStorage.CleanFileName(bShort) & _
-        "_report_" & Format$(Now, "yymmdd_hhnnss") & ".xlsx"
+        "_" & Format$(Now, "yymmdd_hhnnss") & ".xlsx"
 End Function
 
 

@@ -1501,8 +1501,8 @@ Private Sub mBtnSettingsSave_Click()
     Dim copyFolder As String
     Dim openFolder As String
 
-    copyFolder = Trim$(mSettingsTxtCopy.Text)
-    openFolder = Trim$(mSettingsTxtOpen.Text)
+    copyFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtCopy.Text), ThisWorkbook.Path)
+    openFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtOpen.Text), ThisWorkbook.Path)
 
     If Not IsUsableFolderPath(copyFolder) Then
         SafeMsgBox "Copy folder does not exist or is invalid: " & copyFolder, vbExclamation
@@ -1560,7 +1560,7 @@ Private Function GetActiveWorkbookFolder() As String
         Exit Function
     End If
 
-    GetActiveWorkbookFolder = wb.Path
+    GetActiveWorkbookFolder = modNavigatorSettings.NormalizeUserFolderPath(wb.Path, ThisWorkbook.Path)
 End Function
 
 Private Sub mBtnSettingsCancel_Click()
