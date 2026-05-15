@@ -1500,9 +1500,11 @@ End Sub
 Private Sub mBtnSettingsSave_Click()
     Dim copyFolder As String
     Dim openFolder As String
+    Dim pathBase As String
 
-    copyFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtCopy.Text), ThisWorkbook.Path)
-    openFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtOpen.Text), ThisWorkbook.Path)
+    pathBase = GetPreferredSettingsBaseFolder()
+    copyFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtCopy.Text), pathBase)
+    openFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtOpen.Text), pathBase)
 
     If Not IsUsableFolderPath(copyFolder) Then
         SafeMsgBox "Copy folder does not exist or is invalid: " & copyFolder, vbExclamation
@@ -1529,6 +1531,23 @@ Private Sub mBtnSettingsSave_Click()
     ApplySettingsOverlayVisibility
     SafeMsgBox "Settings saved.", vbInformation
 End Sub
+
+Private Function GetPreferredSettingsBaseFolder() As String
+    Dim wb As Workbook
+
+    On Error Resume Next
+    Set wb = ActiveWorkbook
+    On Error GoTo 0
+
+    If Not wb Is Nothing Then
+        If Len(Trim$(wb.Path)) > 0 Then
+            GetPreferredSettingsBaseFolder = ResolvePreferredActiveFolder(wb.Path)
+            Exit Function
+        End If
+    End If
+
+    GetPreferredSettingsBaseFolder = ThisWorkbook.Path
+End Function
 
 Private Sub mBtnSettingsUseActiveForCopy_Click()
     Dim activeFolder As String
