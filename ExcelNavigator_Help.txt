@@ -36,6 +36,13 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
   * W ramce dostępne są akcje: Create Snapshot, Open Snapshot Folder, Compare Latest 2, Compare with Snapshot.
 - Compare Files: uruchamia porównanie dowolnych dwóch plików Excel.
 
+3a) Aktywny vs wybrany skoroszyt (ważne)
+- Aktywny skoroszyt = skoroszyt, który aktualnie ma fokus w Excelu (to na nim działają akcje typu Max, 1/2/3, Snapshot Create).
+- Wybrany skoroszyt = pozycja zaznaczona na liście w add-inie.
+- Gdy Selection mode = OFF, zwykle masz jeden wybrany wiersz.
+- Gdy Selection mode = ON, możesz mieć wiele wybranych wierszy i akcje "... selected" działają na całej tej grupie.
+- "Use active" w Settings korzysta z aktywnego skoroszytu, a nie z listy zaznaczeń.
+
 4) Obszar listy skoroszytów
 - Kolumny: File / Dir / Sync.
 - Wiersz nagłówka nie jest możliwy do zaznaczenia jako cel akcji.
@@ -182,6 +189,13 @@ Excel Navigator - User Guide (v5.2) [EN]
 - ?: opens this help file.
 - Snapshot: toggles Snapshot / Compare action panel.
 - Compare Files: starts comparison for any two Excel files.
+
+3a) Active vs selected workbook (important)
+- Active workbook = the workbook currently focused in Excel (used by actions like Max, 1/2/3, Snapshot Create).
+- Selected workbook = row selected in the add-in workbook list.
+- When Selection mode = OFF, you usually have one selected row.
+- When Selection mode = ON, you can select multiple rows and "... selected" actions run on that group.
+- "Use active" in Settings uses the active workbook context, not the current list selection.
 
 4) Workbook list area
 - Columns: File / Dir / Sync.
