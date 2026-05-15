@@ -30,9 +30,18 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
     1) domyślny folder kopiowania
     2) domyślny folder otwierania
   * Save settings waliduje obie ścieżki i zapisuje je.
+  * Przyciski "Use active" ustawiają ścieżkę na podstawie aktywnego skoroszytu.
 - ?: otwiera ten plik pomocy.
 - Snapshot: otwiera/zamyka ramkę Snapshot / Compare.
-  * W ramce dostępne są akcje: Create Snapshot, Compare Snapshot, Snapshot History.
+  * W ramce dostępne są akcje: Create Snapshot, Open Snapshot Folder, Compare Latest 2, Compare with Snapshot.
+- Compare Files: uruchamia porównanie dowolnych dwóch plików Excel.
+
+3a) Aktywny vs wybrany skoroszyt (ważne)
+- Aktywny skoroszyt = skoroszyt, który aktualnie ma fokus w Excelu (to na nim działają akcje typu Max, 1/2/3, Snapshot Create).
+- Wybrany skoroszyt = pozycja zaznaczona na liście w add-inie.
+- Gdy Selection mode = OFF, zwykle masz jeden wybrany wiersz.
+- Gdy Selection mode = ON, możesz mieć wiele wybranych wierszy i akcje "... selected" działają na całej tej grupie.
+- "Use active" w Settings korzysta z aktywnego skoroszytu, a nie z listy zaznaczeń.
 
 4) Obszar listy skoroszytów
 - Kolumny: File / Dir / Sync.
@@ -82,7 +91,7 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
 
 11) Szczegóły Settings
 - Domyślny folder kopiowania jest używany jako folder startowy przy wyborze folderu docelowego kopiowania.
-- Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh.
+- Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh oraz pickerów compare.
 - Jeśli skonfigurowany folder już nie istnieje, navigator wraca do ścieżki skoroszytu dodatku.
 
 12) Snapshoty - jak działają (aktualna logika)
@@ -109,9 +118,27 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
   * Strict (Value + Formula): porównuje wartości i formuły.
   * Value-only (recommended): porównuje tylko wartości (zalecane dla live vs snapshot z zerwanymi linkami).
   * Hybrid: porównuje wartości, a różnice samych formuł ignoruje, gdy jedna strona to formuła zewnętrzna i wartości są równe.
+- Algorytm porównania:
+  1) Narzędzie otwiera plik A i plik B z `UpdateLinks:=0` (bez odświeżania linków), żeby wynik był stabilny.
+  2) Tworzy mapę arkuszy po nazwach:
+     - arkusz tylko w A => `Removed Sheet`,
+     - arkusz tylko w B => `Added Sheet`,
+     - arkusz w obu plikach => idzie do porównania komórek.
+  3) Dla arkuszy wspólnych wyznacza realny used-range (nie cały milion wierszy), potem dzieli porównanie na bloki dla wydajności.
+  4) W każdym bloku przechodzi komórka po komórce i pobiera: wartość A/B oraz formułę A/B.
+  5) Decyzja o różnicy zależy od trybu:
+     - `Strict`: różnica wartości LUB formuły => wpis do raportu,
+     - `Value-only`: liczy się tylko różnica wartości,
+     - `Hybrid`: jak `Value-only`, ale dodatkowo filtruje część różnic czysto-formułowych przy formułach zewnętrznych.
+  6) Gdy wykryje różnicę, dopisuje wiersz do `Differences`:
+     `Difference Type`, `Worksheet`, `Cell`, `A Value`, `B Value`, `A Formula`, `B Formula`.
+  7) Dla formuł raport dodatkowo podświetla (bold + czerwony) fragment, który się zmienił.
+  8) Po zakończeniu liczy statystyki do `Summary` (m.in. liczba różnic, arkusze z różnicami, added/removed sheets).
+  9) W `Summary` zapisuje też kontekst porównania: `Compare Mode`, `File A name/path`, `File B name/path`, czas wygenerowania.
+  10) Raport zapisuje do pliku `.xlsx` w folderze raportów snapshot i ustawia widok startowy na `Summary!A1`.
 
 14) `_snapshot_meta` - co zawiera
-- Arkusz jest widoczny (nie very hidden).
+- Arkusz jest widoczny.
 - Pola:
   * `OriginalPath` - pełna ścieżka oryginalnego skoroszytu,
   * `OriginalName` - oryginalna nazwa pliku,
@@ -158,7 +185,17 @@ Excel Navigator - User Guide (v5.2) [EN]
     1) default copy folder
     2) default open folder
   * Save settings validates both paths and stores them.
+  * "Use active" buttons fill paths from the active workbook context.
 - ?: opens this help file.
+- Snapshot: toggles Snapshot / Compare action panel.
+- Compare Files: starts comparison for any two Excel files.
+
+3a) Active vs selected workbook (important)
+- Active workbook = the workbook currently focused in Excel (used by actions like Max, 1/2/3, Snapshot Create).
+- Selected workbook = row selected in the add-in workbook list.
+- When Selection mode = OFF, you usually have one selected row.
+- When Selection mode = ON, you can select multiple rows and "... selected" actions run on that group.
+- "Use active" in Settings uses the active workbook context, not the current list selection.
 
 4) Workbook list area
 - Columns: File / Dir / Sync.
@@ -208,7 +245,7 @@ Excel Navigator - User Guide (v5.2) [EN]
 
 11) Settings details
 - Default copy folder is used as initial folder for copy target selection.
-- Default open folder is used as initial folder for Open/Open&Refresh file picker.
+- Default open folder is used as initial folder for Open/Open&Refresh and compare file pickers.
 - If configured folder no longer exists, navigator falls back to add-in workbook path.
 
 12) Snapshots - current behavior
@@ -235,9 +272,27 @@ Excel Navigator - User Guide (v5.2) [EN]
   * Strict (Value + Formula): compares values and formulas.
   * Value-only (recommended): compares values only (best for live workbook vs snapshot with broken links).
   * Hybrid: compares values, and ignores formula-only differences when one side is an external-link formula and values are equal.
+- Comparison algorithm:
+  1) The tool opens file A and file B with `UpdateLinks:=0` (no link refresh) for stable results.
+  2) It builds a worksheet-name map:
+     - sheet only in A => `Removed Sheet`,
+     - sheet only in B => `Added Sheet`,
+     - sheet in both => included in cell-by-cell comparison.
+  3) For shared sheets, it determines the real used range (not full-sheet scan) and compares in blocks for performance.
+  4) Inside each block, it checks each cell and reads: value A/B and formula A/B.
+  5) Difference decision depends on selected mode:
+     - `Strict`: value OR formula change is reported,
+     - `Value-only`: only value change is reported,
+     - `Hybrid`: value-oriented mode that filters selected formula-only noise for external-link formulas.
+  6) Each detected difference is appended to `Differences` with:
+     `Difference Type`, `Worksheet`, `Cell`, `A Value`, `B Value`, `A Formula`, `B Formula`.
+  7) For formula rows, the report additionally highlights changed formula fragments (bold + red).
+  8) After scanning, summary counters are calculated (e.g., total differences, sheets with changes, added/removed sheets).
+  9) `Summary` also stores run context: `Compare Mode`, `File A name/path`, `File B name/path`, and generation timestamp.
+  10) The report is saved as `.xlsx` in the snapshot report folder and opens with `Summary!A1` as the start view.
 
 14) `_snapshot_meta` contents
-- The sheet is visible (not very hidden).
+- The sheet is visible.
 - Fields:
   * `OriginalPath` - full source workbook path,
   * `OriginalName` - original workbook file name,

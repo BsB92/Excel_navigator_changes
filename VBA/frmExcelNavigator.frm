@@ -332,14 +332,18 @@ Private Function PickFolder(ByVal titleText As String) As String
     Dim fd As FileDialog
     Dim initialFolder As String
 
-    initialFolder = modNavigatorSettings.ResolveInitialFolder(ThisWorkbook.Path)
+    initialFolder = modNavigatorSettings.ResolveInitialFolder(GetPreferredSettingsBaseFolder())
     Set fd = Application.FileDialog(msoFileDialogFolderPicker)
     With fd
         .Title = titleText
         .AllowMultiSelect = False
+
+        ' Keep picker rooted in the preferred folder, but clear prefilled "Folder name"
         On Error Resume Next
-        .InitialFileName = initialFolder
+        If Len(initialFolder) > 0 Then ChDir initialFolder
+        .InitialFileName = ""
         On Error GoTo 0
+
         If .Show = -1 Then
             PickFolder = .SelectedItems(1)
         Else
@@ -1500,9 +1504,11 @@ End Sub
 Private Sub mBtnSettingsSave_Click()
     Dim copyFolder As String
     Dim openFolder As String
+    Dim pathBase As String
 
-    copyFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtCopy.Text), ThisWorkbook.Path)
-    openFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtOpen.Text), ThisWorkbook.Path)
+    pathBase = GetPreferredSettingsBaseFolder()
+    copyFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtCopy.Text), pathBase)
+    openFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtOpen.Text), pathBase)
 
     If Not IsUsableFolderPath(copyFolder) Then
         SafeMsgBox "Copy folder does not exist or is invalid: " & copyFolder, vbExclamation
@@ -1529,6 +1535,23 @@ Private Sub mBtnSettingsSave_Click()
     ApplySettingsOverlayVisibility
     SafeMsgBox "Settings saved.", vbInformation
 End Sub
+
+Private Function GetPreferredSettingsBaseFolder() As String
+    Dim wb As Workbook
+
+    On Error Resume Next
+    Set wb = ActiveWorkbook
+    On Error GoTo 0
+
+    If Not wb Is Nothing Then
+        If Len(Trim$(wb.Path)) > 0 Then
+            GetPreferredSettingsBaseFolder = ResolvePreferredActiveFolder(wb.Path)
+            Exit Function
+        End If
+    End If
+
+    GetPreferredSettingsBaseFolder = ThisWorkbook.Path
+End Function
 
 Private Sub mBtnSettingsUseActiveForCopy_Click()
     Dim activeFolder As String
@@ -1560,7 +1583,25 @@ Private Function GetActiveWorkbookFolder() As String
         Exit Function
     End If
 
-    GetActiveWorkbookFolder = modNavigatorSettings.NormalizeUserFolderPath(wb.Path, ThisWorkbook.Path)
+    GetActiveWorkbookFolder = ResolvePreferredActiveFolder(wb.Path)
+End Function
+
+Private Function ResolvePreferredActiveFolder(ByVal workbookFolder As String) As String
+    Dim normalized As String
+    Dim snapshotMarker As String
+    Dim markerPos As Long
+
+    normalized = modNavigatorSettings.NormalizeUserFolderPath(workbookFolder, workbookFolder)
+    snapshotMarker = "\.snapshot\"
+    markerPos = InStr(1, normalized, snapshotMarker, vbTextCompare)
+
+    If markerPos > 1 Then
+        ResolvePreferredActiveFolder = Left$(normalized, markerPos + Len(snapshotMarker) - 2)
+    ElseIf Right$(normalized, Len("\.snapshot")) = "\.snapshot" Then
+        ResolvePreferredActiveFolder = Left$(normalized, Len(normalized) - Len("\.snapshot"))
+    Else
+        ResolvePreferredActiveFolder = normalized
+    End If
 End Function
 
 Private Sub mBtnSettingsCancel_Click()
@@ -3703,7 +3744,7 @@ Private Function PickFilesMulti(ByVal titleText As String) As Collection
 
     Set col = New Collection
     Set fd = Application.FileDialog(msoFileDialogFilePicker)
-    initialFolder = modNavigatorSettings.ResolveOpenFilesInitialFolder(ThisWorkbook.Path)
+    initialFolder = modNavigatorSettings.ResolveOpenFilesInitialFolder(GetPreferredSettingsBaseFolder())
 
     With fd
         .Title = titleText
