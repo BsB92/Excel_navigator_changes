@@ -109,6 +109,13 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
   * Strict (Value + Formula): porównuje wartości i formuły.
   * Value-only (recommended): porównuje tylko wartości (zalecane dla live vs snapshot z zerwanymi linkami).
   * Hybrid: porównuje wartości, a różnice samych formuł ignoruje, gdy jedna strona to formuła zewnętrzna i wartości są równe.
+- Uproszczony algorytm porównania (krok po kroku):
+  1) Narzędzie otwiera plik A i plik B bez odświeżania linków.
+  2) Buduje listę arkuszy: Added/Removed Sheet, gdy arkusz istnieje tylko po jednej stronie.
+  3) Dla arkuszy wspólnych porównuje używany zakres blokami komórek.
+  4) Dla każdej komórki sprawdza różnice zależnie od trybu (Strict / Value-only / Hybrid).
+  5) Każdą różnicę dopisuje do arkusza Differences (typ, arkusz, adres, wartości/formuły A i B).
+  6) Na końcu tworzy Summary: tryb compare, plik A/plik B (nazwa + ścieżka), liczniki zmian i czas wygenerowania.
 
 14) `_snapshot_meta` - co zawiera
 - Arkusz jest widoczny (nie very hidden).
@@ -235,6 +242,13 @@ Excel Navigator - User Guide (v5.2) [EN]
   * Strict (Value + Formula): compares values and formulas.
   * Value-only (recommended): compares values only (best for live workbook vs snapshot with broken links).
   * Hybrid: compares values, and ignores formula-only differences when one side is an external-link formula and values are equal.
+- Simplified comparison algorithm:
+  1) The tool opens file A and file B with link updates disabled.
+  2) It builds a worksheet map and marks Added/Removed Sheet when a sheet exists only on one side.
+  3) For shared sheets, it compares the used range in cell blocks.
+  4) For each cell, it applies the selected mode logic (Strict / Value-only / Hybrid).
+  5) Every difference is written to Differences (type, sheet, address, A/B values and formulas).
+  6) Finally, Summary is generated with compare mode, file A/file B (name + path), change counters, and generation time.
 
 14) `_snapshot_meta` contents
 - The sheet is visible (not very hidden).

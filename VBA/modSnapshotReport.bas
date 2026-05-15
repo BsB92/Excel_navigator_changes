@@ -12,25 +12,7 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     compareMode = modNavigatorSettings.GetSnapshotCompareMode()
 
     Set ws = rWb.Worksheets(1): ws.Name = "Summary"
-    ws.Range("A1:B9").Value = Array( _
-        Array("Source Workbook", sourceWb.FullName), _
-        Array("Compare Mode", compareMode), _
-        Array("Side A", labelA), _
-        Array("Side B", labelB), _
-        Array("Plik A (nazwa + sciezka)", GetShortFileLabel(resolvedFileA) & " | " & resolvedFileA), _
-        Array("Plik B (nazwa + sciezka)", GetShortFileLabel(resolvedFileB) & " | " & resolvedFileB), _
-        Array("File A", resolvedFileA), _
-        Array("File B", resolvedFileB), _
-        Array("Differences", d("Rows").Count) _
-    )
-    ws.Range("A10").Value = "Generated"
-    ws.Range("B10").Value = Now
-    ws.Range("A12").Value = "Legend"
-    ws.Range("A13").Value = "Changed formula fragment"
-    ws.Range("A13").Characters(1, Len(ws.Range("A13").Value2)).Font.Bold = True
-    ws.Range("A13").Characters(1, Len(ws.Range("A13").Value2)).Font.Color = RGB(192, 0, 0)
-    ws.Range("A15").Value = "Compare Mode (report)"
-    ws.Range("B15").Value = compareMode
+    WriteSummary ws, d, sourceWb, compareMode, labelA, labelB, resolvedFileA, resolvedFileB
 
     Set ws = rWb.Worksheets.Add(After:=rWb.Worksheets(rWb.Worksheets.Count)): ws.Name = "Differences"
     ws.Range("A1:G1").Value = Array( _
@@ -64,6 +46,97 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     rWb.Close SaveChanges:=False
     Application.DisplayAlerts = True
     GenerateDiffReport = outPath
+End Function
+
+
+Private Sub WriteSummary(ByVal ws As Worksheet, ByVal d As Object, ByVal sourceWb As Workbook, ByVal compareMode As String, ByVal labelA As String, ByVal labelB As String, ByVal resolvedFileA As String, ByVal resolvedFileB As String)
+    Dim totalDiff As Long
+    Dim changedCells As Long
+    Dim addedSheets As Long
+    Dim removedSheets As Long
+    Dim changedSheets As Long
+    Dim warningCount As Long
+
+    BuildDiffStats d, totalDiff, changedCells, addedSheets, removedSheets, changedSheets, warningCount
+
+    ws.Range("A1:B19").Value = Array( _
+        Array("Source Workbook", sourceWb.FullName), _
+        Array("Compare Mode", compareMode), _
+        Array("Side A", labelA), _
+        Array("Side B", labelB), _
+        Array("File A name", GetShortFileLabel(resolvedFileA)), _
+        Array("File B name", GetShortFileLabel(resolvedFileB)), _
+        Array("File A path", resolvedFileA), _
+        Array("File B path", resolvedFileB), _
+        Array("Compared sheets", CountComparedSheets(d)), _
+        Array("Sheets with differences", changedSheets), _
+        Array("Added sheets", addedSheets), _
+        Array("Removed sheets", removedSheets), _
+        Array("Changed cells", changedCells), _
+        Array("Warnings/other change types", warningCount), _
+        Array("Total differences", totalDiff), _
+        Array("Generated", Now), _
+        Array("Legend", ""), _
+        Array("Changed formula fragment", "bold + red text"), _
+        Array("Compare Mode (report)", compareMode) _
+    )
+
+    ws.Range("A18").Characters(1, Len(ws.Range("A18").Value2)).Font.Bold = True
+    ws.Range("A18").Characters(1, Len(ws.Range("A18").Value2)).Font.Color = RGB(192, 0, 0)
+End Sub
+
+Private Sub BuildDiffStats(ByVal d As Object, ByRef totalDiff As Long, ByRef changedCells As Long, ByRef addedSheets As Long, ByRef removedSheets As Long, ByRef changedSheets As Long, ByRef warningCount As Long)
+    Dim i As Long
+    Dim rowData As Variant
+    Dim diffType As String
+    Dim sheetName As String
+    Dim seen As Object
+
+    totalDiff = d("Rows").Count
+    Set seen = CreateObject("Scripting.Dictionary")
+
+    For i = 1 To d("Rows").Count
+        rowData = d("Rows")(i)
+        diffType = LCase$(Trim$(CStr(rowData(0))))
+        sheetName = Trim$(CStr(rowData(1)))
+
+        If Len(sheetName) > 0 Then
+            If Not seen.Exists(sheetName) Then seen(sheetName) = True
+        End If
+
+        If diffType = "added sheet" Then
+            addedSheets = addedSheets + 1
+        ElseIf diffType = "removed sheet" Then
+            removedSheets = removedSheets + 1
+        ElseIf InStr(1, diffType, "cell", vbTextCompare) > 0 Or InStr(1, diffType, "formula", vbTextCompare) > 0 Or InStr(1, diffType, "value", vbTextCompare) > 0 Then
+            changedCells = changedCells + 1
+        Else
+            warningCount = warningCount + 1
+        End If
+    Next i
+
+    changedSheets = seen.Count
+End Sub
+
+Private Function CountComparedSheets(ByVal d As Object) As Long
+    Dim i As Long
+    Dim rowData As Variant
+    Dim diffType As String
+    Dim sheetName As String
+    Dim seen As Object
+
+    Set seen = CreateObject("Scripting.Dictionary")
+    For i = 1 To d("Rows").Count
+        rowData = d("Rows")(i)
+        diffType = LCase$(Trim$(CStr(rowData(0))))
+        sheetName = Trim$(CStr(rowData(1)))
+        If Len(sheetName) > 0 Then
+            If diffType <> "added sheet" And diffType <> "removed sheet" Then
+                If Not seen.Exists(sheetName) Then seen(sheetName) = True
+            End If
+        End If
+    Next i
+    CountComparedSheets = seen.Count
 End Function
 
 
