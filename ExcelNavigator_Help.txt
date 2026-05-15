@@ -109,13 +109,24 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
   * Strict (Value + Formula): porównuje wartości i formuły.
   * Value-only (recommended): porównuje tylko wartości (zalecane dla live vs snapshot z zerwanymi linkami).
   * Hybrid: porównuje wartości, a różnice samych formuł ignoruje, gdy jedna strona to formuła zewnętrzna i wartości są równe.
-- Uproszczony algorytm porównania (krok po kroku):
-  1) Narzędzie otwiera plik A i plik B bez odświeżania linków.
-  2) Buduje listę arkuszy: Added/Removed Sheet, gdy arkusz istnieje tylko po jednej stronie.
-  3) Dla arkuszy wspólnych porównuje używany zakres blokami komórek.
-  4) Dla każdej komórki sprawdza różnice zależnie od trybu (Strict / Value-only / Hybrid).
-  5) Każdą różnicę dopisuje do arkusza Differences (typ, arkusz, adres, wartości/formuły A i B).
-  6) Na końcu tworzy Summary: tryb compare, plik A/plik B (nazwa + ścieżka), liczniki zmian i czas wygenerowania.
+- Algorytm porównania (dokładniej, krok po kroku):
+  1) Narzędzie otwiera plik A i plik B z `UpdateLinks:=0` (bez odświeżania linków), żeby wynik był stabilny.
+  2) Tworzy mapę arkuszy po nazwach:
+     - arkusz tylko w A => `Removed Sheet`,
+     - arkusz tylko w B => `Added Sheet`,
+     - arkusz w obu plikach => idzie do porównania komórek.
+  3) Dla arkuszy wspólnych wyznacza realny used-range (nie cały milion wierszy), potem dzieli porównanie na bloki dla wydajności.
+  4) W każdym bloku przechodzi komórka po komórce i pobiera: wartość A/B oraz formułę A/B.
+  5) Decyzja o różnicy zależy od trybu:
+     - `Strict`: różnica wartości LUB formuły => wpis do raportu,
+     - `Value-only`: liczy się tylko różnica wartości,
+     - `Hybrid`: jak `Value-only`, ale dodatkowo filtruje część różnic czysto-formułowych przy formułach zewnętrznych.
+  6) Gdy wykryje różnicę, dopisuje wiersz do `Differences`:
+     `Difference Type`, `Worksheet`, `Cell`, `A Value`, `B Value`, `A Formula`, `B Formula`.
+  7) Dla formuł raport dodatkowo podświetla (bold + czerwony) fragment, który się zmienił.
+  8) Po zakończeniu liczy statystyki do `Summary` (m.in. liczba różnic, arkusze z różnicami, added/removed sheets).
+  9) W `Summary` zapisuje też kontekst porównania: `Compare Mode`, `File A name/path`, `File B name/path`, czas wygenerowania.
+  10) Raport zapisuje do pliku `.xlsx` w folderze raportów snapshot i ustawia widok startowy na `Summary!A1`.
 
 14) `_snapshot_meta` - co zawiera
 - Arkusz jest widoczny (nie very hidden).
@@ -242,13 +253,24 @@ Excel Navigator - User Guide (v5.2) [EN]
   * Strict (Value + Formula): compares values and formulas.
   * Value-only (recommended): compares values only (best for live workbook vs snapshot with broken links).
   * Hybrid: compares values, and ignores formula-only differences when one side is an external-link formula and values are equal.
-- Simplified comparison algorithm:
-  1) The tool opens file A and file B with link updates disabled.
-  2) It builds a worksheet map and marks Added/Removed Sheet when a sheet exists only on one side.
-  3) For shared sheets, it compares the used range in cell blocks.
-  4) For each cell, it applies the selected mode logic (Strict / Value-only / Hybrid).
-  5) Every difference is written to Differences (type, sheet, address, A/B values and formulas).
-  6) Finally, Summary is generated with compare mode, file A/file B (name + path), change counters, and generation time.
+- Comparison algorithm (more detailed):
+  1) The tool opens file A and file B with `UpdateLinks:=0` (no link refresh) for stable results.
+  2) It builds a worksheet-name map:
+     - sheet only in A => `Removed Sheet`,
+     - sheet only in B => `Added Sheet`,
+     - sheet in both => included in cell-by-cell comparison.
+  3) For shared sheets, it determines the real used range (not full-sheet scan) and compares in blocks for performance.
+  4) Inside each block, it checks each cell and reads: value A/B and formula A/B.
+  5) Difference decision depends on selected mode:
+     - `Strict`: value OR formula change is reported,
+     - `Value-only`: only value change is reported,
+     - `Hybrid`: value-oriented mode that filters selected formula-only noise for external-link formulas.
+  6) Each detected difference is appended to `Differences` with:
+     `Difference Type`, `Worksheet`, `Cell`, `A Value`, `B Value`, `A Formula`, `B Formula`.
+  7) For formula rows, the report additionally highlights changed formula fragments (bold + red).
+  8) After scanning, summary counters are calculated (e.g., total differences, sheets with changes, added/removed sheets).
+  9) `Summary` also stores run context: `Compare Mode`, `File A name/path`, `File B name/path`, and generation timestamp.
+  10) The report is saved as `.xlsx` in the snapshot report folder and opens with `Summary!A1` as the start view.
 
 14) `_snapshot_meta` contents
 - The sheet is visible (not very hidden).
