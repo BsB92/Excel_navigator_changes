@@ -51,6 +51,8 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
         ApplyFormulaDifferenceBold ws.Cells(i + 1, 6), ws.Cells(i + 1, 7)
     Next i
 
+    ApplyReportLayout rWb.Worksheets("Summary"), ws
+
     folderPath = ResolveReportFolder(sourceWb)
     modSnapshotStorage.EnsureFolderPath folderPath
     baseName = BuildReportFileName(sourceWb.Name, compareMode, resolvedFileA, resolvedFileB)
@@ -63,6 +65,34 @@ Public Function GenerateDiffReport(ByVal d As Object, ByVal sourceWb As Workbook
     Application.DisplayAlerts = True
     GenerateDiffReport = outPath
 End Function
+
+
+Private Sub ApplyReportLayout(ByVal summaryWs As Worksheet, ByVal diffWs As Worksheet)
+    summaryWs.Columns("A:B").EntireColumn.AutoFit
+
+    diffWs.Rows(1).Font.Bold = True
+    diffWs.Columns("A:G").EntireColumn.AutoFit
+    EnsureMinHeaderWidth diffWs, 1, 1
+    EnsureMinHeaderWidth diffWs, 2, 1
+    EnsureMinHeaderWidth diffWs, 3, 1
+    EnsureMinHeaderWidth diffWs, 4, 1
+    EnsureMinHeaderWidth diffWs, 5, 1
+    EnsureMinHeaderWidth diffWs, 6, 1
+    EnsureMinHeaderWidth diffWs, 7, 1
+End Sub
+
+Private Sub EnsureMinHeaderWidth(ByVal targetWs As Worksheet, ByVal colIndex As Long, ByVal headerRow As Long)
+    Dim headerLen As Long
+    Dim minWidth As Double
+
+    headerLen = Len(CStr(targetWs.Cells(headerRow, colIndex).Value2))
+    minWidth = headerLen + 2
+    If minWidth < 14 Then minWidth = 14
+
+    If targetWs.Columns(colIndex).ColumnWidth < minWidth Then
+        targetWs.Columns(colIndex).ColumnWidth = minWidth
+    End If
+End Sub
 
 
 Private Sub ApplyFormulaDifferenceBold(ByVal formulaCellA As Range, ByVal formulaCellB As Range)
