@@ -337,9 +337,13 @@ Private Function PickFolder(ByVal titleText As String) As String
     With fd
         .Title = titleText
         .AllowMultiSelect = False
+
+        ' Keep picker rooted in the preferred folder, but clear prefilled "Folder name"
         On Error Resume Next
-        .InitialFileName = initialFolder
+        If Len(initialFolder) > 0 Then ChDir initialFolder
+        .InitialFileName = ""
         On Error GoTo 0
+
         If .Show = -1 Then
             PickFolder = .SelectedItems(1)
         Else
