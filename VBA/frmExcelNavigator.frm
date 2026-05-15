@@ -138,6 +138,8 @@ Private WithEvents mBtnSnapshotActionCompare As MSForms.CommandButton
 Attribute mBtnSnapshotActionCompare.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotActionHistory As MSForms.CommandButton
 Attribute mBtnSnapshotActionHistory.VB_VarHelpID = -1
+Private WithEvents mBtnSnapshotActionCompareWithSnapshot As MSForms.CommandButton
+Attribute mBtnSnapshotActionCompareWithSnapshot.VB_VarHelpID = -1
 Private WithEvents mChkOpenCopiedFolder As MSForms.CheckBox
 Attribute mChkOpenCopiedFolder.VB_VarHelpID = -1
 Private mLblPostCopyOptions As MSForms.Label
@@ -330,14 +332,18 @@ Private Function PickFolder(ByVal titleText As String) As String
     Dim fd As FileDialog
     Dim initialFolder As String
 
-    initialFolder = modNavigatorSettings.ResolveInitialFolder(ThisWorkbook.Path)
+    initialFolder = modNavigatorSettings.ResolveInitialFolder(GetPreferredSettingsBaseFolder())
     Set fd = Application.FileDialog(msoFileDialogFolderPicker)
     With fd
         .Title = titleText
         .AllowMultiSelect = False
+
+        ' Keep picker rooted in the preferred folder, but clear prefilled "Folder name"
         On Error Resume Next
-        .InitialFileName = initialFolder
+        If Len(initialFolder) > 0 Then ChDir initialFolder
+        .InitialFileName = ""
         On Error GoTo 0
+
         If .Show = -1 Then
             PickFolder = .SelectedItems(1)
         Else
@@ -491,7 +497,35 @@ Private Function BuildOutputPath(ByVal folderPath As String, ByVal fileName As S
         ext = ".xlsx"
     End If
 
-    BuildOutputPath = normalizedFolder & Application.PathSeparator & baseName & suffix & ext
+    BuildOutputPath = normalizedFolder & GetPathSeparatorForFolder(normalizedFolder) & baseName & suffix & ext
+End Function
+
+
+Private Function GetPathSeparatorForFolder(ByVal folderPath As String) As String
+    If IsWebPath(folderPath) Then
+        GetPathSeparatorForFolder = "/"
+    Else
+        GetPathSeparatorForFolder = Application.PathSeparator
+    End If
+End Function
+
+Private Function IsWebPath(ByVal folderPath As String) As Boolean
+    Dim v As String
+    v = LCase$(Trim$(folderPath))
+    IsWebPath = (Left$(v, 7) = "http://" Or Left$(v, 8) = "https://")
+End Function
+
+Private Function IsUsableFolderPath(ByVal folderPath As String) As Boolean
+    Dim p As String
+    p = Trim$(folderPath)
+    If Len(p) = 0 Then Exit Function
+
+    If IsWebPath(p) Then
+        IsUsableFolderPath = True
+        Exit Function
+    End If
+
+    IsUsableFolderPath = (Len(Dir$(p, vbDirectory)) > 0)
 End Function
 
 Private Sub ForceBreakExternalFormulas(ByVal wb As Workbook)
@@ -1470,17 +1504,19 @@ End Sub
 Private Sub mBtnSettingsSave_Click()
     Dim copyFolder As String
     Dim openFolder As String
+    Dim pathBase As String
 
-    copyFolder = Trim$(mSettingsTxtCopy.Text)
-    openFolder = Trim$(mSettingsTxtOpen.Text)
+    pathBase = GetPreferredSettingsBaseFolder()
+    copyFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtCopy.Text), pathBase)
+    openFolder = modNavigatorSettings.NormalizeUserFolderPath(Trim$(mSettingsTxtOpen.Text), pathBase)
 
-    If Len(copyFolder) = 0 Or Len(Dir$(copyFolder, vbDirectory)) = 0 Then
-        SafeMsgBox "Copy folder does not exist: " & copyFolder, vbExclamation
+    If Not IsUsableFolderPath(copyFolder) Then
+        SafeMsgBox "Copy folder does not exist or is invalid: " & copyFolder, vbExclamation
         Exit Sub
     End If
 
-    If Len(openFolder) = 0 Or Len(Dir$(openFolder, vbDirectory)) = 0 Then
-        SafeMsgBox "Open folder does not exist: " & openFolder, vbExclamation
+    If Not IsUsableFolderPath(openFolder) Then
+        SafeMsgBox "Open folder does not exist or is invalid: " & openFolder, vbExclamation
         Exit Sub
     End If
 
@@ -1499,6 +1535,23 @@ Private Sub mBtnSettingsSave_Click()
     ApplySettingsOverlayVisibility
     SafeMsgBox "Settings saved.", vbInformation
 End Sub
+
+Private Function GetPreferredSettingsBaseFolder() As String
+    Dim wb As Workbook
+
+    On Error Resume Next
+    Set wb = ActiveWorkbook
+    On Error GoTo 0
+
+    If Not wb Is Nothing Then
+        If Len(Trim$(wb.Path)) > 0 Then
+            GetPreferredSettingsBaseFolder = ResolvePreferredActiveFolder(wb.Path)
+            Exit Function
+        End If
+    End If
+
+    GetPreferredSettingsBaseFolder = ThisWorkbook.Path
+End Function
 
 Private Sub mBtnSettingsUseActiveForCopy_Click()
     Dim activeFolder As String
@@ -1530,7 +1583,25 @@ Private Function GetActiveWorkbookFolder() As String
         Exit Function
     End If
 
-    GetActiveWorkbookFolder = wb.Path
+    GetActiveWorkbookFolder = ResolvePreferredActiveFolder(wb.Path)
+End Function
+
+Private Function ResolvePreferredActiveFolder(ByVal workbookFolder As String) As String
+    Dim normalized As String
+    Dim snapshotMarker As String
+    Dim markerPos As Long
+
+    normalized = modNavigatorSettings.NormalizeUserFolderPath(workbookFolder, workbookFolder)
+    snapshotMarker = "\.snapshot\"
+    markerPos = InStr(1, normalized, snapshotMarker, vbTextCompare)
+
+    If markerPos > 1 Then
+        ResolvePreferredActiveFolder = Left$(normalized, markerPos + Len(snapshotMarker) - 2)
+    ElseIf Right$(normalized, Len("\.snapshot")) = "\.snapshot" Then
+        ResolvePreferredActiveFolder = Left$(normalized, Len(normalized) - Len("\.snapshot"))
+    Else
+        ResolvePreferredActiveFolder = normalized
+    End If
 End Function
 
 Private Sub mBtnSettingsCancel_Click()
@@ -1569,6 +1640,7 @@ Private Sub EnsureSnapshotOverlay()
         Set mBtnSnapshotActionCreate = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCreate", True)
         Set mBtnSnapshotActionCompare = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCompare", True)
         Set mBtnSnapshotActionHistory = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionHistory", True)
+        Set mBtnSnapshotActionCompareWithSnapshot = mSnapshotFrame.Controls.Add("Forms.CommandButton.1", "btnSnapshotActionCompareWithSnapshot", True)
     End If
 
     With mSnapshotFrame
@@ -1576,7 +1648,7 @@ Private Sub EnsureSnapshotOverlay()
         .Left = mBtnSnapshotCreate.Left
         .Top = mBtnSnapshotCreate.Top + mBtnSnapshotCreate.Height + 4
         .Width = 170
-        .Height = 88
+        .Height = 110
         .SpecialEffect = fmSpecialEffectSunken
         .BorderStyle = fmBorderStyleSingle
     End With
@@ -1592,6 +1664,10 @@ Private Sub EnsureSnapshotOverlay()
     With mBtnSnapshotActionHistory
         .Caption = "Compare Latest 2"
         .Left = 8: .Top = 58: .Width = 150: .Height = 20
+    End With
+    With mBtnSnapshotActionCompareWithSnapshot
+        .Caption = "Compare with Snapshot"
+        .Left = 8: .Top = 80: .Width = 150: .Height = 20
     End With
 End Sub
 
@@ -1623,6 +1699,15 @@ Private Sub mBtnSnapshotActionHistory_Click()
     Exit Sub
 EH:
     SafeMsgBox "Compare Latest 2 failed: " & Err.Description, vbExclamation
+End Sub
+
+
+Private Sub mBtnSnapshotActionCompareWithSnapshot_Click()
+    On Error GoTo EH
+    modSnapshotMain.SnapshotCompareActiveWithSelectedSnapshot
+    Exit Sub
+EH:
+    SafeMsgBox "Compare with Snapshot failed: " & Err.Description, vbExclamation
 End Sub
 
 Private Sub PinImage1AndTopRow()
@@ -1906,9 +1991,10 @@ Private Sub ActivateWorkbookFromListIndex(ByVal idx As Long)
     If wb Is Nothing Then GoTo SafeExit
 
     On Error Resume Next
+    modWinAPI.SetTopMostState Me.Caption, False
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
-    Me.lstWorkbooks.SetFocus
+    AppActivate Application.Caption
     On Error GoTo 0
 
 SafeExit:
@@ -3011,14 +3097,15 @@ Private Sub ActivateSheetFromSheetList()
     If ws Is Nothing Then GoTo SafeExit
 
     On Error Resume Next
+    modWinAPI.SetTopMostState Me.Caption, False
     If wb.Windows.Count > 0 Then wb.Windows(1).Activate
     wb.Activate
     ws.Activate
+    AppActivate Application.Caption
     On Error GoTo 0
 
     RefreshVisuals
     On Error Resume Next
-    mLstSheets.SetFocus
     On Error GoTo 0
 
 SafeExit:
@@ -3657,7 +3744,7 @@ Private Function PickFilesMulti(ByVal titleText As String) As Collection
 
     Set col = New Collection
     Set fd = Application.FileDialog(msoFileDialogFilePicker)
-    initialFolder = modNavigatorSettings.ResolveOpenFilesInitialFolder(ThisWorkbook.Path)
+    initialFolder = modNavigatorSettings.ResolveOpenFilesInitialFolder(GetPreferredSettingsBaseFolder())
 
     With fd
         .Title = titleText

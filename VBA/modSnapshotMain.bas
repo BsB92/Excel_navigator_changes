@@ -186,6 +186,54 @@ EH:
     ShowSnapshotError "Compare latest snapshots failed", Err.Description
 End Sub
 
+
+Public Sub SnapshotCompareActiveWithSelectedSnapshot()
+    On Error GoTo EH
+    Dim wb As Workbook
+    Dim folderPath As String
+    Dim legacyFolder As String
+    Dim fp As Variant
+    Dim reportPath As String
+
+    Set wb = ActiveWorkbook
+    If wb Is Nothing Then Err.Raise vbObjectError + 6115, "SnapshotCompareActiveWithSelectedSnapshot", "No active workbook."
+    If Len(wb.Path) = 0 Then Err.Raise vbObjectError + 6116, "SnapshotCompareActiveWithSelectedSnapshot", "Workbook must be saved before compare."
+
+    folderPath = BuildSnapshotFolderForWorkbook(wb)
+    legacyFolder = BuildLegacySnapshotFolderForWorkbook(wb)
+
+    If Len(Dir$(folderPath, vbDirectory)) = 0 Then
+        If Len(Dir$(legacyFolder, vbDirectory)) > 0 Then
+            folderPath = legacyFolder
+        Else
+            ShowSnapshotInfo "No snapshots found for this workbook yet." & vbCrLf & folderPath
+            Exit Sub
+        End If
+    End If
+
+    If Dir$(folderPath & "\*_snapshot_*.xlsx") = "" Then
+        ShowSnapshotInfo "No snapshots found for this workbook yet." & vbCrLf & folderPath
+        Exit Sub
+    End If
+
+    fp = PickExcelFileWithInitialFolder( _
+        "Select snapshot to compare with active workbook", _
+        "Excel Files (*.xlsx),*.xlsx", _
+        folderPath _
+    )
+
+    If VarType(fp) = vbBoolean Then
+        ShowSnapshotInfo "Compare canceled (no snapshot selected)."
+        Exit Sub
+    End If
+
+    reportPath = CompareCurrentWorkbookToSnapshot(wb, CStr(fp))
+    ShowCompareReportCreated reportPath
+    Exit Sub
+EH:
+    ShowSnapshotError "Compare with snapshot failed", Err.Description
+End Sub
+
 Private Sub GetTwoLatestSnapshotFiles(ByVal folderPath As String, ByRef latestA As String, ByRef latestB As String)
     Dim fn As String
     Dim fullPath As String
