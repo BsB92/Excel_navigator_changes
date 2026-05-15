@@ -332,7 +332,7 @@ Private Function PickFolder(ByVal titleText As String) As String
     Dim fd As FileDialog
     Dim initialFolder As String
 
-    initialFolder = modNavigatorSettings.ResolveInitialFolder(ThisWorkbook.Path)
+    initialFolder = modNavigatorSettings.ResolveInitialFolder(GetPreferredSettingsBaseFolder())
     Set fd = Application.FileDialog(msoFileDialogFolderPicker)
     With fd
         .Title = titleText
@@ -3740,7 +3740,7 @@ Private Function PickFilesMulti(ByVal titleText As String) As Collection
 
     Set col = New Collection
     Set fd = Application.FileDialog(msoFileDialogFilePicker)
-    initialFolder = modNavigatorSettings.ResolveOpenFilesInitialFolder(ThisWorkbook.Path)
+    initialFolder = modNavigatorSettings.ResolveOpenFilesInitialFolder(GetPreferredSettingsBaseFolder())
 
     With fd
         .Title = titleText
