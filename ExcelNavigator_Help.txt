@@ -30,9 +30,11 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
     1) domyślny folder kopiowania
     2) domyślny folder otwierania
   * Save settings waliduje obie ścieżki i zapisuje je.
+  * Przyciski "Use active" ustawiają ścieżkę na podstawie aktywnego skoroszytu.
 - ?: otwiera ten plik pomocy.
 - Snapshot: otwiera/zamyka ramkę Snapshot / Compare.
-  * W ramce dostępne są akcje: Create Snapshot, Compare Snapshot, Snapshot History.
+  * W ramce dostępne są akcje: Create Snapshot, Open Snapshot Folder, Compare Latest 2, Compare with Snapshot.
+- Compare Files: uruchamia porównanie dowolnych dwóch plików Excel.
 
 4) Obszar listy skoroszytów
 - Kolumny: File / Dir / Sync.
@@ -82,7 +84,7 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
 
 11) Szczegóły Settings
 - Domyślny folder kopiowania jest używany jako folder startowy przy wyborze folderu docelowego kopiowania.
-- Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh.
+- Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh oraz pickerów compare.
 - Jeśli skonfigurowany folder już nie istnieje, navigator wraca do ścieżki skoroszytu dodatku.
 
 12) Snapshoty - jak działają (aktualna logika)
@@ -109,7 +111,7 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
   * Strict (Value + Formula): porównuje wartości i formuły.
   * Value-only (recommended): porównuje tylko wartości (zalecane dla live vs snapshot z zerwanymi linkami).
   * Hybrid: porównuje wartości, a różnice samych formuł ignoruje, gdy jedna strona to formuła zewnętrzna i wartości są równe.
-- Algorytm porównania (dokładniej, krok po kroku):
+- Algorytm porównania:
   1) Narzędzie otwiera plik A i plik B z `UpdateLinks:=0` (bez odświeżania linków), żeby wynik był stabilny.
   2) Tworzy mapę arkuszy po nazwach:
      - arkusz tylko w A => `Removed Sheet`,
@@ -129,7 +131,7 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
   10) Raport zapisuje do pliku `.xlsx` w folderze raportów snapshot i ustawia widok startowy na `Summary!A1`.
 
 14) `_snapshot_meta` - co zawiera
-- Arkusz jest widoczny (nie very hidden).
+- Arkusz jest widoczny.
 - Pola:
   * `OriginalPath` - pełna ścieżka oryginalnego skoroszytu,
   * `OriginalName` - oryginalna nazwa pliku,
@@ -176,7 +178,10 @@ Excel Navigator - User Guide (v5.2) [EN]
     1) default copy folder
     2) default open folder
   * Save settings validates both paths and stores them.
+  * "Use active" buttons fill paths from the active workbook context.
 - ?: opens this help file.
+- Snapshot: toggles Snapshot / Compare action panel.
+- Compare Files: starts comparison for any two Excel files.
 
 4) Workbook list area
 - Columns: File / Dir / Sync.
@@ -226,7 +231,7 @@ Excel Navigator - User Guide (v5.2) [EN]
 
 11) Settings details
 - Default copy folder is used as initial folder for copy target selection.
-- Default open folder is used as initial folder for Open/Open&Refresh file picker.
+- Default open folder is used as initial folder for Open/Open&Refresh and compare file pickers.
 - If configured folder no longer exists, navigator falls back to add-in workbook path.
 
 12) Snapshots - current behavior
@@ -253,7 +258,7 @@ Excel Navigator - User Guide (v5.2) [EN]
   * Strict (Value + Formula): compares values and formulas.
   * Value-only (recommended): compares values only (best for live workbook vs snapshot with broken links).
   * Hybrid: compares values, and ignores formula-only differences when one side is an external-link formula and values are equal.
-- Comparison algorithm (more detailed):
+- Comparison algorithm:
   1) The tool opens file A and file B with `UpdateLinks:=0` (no link refresh) for stable results.
   2) It builds a worksheet-name map:
      - sheet only in A => `Removed Sheet`,
@@ -273,7 +278,7 @@ Excel Navigator - User Guide (v5.2) [EN]
   10) The report is saved as `.xlsx` in the snapshot report folder and opens with `Summary!A1` as the start view.
 
 14) `_snapshot_meta` contents
-- The sheet is visible (not very hidden).
+- The sheet is visible.
 - Fields:
   * `OriginalPath` - full source workbook path,
   * `OriginalName` - original workbook file name,
