@@ -56,33 +56,38 @@ Private Sub WriteSummary(ByVal ws As Worksheet, ByVal d As Object, ByVal sourceW
     Dim removedSheets As Long
     Dim changedSheets As Long
     Dim warningCount As Long
+    Dim rowNo As Long
 
     BuildDiffStats d, totalDiff, changedCells, addedSheets, removedSheets, changedSheets, warningCount
 
-    ws.Range("A1:B19").Value = Array( _
-        Array("Source Workbook", sourceWb.FullName), _
-        Array("Compare Mode", compareMode), _
-        Array("Side A", labelA), _
-        Array("Side B", labelB), _
-        Array("File A name", GetShortFileLabel(resolvedFileA)), _
-        Array("File B name", GetShortFileLabel(resolvedFileB)), _
-        Array("File A path", resolvedFileA), _
-        Array("File B path", resolvedFileB), _
-        Array("Compared sheets", CountComparedSheets(d)), _
-        Array("Sheets with differences", changedSheets), _
-        Array("Added sheets", addedSheets), _
-        Array("Removed sheets", removedSheets), _
-        Array("Changed cells", changedCells), _
-        Array("Warnings/other change types", warningCount), _
-        Array("Total differences", totalDiff), _
-        Array("Generated", Now), _
-        Array("Legend", ""), _
-        Array("Changed formula fragment", "bold + red text"), _
-        Array("Compare Mode (report)", compareMode) _
-    )
+    rowNo = 1
+    WriteSummaryRow ws, rowNo, "Source Workbook", sourceWb.FullName
+    WriteSummaryRow ws, rowNo, "Compare Mode", compareMode
+    WriteSummaryRow ws, rowNo, "Side A", labelA
+    WriteSummaryRow ws, rowNo, "Side B", labelB
+    WriteSummaryRow ws, rowNo, "File A name", GetShortFileLabel(resolvedFileA)
+    WriteSummaryRow ws, rowNo, "File B name", GetShortFileLabel(resolvedFileB)
+    WriteSummaryRow ws, rowNo, "File A path", resolvedFileA
+    WriteSummaryRow ws, rowNo, "File B path", resolvedFileB
+    WriteSummaryRow ws, rowNo, "Compared sheets", CStr(CountComparedSheets(d))
+    WriteSummaryRow ws, rowNo, "Sheets with differences", CStr(changedSheets)
+    WriteSummaryRow ws, rowNo, "Added sheets", CStr(addedSheets)
+    WriteSummaryRow ws, rowNo, "Removed sheets", CStr(removedSheets)
+    WriteSummaryRow ws, rowNo, "Changed cells", CStr(changedCells)
+    WriteSummaryRow ws, rowNo, "Warnings/other change types", CStr(warningCount)
+    WriteSummaryRow ws, rowNo, "Total differences", CStr(totalDiff)
+    WriteSummaryRow ws, rowNo, "Generated", CStr(Now)
+    WriteSummaryRow ws, rowNo, "Legend", ""
+    WriteSummaryRow ws, rowNo, "Changed formula fragment", "bold + red text"
+    ws.Range("A" & rowNo).Characters(1, Len(ws.Range("A" & rowNo).Value2)).Font.Bold = True
+    ws.Range("A" & rowNo).Characters(1, Len(ws.Range("A" & rowNo).Value2)).Font.Color = RGB(192, 0, 0)
+    WriteSummaryRow ws, rowNo, "Compare Mode (report)", compareMode
+End Sub
 
-    ws.Range("A18").Characters(1, Len(ws.Range("A18").Value2)).Font.Bold = True
-    ws.Range("A18").Characters(1, Len(ws.Range("A18").Value2)).Font.Color = RGB(192, 0, 0)
+Private Sub WriteSummaryRow(ByVal ws As Worksheet, ByRef rowNo As Long, ByVal keyText As String, ByVal valueText As String)
+    ws.Cells(rowNo, 1).Value = keyText
+    ws.Cells(rowNo, 2).Value = valueText
+    rowNo = rowNo + 1
 End Sub
 
 Private Sub BuildDiffStats(ByVal d As Object, ByRef totalDiff As Long, ByRef changedCells As Long, ByRef addedSheets As Long, ByRef removedSheets As Long, ByRef changedSheets As Long, ByRef warningCount As Long)
