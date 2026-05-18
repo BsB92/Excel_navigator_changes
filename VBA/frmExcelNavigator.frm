@@ -338,10 +338,8 @@ Private Function PickFolder(ByVal titleText As String) As String
         .Title = titleText
         .AllowMultiSelect = False
 
-        ' Keep picker rooted in the preferred folder, but clear prefilled "Folder name"
         On Error Resume Next
-        If Len(initialFolder) > 0 Then ChDir initialFolder
-        .InitialFileName = ""
+        If Len(initialFolder) > 0 Then .InitialFileName = EnsureTrailingPathSeparator(initialFolder)
         On Error GoTo 0
 
         If .Show = -1 Then
@@ -3665,7 +3663,7 @@ Private Function PickFilesMulti(ByVal titleText As String) As Collection
         .Title = titleText
         .AllowMultiSelect = True
         On Error Resume Next
-        .InitialFileName = initialFolder
+        .InitialFileName = EnsureTrailingPathSeparator(initialFolder)
         On Error GoTo 0
         .Filters.Clear
         .Filters.Add "Excel files", "*.xlsx;*.xlsm;*.xlsb;*.xls", 1
@@ -3682,6 +3680,27 @@ Private Function PickFilesMulti(ByVal titleText As String) As Collection
     End With
 
     Set PickFilesMulti = col
+End Function
+
+
+Private Function EnsureTrailingPathSeparator(ByVal folderPath As String) As String
+    Dim normalized As String
+
+    normalized = Trim$(folderPath)
+    If Len(normalized) = 0 Then
+        EnsureTrailingPathSeparator = normalized
+        Exit Function
+    End If
+
+    If Right$(normalized, 1) <> "\" And Right$(normalized, 1) <> "/" Then
+        If InStr(1, normalized, "http://", vbTextCompare) = 1 Or InStr(1, normalized, "https://", vbTextCompare) = 1 Then
+            normalized = normalized & "/"
+        Else
+            normalized = normalized & Application.PathSeparator
+        End If
+    End If
+
+    EnsureTrailingPathSeparator = normalized
 End Function
 
 Private Function OpenWorkbookSafe(ByVal filePath As String) As Workbook
