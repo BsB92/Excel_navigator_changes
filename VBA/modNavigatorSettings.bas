@@ -7,6 +7,8 @@ Private Const KEY_DEFAULT_FOLDER As String = "DefaultFolder"
 Private Const KEY_OPEN_FILES_FOLDER As String = "OpenFilesFolder"
 Private Const HELP_FILE_NAME As String = "ExcelNavigator_Help.txt"
 Private Const KEY_SNAPSHOT_COMPARE_MODE As String = "SnapshotCompareMode"
+Private Const KEY_OPEN_COPIED_FILES As String = "OpenCopiedFiles"
+Private Const KEY_OPEN_TARGET_FOLDER As String = "OpenTargetFolder"
 
 Public Const SNAP_COMPARE_MODE_STRICT As String = "STRICT"
 Public Const SNAP_COMPARE_MODE_VALUE_ONLY As String = "VALUE_ONLY"
@@ -72,6 +74,22 @@ End Function
 
 Public Sub SaveSnapshotCompareMode(ByVal modeValue As String)
     SaveSetting REG_APP, REG_SEC_SETTINGS, KEY_SNAPSHOT_COMPARE_MODE, UCase$(Trim$(modeValue))
+End Sub
+
+Public Function GetOpenCopiedFilesEnabled() As Boolean
+    GetOpenCopiedFilesEnabled = CBool(Val(GetSetting(REG_APP, REG_SEC_SETTINGS, KEY_OPEN_COPIED_FILES, "0")))
+End Function
+
+Public Sub SaveOpenCopiedFilesEnabled(ByVal enabled As Boolean)
+    SaveSetting REG_APP, REG_SEC_SETTINGS, KEY_OPEN_COPIED_FILES, IIf(enabled, "1", "0")
+End Sub
+
+Public Function GetOpenTargetFolderEnabled() As Boolean
+    GetOpenTargetFolderEnabled = CBool(Val(GetSetting(REG_APP, REG_SEC_SETTINGS, KEY_OPEN_TARGET_FOLDER, "0")))
+End Function
+
+Public Sub SaveOpenTargetFolderEnabled(ByVal enabled As Boolean)
+    SaveSetting REG_APP, REG_SEC_SETTINGS, KEY_OPEN_TARGET_FOLDER, IIf(enabled, "1", "0")
 End Sub
 
 Private Function IsWebPath(ByVal folderPath As String) As Boolean

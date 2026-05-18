@@ -844,7 +844,19 @@ Private Function WorkbookIsOpen(ByVal wbName As String) As Boolean
 End Function
 
 Private Sub CheckBox1_Click()
+    Dim ctl As Object
 
+    Set ctl = GetControlIfExists("ChckBox1")
+    If ctl Is Nothing Then Set ctl = GetControlIfExists("CheckBox1")
+    If ctl Is Nothing Then Exit Sub
+
+    On Error Resume Next
+    SaveOpenCopiedFilesEnabled CBool(ctl.Value)
+    On Error GoTo 0
+End Sub
+
+Private Sub ChckBox1_Click()
+    CheckBox1_Click
 End Sub
 
 Private Function ShouldOpenCopiedFiles() As Boolean
@@ -1121,6 +1133,8 @@ ApplyLayout
 End Sub
 
 Private Sub EnsureCopyOptionsControls()
+    Dim ctlOpenCopied As Object
+
     If mChkOpenCopiedFolder Is Nothing Then
         Set mChkOpenCopiedFolder = GetControlIfExists("chkOpenCopiedFolder")
         If mChkOpenCopiedFolder Is Nothing Then
@@ -1138,7 +1152,7 @@ Private Sub EnsureCopyOptionsControls()
     With mChkOpenCopiedFolder
         .Caption = "Open target folder"
         .Visible = True
-        .Value = False
+        .Value = GetOpenTargetFolderEnabled()
     End With
 
     With mLblPostCopyOptions
@@ -1149,6 +1163,20 @@ Private Sub EnsureCopyOptionsControls()
         .Height = 12
         .Width = 130
     End With
+
+    Set ctlOpenCopied = GetControlIfExists("ChckBox1")
+    If ctlOpenCopied Is Nothing Then Set ctlOpenCopied = GetControlIfExists("CheckBox1")
+    If Not ctlOpenCopied Is Nothing Then
+        On Error Resume Next
+        ctlOpenCopied.Value = GetOpenCopiedFilesEnabled()
+        On Error GoTo 0
+    End If
+End Sub
+
+Private Sub mChkOpenCopiedFolder_Click()
+    On Error Resume Next
+    SaveOpenTargetFolderEnabled CBool(mChkOpenCopiedFolder.Value)
+    On Error GoTo 0
 End Sub
 
 Private Sub EnsureTopLeftButtons()
