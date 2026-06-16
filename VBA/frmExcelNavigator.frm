@@ -851,11 +851,27 @@ Private Sub CheckBox1_Click()
     SavePostCopyOptionsState
 End Sub
 
+Private Sub mChkOpenCopiedFiles_Change()
+    SavePostCopyOptionsState
+End Sub
+
 Private Sub mChkOpenCopiedFiles_Click()
     SavePostCopyOptionsState
 End Sub
 
+Private Sub mChkOpenCopiedFolder_Change()
+    SavePostCopyOptionsState
+End Sub
+
 Private Sub mChkOpenCopiedFolder_Click()
+    SavePostCopyOptionsState
+End Sub
+
+Private Sub chkOpenCopiedFolder_Change()
+    SavePostCopyOptionsState
+End Sub
+
+Private Sub chkOpenCopiedFolder_Click()
     SavePostCopyOptionsState
 End Sub
 
