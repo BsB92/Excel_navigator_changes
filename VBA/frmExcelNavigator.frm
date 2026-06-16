@@ -38,9 +38,12 @@ Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
 Private Const REG_APP As String = "ExcelNavigator_v5.2"
 Private Const REG_SEC As String = "FormState"
+Private Const REG_KEY_OPEN_COPIED As String = "OpenCopied"
+Private Const REG_KEY_OPEN_TARGET_FOLDER As String = "OpenTargetFolder"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
 Private mBatchRunning As Boolean
+Private mLoadingPostCopyOptions As Boolean
 
 
 ' ========= STATE =========
@@ -140,6 +143,8 @@ Private WithEvents mBtnSnapshotActionHistory As MSForms.CommandButton
 Attribute mBtnSnapshotActionHistory.VB_VarHelpID = -1
 Private WithEvents mBtnSnapshotActionCompareWithSnapshot As MSForms.CommandButton
 Attribute mBtnSnapshotActionCompareWithSnapshot.VB_VarHelpID = -1
+Private WithEvents mChkOpenCopiedFiles As MSForms.CheckBox
+Attribute mChkOpenCopiedFiles.VB_VarHelpID = -1
 Private WithEvents mChkOpenCopiedFolder As MSForms.CheckBox
 Attribute mChkOpenCopiedFolder.VB_VarHelpID = -1
 Private mLblPostCopyOptions As MSForms.Label
@@ -844,23 +849,71 @@ Private Function WorkbookIsOpen(ByVal wbName As String) As Boolean
 End Function
 
 Private Sub CheckBox1_Click()
+    SavePostCopyOptionsState
+End Sub
 
+Private Sub mChkOpenCopiedFiles_Change()
+    SavePostCopyOptionsState
+End Sub
+
+Private Sub mChkOpenCopiedFiles_Click()
+    SavePostCopyOptionsState
+End Sub
+
+Private Sub mChkOpenCopiedFolder_Change()
+    SavePostCopyOptionsState
+End Sub
+
+Private Sub mChkOpenCopiedFolder_Click()
+    SavePostCopyOptionsState
+End Sub
+
+Private Sub chkOpenCopiedFolder_Change()
+    SavePostCopyOptionsState
+End Sub
+
+Private Sub chkOpenCopiedFolder_Click()
+    SavePostCopyOptionsState
+End Sub
+
+
+Private Sub LoadPostCopyOptionsState()
+    On Error GoTo FINALLY
+    mLoadingPostCopyOptions = True
+
+    If Not mChkOpenCopiedFiles Is Nothing Then
+        mChkOpenCopiedFiles.Value = CBool(GetSetting(REG_APP, REG_SEC, REG_KEY_OPEN_COPIED, "False"))
+    End If
+    If Not mChkOpenCopiedFolder Is Nothing Then
+        mChkOpenCopiedFolder.Value = CBool(GetSetting(REG_APP, REG_SEC, REG_KEY_OPEN_TARGET_FOLDER, "False"))
+    End If
+
+FINALLY:
+    mLoadingPostCopyOptions = False
+End Sub
+
+Private Sub SavePostCopyOptionsState()
+    If mLoadingPostCopyOptions Then Exit Sub
+
+    On Error Resume Next
+    SaveSetting REG_APP, REG_SEC, REG_KEY_OPEN_COPIED, CStr(ShouldOpenCopiedFiles())
+    SaveSetting REG_APP, REG_SEC, REG_KEY_OPEN_TARGET_FOLDER, CStr(ShouldOpenCopiedFolder())
+    On Error GoTo 0
 End Sub
 
 Private Function ShouldOpenCopiedFiles() As Boolean
-    Dim ctl As Object
-
-    Set ctl = GetControlIfExists("ChckBox1")
-    If ctl Is Nothing Then Set ctl = GetControlIfExists("CheckBox1")
-    If ctl Is Nothing Then Exit Function
+    If mChkOpenCopiedFiles Is Nothing Then Set mChkOpenCopiedFiles = GetOpenCopiedFilesControl()
+    If mChkOpenCopiedFiles Is Nothing Then Exit Function
 
     On Error Resume Next
-    ShouldOpenCopiedFiles = CBool(ctl.Value)
+    ShouldOpenCopiedFiles = CBool(mChkOpenCopiedFiles.Value)
     On Error GoTo 0
 End Function
 
 Private Function ShouldOpenCopiedFolder() As Boolean
+    If mChkOpenCopiedFolder Is Nothing Then Set mChkOpenCopiedFolder = GetOpenCopiedFolderControl()
     If mChkOpenCopiedFolder Is Nothing Then Exit Function
+
     On Error Resume Next
     ShouldOpenCopiedFolder = CBool(mChkOpenCopiedFolder.Value)
     On Error GoTo 0
@@ -1108,6 +1161,7 @@ SetExpandedView False
 EnsureTopLeftButtons
 EnsureSnapshotOverlay
 EnsureCopyOptionsControls
+LoadPostCopyOptionsState
 ApplySnapshotOverlayVisibility
 PositionTopButtons
 
@@ -1120,9 +1174,20 @@ ApplyLayout
 
 End Sub
 
+Private Function GetOpenCopiedFilesControl() As MSForms.CheckBox
+    Set GetOpenCopiedFilesControl = GetControlIfExists("ChckBox1")
+    If GetOpenCopiedFilesControl Is Nothing Then Set GetOpenCopiedFilesControl = GetControlIfExists("CheckBox1")
+End Function
+
+Private Function GetOpenCopiedFolderControl() As MSForms.CheckBox
+    Set GetOpenCopiedFolderControl = GetControlIfExists("chkOpenCopiedFolder")
+End Function
+
 Private Sub EnsureCopyOptionsControls()
+    If mChkOpenCopiedFiles Is Nothing Then Set mChkOpenCopiedFiles = GetOpenCopiedFilesControl()
+
     If mChkOpenCopiedFolder Is Nothing Then
-        Set mChkOpenCopiedFolder = GetControlIfExists("chkOpenCopiedFolder")
+        Set mChkOpenCopiedFolder = GetOpenCopiedFolderControl()
         If mChkOpenCopiedFolder Is Nothing Then
             Set mChkOpenCopiedFolder = Me.Controls.Add("Forms.CheckBox.1", "chkOpenCopiedFolder", True)
         End If
@@ -1138,7 +1203,6 @@ Private Sub EnsureCopyOptionsControls()
     With mChkOpenCopiedFolder
         .Caption = "Open target folder"
         .Visible = True
-        .Value = False
     End With
 
     With mLblPostCopyOptions
@@ -3062,6 +3126,7 @@ Private Sub UserForm_Terminate()
     On Error Resume Next
     SaveSetting REG_APP, REG_SEC, "W", IIf(mIsExpandedView, Me.Width - (mGap + mPanelWidth), Me.Width)
     SaveSetting REG_APP, REG_SEC, "H", Me.Height
+    SavePostCopyOptionsState
 End Sub
 
 
