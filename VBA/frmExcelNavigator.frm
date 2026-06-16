@@ -43,6 +43,7 @@ Private Const REG_KEY_OPEN_TARGET_FOLDER As String = "OpenTargetFolder"
 Private Const REFRESH_TIMEOUT_SEC As Long = 300 ' 300=5min
 Private mCancelBatch As Boolean
 Private mBatchRunning As Boolean
+Private mLoadingPostCopyOptions As Boolean
 
 
 ' ========= STATE =========
@@ -877,17 +878,23 @@ End Sub
 
 
 Private Sub LoadPostCopyOptionsState()
-    On Error Resume Next
+    On Error GoTo FINALLY
+    mLoadingPostCopyOptions = True
+
     If Not mChkOpenCopiedFiles Is Nothing Then
         mChkOpenCopiedFiles.Value = CBool(GetSetting(REG_APP, REG_SEC, REG_KEY_OPEN_COPIED, "False"))
     End If
     If Not mChkOpenCopiedFolder Is Nothing Then
         mChkOpenCopiedFolder.Value = CBool(GetSetting(REG_APP, REG_SEC, REG_KEY_OPEN_TARGET_FOLDER, "False"))
     End If
-    On Error GoTo 0
+
+FINALLY:
+    mLoadingPostCopyOptions = False
 End Sub
 
 Private Sub SavePostCopyOptionsState()
+    If mLoadingPostCopyOptions Then Exit Sub
+
     On Error Resume Next
     SaveSetting REG_APP, REG_SEC, REG_KEY_OPEN_COPIED, CStr(ShouldOpenCopiedFiles())
     SaveSetting REG_APP, REG_SEC, REG_KEY_OPEN_TARGET_FOLDER, CStr(ShouldOpenCopiedFolder())
