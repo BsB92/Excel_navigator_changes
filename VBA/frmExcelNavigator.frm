@@ -115,6 +115,7 @@ Attribute mBtnTogglePanel.VB_VarHelpID = -1
 Private WithEvents mLstSheets As MSForms.ListBox
 Attribute mLstSheets.VB_VarHelpID = -1
 Private mLblSheetsWorkbook As MSForms.Label
+Private mLblActiveSheet As MSForms.Label
 Private mIsExpandedView As Boolean
 Private mCollapsedInsideW As Single
 Private mPanelWidth As Single
@@ -2885,6 +2886,7 @@ Private Sub EnsureRightPanelControls()
     Dim ctlBtn As Object
     Dim ctlList As Object
     Dim ctlLbl As Object
+    Dim ctlActiveSheetLbl As Object
 
     Set ctlBtn = GetControlIfExists("btnTogglePanel")
     If ctlBtn Is Nothing Then
@@ -2919,6 +2921,19 @@ Private Sub EnsureRightPanelControls()
         .Caption = ""
         .Visible = False
         .WordWrap = False
+        .AutoSize = False
+    End With
+
+    Set ctlActiveSheetLbl = GetControlIfExists("lblActiveSheet")
+    If ctlActiveSheetLbl Is Nothing Then
+        Set ctlActiveSheetLbl = Me.Controls.Add("Forms.Label.1", "lblActiveSheet", True)
+    End If
+    Set mLblActiveSheet = ctlActiveSheetLbl
+    With mLblActiveSheet
+        .Caption = ""
+        .Visible = False
+        .WordWrap = False
+        .AutoSize = False
     End With
 End Sub
 
@@ -2951,6 +2966,7 @@ Private Sub SetExpandedView(ByVal expanded As Boolean)
     mBtnTogglePanel.Caption = IIf(expanded, PANEL_TOGGLE_EXPANDED, PANEL_TOGGLE_COLLAPSED)
     mLstSheets.Visible = expanded
     If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Visible = expanded
+    If Not mLblActiveSheet Is Nothing Then mLblActiveSheet.Visible = expanded
 
     ApplyLayout
     PositionTopButtons
@@ -2987,17 +3003,19 @@ Private Sub RefreshSheetList()
     selectedSheetName = GetRawSheetNameFromRow(mLstSheets.ListIndex)
     mLstSheets.Clear
     If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Caption = ""
+    If Not mLblActiveSheet Is Nothing Then mLblActiveSheet.Caption = ""
     Set wb = GetCurrentWorkbookForSheets()
     If wb Is Nothing Then
         mUpdatingSheets = False
         Exit Sub
     End If
 
-    If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Caption = wb.Name
-
     On Error Resume Next
     activeSheetName = CStr(wb.ActiveSheet.Name)
     On Error GoTo 0
+
+    If Not mLblSheetsWorkbook Is Nothing Then mLblSheetsWorkbook.Caption = wb.Name
+    If Not mLblActiveSheet Is Nothing Then mLblActiveSheet.Caption = activeSheetName
 
     For Each ws In wb.Worksheets
         rowText = ws.Name
@@ -3369,17 +3387,25 @@ Me.txtFullPath.TOP = Me.tglBatchMode.TOP - mGap - Me.txtFullPath.Height
 ' ListBox ends above FullPath bar (leave gap)
 Me.lstWorkbooks.Height = (Me.txtFullPath.TOP - mGap) - Me.lstWorkbooks.TOP
 
-Me.Label3.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width - Me.Label3.Width
+Me.Label3.Left = Me.Label1.Left
+If Not mLblSheetsWorkbook Is Nothing Then
+    mLblSheetsWorkbook.Left = Me.Label3.Left + Me.Label3.Width + 6
+    mLblSheetsWorkbook.TOP = Me.Label3.TOP
+    mLblSheetsWorkbook.Width = (Me.lstWorkbooks.Left + Me.lstWorkbooks.Width) - mLblSheetsWorkbook.Left
+    If mLblSheetsWorkbook.Width < 30 Then mLblSheetsWorkbook.Width = 30
+    mLblSheetsWorkbook.Visible = mIsExpandedView
+    mLblSheetsWorkbook.TextAlign = fmTextAlignLeft
+End If
 
 If Not mLstSheets Is Nothing Then
     mLstSheets.Left = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width + mGap
-    If Not mLblSheetsWorkbook Is Nothing Then
-        mLblSheetsWorkbook.Left = mLstSheets.Left
+    If Not mLblActiveSheet Is Nothing Then
+        mLblActiveSheet.Left = mLstSheets.Left
         mLstSheets.TOP = Me.lstWorkbooks.TOP
-        mLblSheetsWorkbook.TOP = mLstSheets.TOP - mLblSheetsWorkbook.Height
-        mLblSheetsWorkbook.Width = mPanelWidth
-        mLblSheetsWorkbook.Visible = mIsExpandedView
-        mLblSheetsWorkbook.TextAlign = fmTextAlignLeft
+        mLblActiveSheet.TOP = mLstSheets.TOP - mLblActiveSheet.Height
+        mLblActiveSheet.Width = mPanelWidth
+        mLblActiveSheet.Visible = mIsExpandedView
+        mLblActiveSheet.TextAlign = fmTextAlignLeft
     Else
         mLstSheets.TOP = Me.lstWorkbooks.TOP
     End If
