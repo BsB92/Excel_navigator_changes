@@ -904,7 +904,9 @@ Private Function ShouldOpenCopiedFiles() As Boolean
 End Function
 
 Private Function ShouldOpenCopiedFolder() As Boolean
+    If mChkOpenCopiedFolder Is Nothing Then Set mChkOpenCopiedFolder = GetOpenCopiedFolderControl()
     If mChkOpenCopiedFolder Is Nothing Then Exit Function
+
     On Error Resume Next
     ShouldOpenCopiedFolder = CBool(mChkOpenCopiedFolder.Value)
     On Error GoTo 0
@@ -1170,11 +1172,15 @@ Private Function GetOpenCopiedFilesControl() As MSForms.CheckBox
     If GetOpenCopiedFilesControl Is Nothing Then Set GetOpenCopiedFilesControl = GetControlIfExists("CheckBox1")
 End Function
 
+Private Function GetOpenCopiedFolderControl() As MSForms.CheckBox
+    Set GetOpenCopiedFolderControl = GetControlIfExists("chkOpenCopiedFolder")
+End Function
+
 Private Sub EnsureCopyOptionsControls()
     If mChkOpenCopiedFiles Is Nothing Then Set mChkOpenCopiedFiles = GetOpenCopiedFilesControl()
 
     If mChkOpenCopiedFolder Is Nothing Then
-        Set mChkOpenCopiedFolder = GetControlIfExists("chkOpenCopiedFolder")
+        Set mChkOpenCopiedFolder = GetOpenCopiedFolderControl()
         If mChkOpenCopiedFolder Is Nothing Then
             Set mChkOpenCopiedFolder = Me.Controls.Add("Forms.CheckBox.1", "chkOpenCopiedFolder", True)
         End If
