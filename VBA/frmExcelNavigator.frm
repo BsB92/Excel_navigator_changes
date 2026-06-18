@@ -1849,7 +1849,7 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
         End If
     ElseIf KeyCode = vbKeyD Then
         If (Shift And KEYBOARD_CTRL_MASK) <> 0 Then
-            DeselectCurrentWorkbookRow
+            btnClearAll_Click
             KeyCode = 0
             handled = True
         End If
@@ -1888,13 +1888,6 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
     HandleGlobalKeyboardShortcuts = handled
 End Function
 
-Private Sub DeselectCurrentWorkbookRow()
-    If Me.lstWorkbooks.ListIndex > 0 Then
-        Me.lstWorkbooks.Selected(Me.lstWorkbooks.ListIndex) = False
-        RefreshVisuals
-        RefreshSheetList
-    End If
-End Sub
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     If HandleGlobalKeyboardShortcuts(KeyCode, Shift) Then Exit Sub
@@ -1914,7 +1907,11 @@ Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal S
             KeyCode = 0
             Exit Sub
         ElseIf KeyCode = vbKeyD Then
-            DeselectCurrentWorkbookRow
+            If Me.lstWorkbooks.ListIndex > 0 Then
+                Me.lstWorkbooks.Selected(Me.lstWorkbooks.ListIndex) = False
+                RefreshVisuals
+                RefreshSheetList
+            End If
             KeyCode = 0
             Exit Sub
         End If
