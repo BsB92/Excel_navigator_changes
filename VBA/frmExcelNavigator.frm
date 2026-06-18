@@ -1847,6 +1847,12 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
             KeyCode = 0
             handled = True
         End If
+    ElseIf KeyCode = vbKeyD Then
+        If (Shift And KEYBOARD_CTRL_MASK) <> 0 Then
+            btnClearAll_Click
+            KeyCode = 0
+            handled = True
+        End If
     ElseIf KeyCode = vbKeyS Then
         If Shift = 0 Then
             Me.tglBatchMode.Value = Not Me.tglBatchMode.Value
@@ -1881,6 +1887,7 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
 
     HandleGlobalKeyboardShortcuts = handled
 End Function
+
 
 Private Sub lstWorkbooks_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     If HandleGlobalKeyboardShortcuts(KeyCode, Shift) Then Exit Sub
