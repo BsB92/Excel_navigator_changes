@@ -75,3 +75,10 @@ Files most impacted
 - Compare report now visually marks changed formula fragments using bold + red text.
 - Added legend note in the report summary sheet for changed formula fragment styling.
 - Updated bilingual help (PL/EN) with legacy-folder fallback note and formula-fragment highlight behavior.
+
+
+12) v6.0 - ExcelNavigator layout update
+- Updated navigator version identifiers, launcher macro, and help headers to v6.0.
+- Added Actions, Copy, and Open toggle frames that reuse the existing controls and handlers.
+- Renamed Max to Maximize all and kept screen controls with the bottom window-action row.
+- Added Ctrl+D as Clear Selection and made Select All / Clear Selection activate Selection mode automatically.

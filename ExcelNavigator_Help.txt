@@ -1,4 +1,4 @@
-Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
+Excel Navigator - Instrukcja użytkownika (v6.0) [PL]
 
 1) Ogólny przepływ pracy
 - Kliknij Reload list, aby odświeżyć listę aktualnie otwartych skoroszytów.
@@ -85,7 +85,7 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
 - Kliknij lub użyj strzałek, aby aktywować wybrany arkusz.
 
 10) Przyciski okna i pozycjonowania
-- Max: maksymalizuje okno aktywnego skoroszytu.
+- Maximize all: maksymalizuje okna wybranych skoroszytów.
 - 1 / 2 / 3: przenosi aktywny skoroszyt do zdefiniowanych pozycji ekranu.
 - Close: zamyka formularz navigatora.
 
@@ -153,7 +153,7 @@ Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
 
 
 ------------------------------------------------------------
-Excel Navigator - User Guide (v5.2) [EN]
+Excel Navigator - User Guide (v6.0) [EN]
 
 1) General workflow
 - Click Reload list to refresh the list of currently open workbooks.
@@ -191,7 +191,7 @@ Excel Navigator - User Guide (v5.2) [EN]
 - Compare Files: starts comparison for any two Excel files.
 
 3a) Active vs selected workbook (important)
-- Active workbook = the workbook currently focused in Excel (used by actions like Max, 1/2/3, Snapshot Create).
+- Active workbook = the workbook currently focused in Excel (used by actions like Maximize all, 1/2/3, Snapshot Create).
 - Selected workbook = row selected in the add-in workbook list.
 - When Selection mode = OFF, you usually have one selected row.
 - When Selection mode = ON, you can select multiple rows and "... selected" actions run on that group.
@@ -239,7 +239,7 @@ Excel Navigator - User Guide (v5.2) [EN]
 - Click or use arrows to activate selected sheet.
 
 10) Window and placement buttons
-- Max: maximize active workbook window.
+- Maximize all: maximizes selected workbook windows.
 - 1 / 2 / 3: move active workbook to predefined screen positions.
 - Close: closes navigator form.
 

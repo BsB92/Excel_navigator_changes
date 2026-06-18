@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v5.2"
+   Caption         =   "ExcelNavigator v6.0"
    ClientHeight    =   10095.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -36,7 +36,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator_v5.2"
+Private Const REG_APP As String = "ExcelNavigator_v6.0"
 Private Const REG_SEC As String = "FormState"
 Private Const REG_KEY_OPEN_COPIED As String = "OpenCopied"
 Private Const REG_KEY_OPEN_TARGET_FOLDER As String = "OpenTargetFolder"
@@ -153,6 +153,19 @@ Private Const TOP_LEFT_BUTTON_MARGIN As Single = 6
 Private Const TOP_LEFT_BUTTON_GAP As Single = 6
 Private mSettingsMode As Boolean
 Private mSettingsFrame As MSForms.Frame
+Private WithEvents mBtnActionsMenu As MSForms.CommandButton
+Attribute mBtnActionsMenu.VB_VarHelpID = -1
+Private WithEvents mBtnCopyMenu As MSForms.CommandButton
+Attribute mBtnCopyMenu.VB_VarHelpID = -1
+Private WithEvents mBtnOpenMenu As MSForms.CommandButton
+Attribute mBtnOpenMenu.VB_VarHelpID = -1
+Private mFraActionsMenu As MSForms.Frame
+Private mFraCopyMenu As MSForms.Frame
+Private mFraOpenMenu As MSForms.Frame
+Private mActiveMainFrame As String
+Private Const MAIN_FRAME_ACTIONS As String = "Actions"
+Private Const MAIN_FRAME_COPY As String = "Copy"
+Private Const MAIN_FRAME_OPEN As String = "Open"
 Private mSettingsLblTitle As MSForms.Label
 Private mSettingsLblCopy As MSForms.Label
 Private mSettingsTxtCopy As MSForms.TextBox
@@ -1121,6 +1134,7 @@ Private Sub UserForm_Initialize()
     Me.tglBatchMode.BackColor = SELECTION_OFF_COLOR
 
     SetActionButtonsEnabled False
+    SetOptionalControlCaption "btnMaximize", "Maximize all"
     SetOptionalControlEnabled "btnMaximize", True
     SetOptionalControlEnabled "btnScreen1", True
     SetOptionalControlEnabled "btnScreen2", True
@@ -1160,6 +1174,7 @@ mIsExpandedView = False
 mPanelWidth = GetSheetPanelWidthPt()
 SetExpandedView False
 EnsureTopLeftButtons
+EnsureMainActionFrames
 EnsureSnapshotOverlay
 EnsureCopyOptionsControls
 LoadPostCopyOptionsState
@@ -1277,6 +1292,112 @@ Private Sub EnsureTopLeftButtons()
         .Visible = True
     End With
 
+End Sub
+
+Private Sub EnsureMainActionFrames()
+    If mBtnActionsMenu Is Nothing Then
+        Set mBtnActionsMenu = GetControlIfExists("btnActionsMenu")
+        If mBtnActionsMenu Is Nothing Then Set mBtnActionsMenu = Me.Controls.Add("Forms.CommandButton.1", "btnActionsMenu", True)
+    End If
+
+    If mBtnCopyMenu Is Nothing Then
+        Set mBtnCopyMenu = GetControlIfExists("btnCopyMenu")
+        If mBtnCopyMenu Is Nothing Then Set mBtnCopyMenu = Me.Controls.Add("Forms.CommandButton.1", "btnCopyMenu", True)
+    End If
+
+    If mBtnOpenMenu Is Nothing Then
+        Set mBtnOpenMenu = GetControlIfExists("btnOpenMenu")
+        If mBtnOpenMenu Is Nothing Then Set mBtnOpenMenu = Me.Controls.Add("Forms.CommandButton.1", "btnOpenMenu", True)
+    End If
+
+    If mFraActionsMenu Is Nothing Then
+        Set mFraActionsMenu = GetControlIfExists("fraActionsMenu")
+        If mFraActionsMenu Is Nothing Then Set mFraActionsMenu = Me.Controls.Add("Forms.Frame.1", "fraActionsMenu", True)
+    End If
+
+    If mFraCopyMenu Is Nothing Then
+        Set mFraCopyMenu = GetControlIfExists("fraCopyMenu")
+        If mFraCopyMenu Is Nothing Then Set mFraCopyMenu = Me.Controls.Add("Forms.Frame.1", "fraCopyMenu", True)
+    End If
+
+    If mFraOpenMenu Is Nothing Then
+        Set mFraOpenMenu = GetControlIfExists("fraOpenMenu")
+        If mFraOpenMenu Is Nothing Then Set mFraOpenMenu = Me.Controls.Add("Forms.Frame.1", "fraOpenMenu", True)
+    End If
+
+    With mBtnActionsMenu
+        .Caption = "Actions"
+        .Height = 22
+        .Width = 64
+        .Visible = True
+    End With
+    With mBtnCopyMenu
+        .Caption = "Copy"
+        .Height = mBtnActionsMenu.Height
+        .Width = 64
+        .Visible = True
+    End With
+    With mBtnOpenMenu
+        .Caption = "Open"
+        .Height = mBtnActionsMenu.Height
+        .Width = 64
+        .Visible = True
+    End With
+
+    ConfigureMainFrame mFraActionsMenu, "Actions"
+    ConfigureMainFrame mFraCopyMenu, "Copy"
+    ConfigureMainFrame mFraOpenMenu, "Open"
+    ApplyMainFrameVisibility
+End Sub
+
+Private Sub ConfigureMainFrame(ByVal fra As MSForms.Frame, ByVal captionText As String)
+    With fra
+        .Caption = captionText
+        .SpecialEffect = fmSpecialEffectSunken
+        .BorderStyle = fmBorderStyleSingle
+        .Visible = False
+    End With
+End Sub
+
+Private Sub ToggleMainFrame(ByVal frameName As String)
+    If mActiveMainFrame = frameName Then
+        mActiveMainFrame = vbNullString
+    Else
+        mActiveMainFrame = frameName
+    End If
+    ApplyMainFrameVisibility
+End Sub
+
+Private Sub ApplyMainFrameVisibility()
+    If mFraActionsMenu Is Nothing Or mFraCopyMenu Is Nothing Or mFraOpenMenu Is Nothing Then Exit Sub
+
+    mFraActionsMenu.Visible = (mActiveMainFrame = MAIN_FRAME_ACTIONS)
+    mFraCopyMenu.Visible = (mActiveMainFrame = MAIN_FRAME_COPY)
+    mFraOpenMenu.Visible = (mActiveMainFrame = MAIN_FRAME_OPEN)
+
+    If Not mBtnActionsMenu Is Nothing Then mBtnActionsMenu.Font.Bold = mFraActionsMenu.Visible
+    If Not mBtnCopyMenu Is Nothing Then mBtnCopyMenu.Font.Bold = mFraCopyMenu.Visible
+    If Not mBtnOpenMenu Is Nothing Then mBtnOpenMenu.Font.Bold = mFraOpenMenu.Visible
+
+    If mFraActionsMenu.Visible Then mFraActionsMenu.ZOrder 1
+    If mFraCopyMenu.Visible Then mFraCopyMenu.ZOrder 1
+    If mFraOpenMenu.Visible Then mFraOpenMenu.ZOrder 1
+
+    On Error Resume Next
+    PositionMainActionFrames Me.btnClose.Top
+    On Error GoTo 0
+End Sub
+
+Private Sub mBtnActionsMenu_Click()
+    ToggleMainFrame MAIN_FRAME_ACTIONS
+End Sub
+
+Private Sub mBtnCopyMenu_Click()
+    ToggleMainFrame MAIN_FRAME_COPY
+End Sub
+
+Private Sub mBtnOpenMenu_Click()
+    ToggleMainFrame MAIN_FRAME_OPEN
 End Sub
 
 Private Sub EnsureSettingsOverlay()
@@ -1751,8 +1872,8 @@ Private Sub SetActionButtonsEnabled(ByVal enabled As Boolean)
     Me.btnSave.enabled = enabled
     Me.btnRefreshSave.enabled = enabled
     Me.btnCopyBreakLinks.enabled = enabled
-    Me.btnSelectAll.enabled = enabled
-    Me.btnClearAll.enabled = enabled
+    Me.btnSelectAll.enabled = True
+    Me.btnClearAll.enabled = True
     Me.btnCloseSelected.enabled = enabled
     Me.btnCopyWithSuffix.enabled = enabled
     SetOptionalControlEnabled "btnMaximize", True
@@ -1844,6 +1965,12 @@ Private Function HandleGlobalKeyboardShortcuts(ByRef KeyCode As MSForms.ReturnIn
     If KeyCode = vbKeyA Then
         If (Shift And KEYBOARD_CTRL_MASK) <> 0 Then
             btnSelectAll_Click
+            KeyCode = 0
+            handled = True
+        End If
+    ElseIf KeyCode = vbKeyD Then
+        If (Shift And KEYBOARD_CTRL_MASK) <> 0 Then
+            btnClearAll_Click
             KeyCode = 0
             handled = True
         End If
@@ -2071,7 +2198,7 @@ End Sub
 ' =========================================================
 Private Sub btnSelectAll_Click()
     Dim i As Long
-    If Not Me.tglBatchMode.Value Then Exit Sub
+    EnsureSelectionModeActive
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         Me.lstWorkbooks.Selected(i) = True
@@ -2082,7 +2209,7 @@ Private Sub btnSelectAll_Click()
 End Sub
 
 Private Sub btnClearAll_Click()
-    If Not Me.tglBatchMode.Value Then Exit Sub
+    EnsureSelectionModeActive
     ClearAllSelections
     RefreshVisuals
     
@@ -2093,6 +2220,12 @@ Private Sub ClearAllSelections()
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         Me.lstWorkbooks.Selected(i) = False
     Next i
+End Sub
+
+Private Sub EnsureSelectionModeActive()
+    If Me.tglBatchMode.Value Then Exit Sub
+    Me.tglBatchMode.Value = True
+    ApplySelectionModeState
 End Sub
 
 Private Sub btnClose_Click()
@@ -2843,6 +2976,13 @@ Private Sub SetOptionalControlEnabled(ByVal controlName As String, ByVal enabled
     ctl.enabled = enabled
 End Sub
 
+Private Sub SetOptionalControlCaption(ByVal controlName As String, ByVal captionText As String)
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If ctl Is Nothing Then Exit Sub
+    ctl.Caption = captionText
+End Sub
+
 Private Function GetOptionalControlTop(ByVal controlName As String, ByVal fallbackTop As Single) As Single
     Dim ctl As Object
     Set ctl = GetControlIfExists(controlName)
@@ -3313,6 +3453,7 @@ Private Sub ApplyLayout()
     Set ctlPostCopyLabel = mLblPostCopyOptions
 
     If Not ctlMax Is Nothing Then
+        ctlMax.Caption = "Maximize all"
         ctlMax.TOP = actionTop
         ctlMax.Left = Me.btnCopyWithSuffix.Left
     End If
@@ -3336,6 +3477,17 @@ Private Sub ApplyLayout()
         If Not ctlS2 Is Nothing Then
             ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
         End If
+    End If
+
+    If Not mBtnTogglePanel Is Nothing Then
+        If Not ctlS3 Is Nothing Then
+            mBtnTogglePanel.Left = ctlS3.Left + ctlS3.Width + actionGap
+        Else
+            mBtnTogglePanel.Left = Me.btnClose.Left
+        End If
+        mBtnTogglePanel.TOP = actionTop
+        mBtnTogglePanel.Width = Me.btnClose.Width
+        mBtnTogglePanel.Height = Me.btnClose.Height
     End If
 
     Dim postCopyTop As Single
@@ -3367,6 +3519,8 @@ Private Sub ApplyLayout()
             ctlOpenCopiedFolder.TOP = postCopyTop + 1
         End If
     End If
+
+    PositionMainActionFrames actionTop
 
     ' --- ListBox: stretch to fill between top row and bottom block
     Me.lstWorkbooks.Left = mBaseListLeft
@@ -3423,6 +3577,106 @@ End If
     ' --- ListBox columns: File width based on average display width of file names
     newFileW = ResolveFileColumnWidthPt(Me.lstWorkbooks.Width)
     Me.lstWorkbooks.ColumnWidths = CStr(newFileW) & " pt;30 pt;55 pt;0 pt"
+End Sub
+
+Private Sub PositionMainActionFrames(ByVal bottomButtonTop As Single)
+    Const GAP As Single = 6
+    Const FRAME_PAD As Single = 8
+    Dim menuTop As Single
+    Dim frameTop As Single
+    Dim frameLeft As Single
+    Dim frameW As Single
+
+    If mBtnActionsMenu Is Nothing Then EnsureMainActionFrames
+    If mBtnActionsMenu Is Nothing Then Exit Sub
+
+    frameLeft = Me.lstWorkbooks.Left
+    frameW = Me.lstWorkbooks.Width
+    If frameW < 260 Then frameW = 260
+
+    menuTop = bottomButtonTop - GAP - mBtnActionsMenu.Height
+    With mBtnActionsMenu
+        .Left = frameLeft
+        .Top = menuTop
+    End With
+    With mBtnCopyMenu
+        .Left = mBtnActionsMenu.Left + mBtnActionsMenu.Width + GAP
+        .Top = menuTop
+    End With
+    With mBtnOpenMenu
+        .Left = mBtnCopyMenu.Left + mBtnCopyMenu.Width + GAP
+        .Top = menuTop
+    End With
+
+    Me.tglBatchMode.Left = mBtnOpenMenu.Left + mBtnOpenMenu.Width + GAP
+    Me.tglBatchMode.Top = menuTop
+    Me.btnSelectAll.Left = Me.tglBatchMode.Left + Me.tglBatchMode.Width + GAP
+    Me.btnSelectAll.Top = menuTop
+    Me.btnClearAll.Left = Me.btnSelectAll.Left + Me.btnSelectAll.Width + GAP
+    Me.btnClearAll.Top = menuTop
+    Me.btnSelectAll.Enabled = True
+    Me.btnClearAll.Enabled = True
+
+    frameTop = menuTop - 72 - GAP
+    If frameTop < Me.txtFullPath.Top + Me.txtFullPath.Height + GAP Then frameTop = Me.txtFullPath.Top + Me.txtFullPath.Height + GAP
+
+    With mFraActionsMenu
+        .Left = frameLeft
+        .Top = frameTop
+        .Width = 240
+        .Height = 72
+    End With
+    With mFraCopyMenu
+        .Left = mBtnCopyMenu.Left
+        .Top = frameTop
+        .Width = 260
+        .Height = 96
+    End With
+    With mFraOpenMenu
+        .Left = mBtnOpenMenu.Left
+        .Top = frameTop
+        .Width = 190
+        .Height = 72
+    End With
+
+    Me.btnRefresh.Left = mFraActionsMenu.Left + FRAME_PAD
+    Me.btnRefresh.Top = mFraActionsMenu.Top + 18
+    Me.btnSave.Left = Me.btnRefresh.Left + Me.btnRefresh.Width + GAP
+    Me.btnSave.Top = Me.btnRefresh.Top
+    Me.btnRefreshSave.Left = Me.btnRefresh.Left
+    Me.btnRefreshSave.Top = Me.btnRefresh.Top + Me.btnRefresh.Height + GAP
+    Me.btnCloseSelected.Left = Me.btnRefreshSave.Left + Me.btnRefreshSave.Width + GAP
+    Me.btnCloseSelected.Top = Me.btnRefreshSave.Top
+
+    Me.Label2.Left = mFraCopyMenu.Left + FRAME_PAD
+    Me.Label2.Top = mFraCopyMenu.Top + 18
+    Me.txtSuffix.Left = Me.Label2.Left + Me.Label2.Width + GAP
+    Me.txtSuffix.Top = Me.Label2.Top - 2
+    Me.btnCopyWithSuffix.Left = Me.Label2.Left
+    Me.btnCopyWithSuffix.Top = Me.txtSuffix.Top + Me.txtSuffix.Height + GAP
+    Me.btnCopyBreakLinks.Left = Me.btnCopyWithSuffix.Left + Me.btnCopyWithSuffix.Width + GAP
+    Me.btnCopyBreakLinks.Top = Me.btnCopyWithSuffix.Top
+    Me.btnOpenCopyFolder.Left = Me.btnCopyWithSuffix.Left
+    Me.btnOpenCopyFolder.Top = Me.btnCopyWithSuffix.Top + Me.btnCopyWithSuffix.Height + GAP
+
+    Me.btnOpenFile.Left = mFraOpenMenu.Left + FRAME_PAD
+    Me.btnOpenFile.Top = mFraOpenMenu.Top + 18
+    Me.btnOpenAndRefresh.Left = Me.btnOpenFile.Left
+    Me.btnOpenAndRefresh.Top = Me.btnOpenFile.Top + Me.btnOpenFile.Height + GAP
+
+    Me.btnRefresh.Visible = mFraActionsMenu.Visible
+    Me.btnSave.Visible = mFraActionsMenu.Visible
+    Me.btnRefreshSave.Visible = mFraActionsMenu.Visible
+    Me.btnCloseSelected.Visible = mFraActionsMenu.Visible
+
+    Me.Label2.Visible = mFraCopyMenu.Visible
+    Me.txtSuffix.Visible = mFraCopyMenu.Visible
+    Me.btnCopyWithSuffix.Visible = mFraCopyMenu.Visible
+    Me.btnCopyBreakLinks.Visible = mFraCopyMenu.Visible
+    Me.btnOpenCopyFolder.Visible = mFraCopyMenu.Visible
+
+    Me.btnOpenFile.Visible = mFraOpenMenu.Visible
+    Me.btnOpenAndRefresh.Visible = mFraOpenMenu.Visible
 End Sub
 
 Private Function ResolveFileColumnWidthPt(ByVal listWidthPt As Single) As Single
@@ -3650,8 +3904,7 @@ Private Sub PositionTopButtons()
     If Not mBtnTogglePanel Is Nothing Then
         mBtnTogglePanel.Width = btnClose.Width
         mBtnTogglePanel.Height = btnClose.Height
-        mBtnTogglePanel.Left = btnClose.Left
-        mBtnTogglePanel.TOP = btnClose.TOP - GAP - mBtnTogglePanel.Height
+        mBtnTogglePanel.TOP = btnClose.TOP
     End If
 
     Set ctlMax = GetControlIfExists("btnMaximize")
@@ -3660,6 +3913,7 @@ Private Sub PositionTopButtons()
     Set ctlS3 = GetControlIfExists("btnScreen3")
 
     If Not ctlMax Is Nothing Then
+        ctlMax.Caption = "Maximize all"
         ctlMax.TOP = btnClose.TOP
         ctlMax.Left = Me.btnCopyWithSuffix.Left
     End If
@@ -3685,7 +3939,17 @@ Private Sub PositionTopButtons()
         End If
     End If
 
+    If Not mBtnTogglePanel Is Nothing Then
+        If Not ctlS3 Is Nothing Then
+            mBtnTogglePanel.Left = ctlS3.Left + ctlS3.Width + GAP
+        Else
+            mBtnTogglePanel.Left = btnClose.Left
+        End If
+    End If
+
     EnsureTopLeftButtons
+    EnsureMainActionFrames
+    PositionMainActionFrames btnClose.Top
     EnsureSnapshotOverlay
     ApplySnapshotOverlayVisibility
     If mSettingsMode Then EnsureSettingsOverlay
@@ -3806,4 +4070,3 @@ EH:
     SafeMsgBox "Open file error:" & vbCrLf & filePath & vbCrLf & Err.Description, vbExclamation
     Set OpenWorkbookSafe = Nothing
 End Function
-

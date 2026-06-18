@@ -20,6 +20,10 @@ Public Sub ExcelNavigator_v5_2()
     ShowExcelNavigatorForm
 End Sub
 
+Public Sub ExcelNavigator_v6_0()
+    ShowExcelNavigatorForm
+End Sub
+
 
 
 Public Sub ExcelNavigatorCreateSnapshot()
