@@ -1712,6 +1712,13 @@ Private Sub tglBatchMode_Click()
     ApplySelectionModeState
 End Sub
 
+Private Sub EnsureSelectionModeOn()
+    If Me.tglBatchMode.Value Then Exit Sub
+
+    Me.tglBatchMode.Value = True
+    ApplySelectionModeState
+End Sub
+
 Private Sub ApplySelectionModeState()
     On Error GoTo ModeSwitchError
 
@@ -2078,13 +2085,15 @@ End Sub
 ' =========================================================
 Private Sub btnSelectAll_Click()
     Dim i As Long
-    If Not Me.tglBatchMode.Value Then Exit Sub
+
+    EnsureSelectionModeOn
 
     For i = 1 To Me.lstWorkbooks.ListCount - 1
         Me.lstWorkbooks.Selected(i) = True
     Next i
 
     RefreshVisuals
+    RefreshSheetList
     
 End Sub
 
