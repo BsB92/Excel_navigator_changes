@@ -162,6 +162,7 @@ Attribute mBtnOpenMenu.VB_VarHelpID = -1
 Private mFraActionsMenu As MSForms.Frame
 Private mFraCopyMenu As MSForms.Frame
 Private mFraOpenMenu As MSForms.Frame
+Private mLblSwitchScreen As MSForms.Label
 Private mActiveMainFrame As String
 Private Const MAIN_FRAME_ACTIONS As String = "Actions"
 Private Const MAIN_FRAME_COPY As String = "Copy"
@@ -1325,22 +1326,36 @@ Private Sub EnsureMainActionFrames()
         If mFraOpenMenu Is Nothing Then Set mFraOpenMenu = Me.Controls.Add("Forms.Frame.1", "fraOpenMenu", True)
     End If
 
+    If mLblSwitchScreen Is Nothing Then
+        Set mLblSwitchScreen = GetControlIfExists("lblSwitchScreen")
+        If mLblSwitchScreen Is Nothing Then Set mLblSwitchScreen = Me.Controls.Add("Forms.Label.1", "lblSwitchScreen", True)
+    End If
+
     With mBtnActionsMenu
         .Caption = "Actions"
         .Height = 22
-        .Width = 64
+        .Width = 58
         .Visible = True
     End With
     With mBtnCopyMenu
         .Caption = "Copy"
         .Height = mBtnActionsMenu.Height
-        .Width = 64
+        .Width = 58
         .Visible = True
     End With
     With mBtnOpenMenu
         .Caption = "Open"
         .Height = mBtnActionsMenu.Height
-        .Width = 64
+        .Width = 58
+        .Visible = True
+    End With
+
+    With mLblSwitchScreen
+        .Caption = "Switch the screen:"
+        .BackStyle = fmBackStyleTransparent
+        .AutoSize = False
+        .Height = 12
+        .Width = 95
         .Visible = True
     End With
 
@@ -3616,8 +3631,11 @@ Private Sub PositionMainActionFrames(ByVal bottomButtonTop As Single)
     Me.btnClearAll.Top = menuTop
     Me.btnSelectAll.Enabled = True
     Me.btnClearAll.Enabled = True
+    mBtnActionsMenu.ZOrder 0
+    mBtnCopyMenu.ZOrder 0
+    mBtnOpenMenu.ZOrder 0
 
-    frameTop = menuTop - 72 - GAP
+    frameTop = menuTop - 120 - GAP
     If frameTop < Me.txtFullPath.Top + Me.txtFullPath.Height + GAP Then frameTop = Me.txtFullPath.Top + Me.txtFullPath.Height + GAP
 
     With mFraActionsMenu
@@ -3629,8 +3647,8 @@ Private Sub PositionMainActionFrames(ByVal bottomButtonTop As Single)
     With mFraCopyMenu
         .Left = mBtnCopyMenu.Left
         .Top = frameTop
-        .Width = 260
-        .Height = 96
+        .Width = 300
+        .Height = 120
     End With
     With mFraOpenMenu
         .Left = mBtnOpenMenu.Left
@@ -3677,6 +3695,56 @@ Private Sub PositionMainActionFrames(ByVal bottomButtonTop As Single)
 
     Me.btnOpenFile.Visible = mFraOpenMenu.Visible
     Me.btnOpenAndRefresh.Visible = mFraOpenMenu.Visible
+
+    ApplyCopyOptionsVisibility mFraCopyMenu.Visible
+    PositionSwitchScreenLabel bottomButtonTop
+End Sub
+
+Private Sub ApplyCopyOptionsVisibility(ByVal visible As Boolean)
+    Dim ctlOpenCopied As Object
+
+    Set ctlOpenCopied = GetControlIfExists("ChckBox1")
+    If ctlOpenCopied Is Nothing Then Set ctlOpenCopied = GetControlIfExists("CheckBox1")
+
+    If Not mLblPostCopyOptions Is Nothing Then
+        mLblPostCopyOptions.Visible = visible
+        mLblPostCopyOptions.Left = mFraCopyMenu.Left + 8
+        mLblPostCopyOptions.Top = Me.btnOpenCopyFolder.Top + Me.btnOpenCopyFolder.Height + 4
+    End If
+
+    If Not ctlOpenCopied Is Nothing Then
+        ctlOpenCopied.Visible = visible
+        ctlOpenCopied.Left = mFraCopyMenu.Left + 8
+        If Not mLblPostCopyOptions Is Nothing Then
+            ctlOpenCopied.Top = mLblPostCopyOptions.Top + mLblPostCopyOptions.Height + 1
+        Else
+            ctlOpenCopied.Top = Me.btnOpenCopyFolder.Top + Me.btnOpenCopyFolder.Height + 4
+        End If
+    End If
+
+    If Not mChkOpenCopiedFolder Is Nothing Then
+        mChkOpenCopiedFolder.Visible = visible
+        If Not ctlOpenCopied Is Nothing Then
+            mChkOpenCopiedFolder.Left = ctlOpenCopied.Left + ctlOpenCopied.Width + 8
+            mChkOpenCopiedFolder.Top = ctlOpenCopied.Top
+        Else
+            mChkOpenCopiedFolder.Left = mFraCopyMenu.Left + 8
+            mChkOpenCopiedFolder.Top = Me.btnOpenCopyFolder.Top + Me.btnOpenCopyFolder.Height + 4
+        End If
+    End If
+End Sub
+
+Private Sub PositionSwitchScreenLabel(ByVal bottomButtonTop As Single)
+    Dim ctlMax As Object
+
+    If mLblSwitchScreen Is Nothing Then Exit Sub
+    Set ctlMax = GetControlIfExists("btnMaximize")
+    If ctlMax Is Nothing Then Exit Sub
+
+    mLblSwitchScreen.Left = ctlMax.Left
+    mLblSwitchScreen.Top = bottomButtonTop - mLblSwitchScreen.Height - 2
+    mLblSwitchScreen.Visible = True
+    mLblSwitchScreen.ZOrder 0
 End Sub
 
 Private Function ResolveFileColumnWidthPt(ByVal listWidthPt As Single) As Single
