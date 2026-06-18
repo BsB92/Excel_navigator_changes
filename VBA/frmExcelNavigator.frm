@@ -1754,12 +1754,12 @@ ModeSwitchError:
 End Sub
 
 Private Sub SetActionButtonsEnabled(ByVal enabled As Boolean)
-    Me.btnRefresh.enabled = enabled
-    Me.btnSave.enabled = enabled
-    Me.btnRefreshSave.enabled = enabled
+    Me.btnRefresh.enabled = True
+    Me.btnSave.enabled = True
+    Me.btnRefreshSave.enabled = True
     Me.btnCopyBreakLinks.enabled = enabled
-    Me.btnSelectAll.enabled = enabled
-    Me.btnClearAll.enabled = enabled
+    Me.btnSelectAll.enabled = True
+    Me.btnClearAll.enabled = True
     Me.btnCloseSelected.enabled = enabled
     Me.btnCopyWithSuffix.enabled = enabled
     SetOptionalControlEnabled "btnMaximize", True
@@ -2098,9 +2098,10 @@ Private Sub btnSelectAll_Click()
 End Sub
 
 Private Sub btnClearAll_Click()
-    If Not Me.tglBatchMode.Value Then Exit Sub
+    EnsureSelectionModeOn
     ClearAllSelections
     RefreshVisuals
+    RefreshSheetList
     
 End Sub
 
@@ -2119,15 +2120,18 @@ End Sub
 ' ACTIONS
 ' =========================================================
 Private Sub btnRefresh_Click()
-    If Me.tglBatchMode.Value Then RunSelected False, True
+    EnsureSelectionModeOn
+    RunSelected False, True
 End Sub
 
 Private Sub btnSave_Click()
-    If Me.tglBatchMode.Value Then RunSelected True, False
+    EnsureSelectionModeOn
+    RunSelected True, False
 End Sub
 
 Private Sub btnRefreshSave_Click()
-    If Me.tglBatchMode.Value Then RunSelected True, True
+    EnsureSelectionModeOn
+    RunSelected True, True
 End Sub
 
 Private Sub ApplyWindowAction(ByVal targetScreen As Long)
