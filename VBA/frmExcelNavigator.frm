@@ -2098,6 +2098,7 @@ Private Sub btnSelectAll_Click()
 End Sub
 
 Private Sub btnClearAll_Click()
+    ' Keep Clear Selection available from any selection-mode state.
     EnsureSelectionModeOn
     ClearAllSelections
     RefreshVisuals
