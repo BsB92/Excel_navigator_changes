@@ -2064,18 +2064,22 @@ Private Sub btnReload_Click()
 End Sub
 
 Private Sub btnMaximize_Click()
+    EnsureSelectionModeOn
     ApplyWindowAction 0
 End Sub
 
 Private Sub btnScreen1_Click()
+    EnsureSelectionModeOn
     ApplyWindowAction 1
 End Sub
 
 Private Sub btnScreen2_Click()
+    EnsureSelectionModeOn
     ApplyWindowAction 2
 End Sub
 
 Private Sub btnScreen3_Click()
+    EnsureSelectionModeOn
     ApplyWindowAction 3
 End Sub
 
