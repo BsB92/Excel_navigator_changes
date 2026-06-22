@@ -1173,22 +1173,28 @@ Private Sub UserForm_Initialize()
 Dim w As Variant
 Dim defaultW As Single
 Dim defaultH As Single
+Dim minimumW As Single
+Dim minimumH As Single
 
 w = GetSetting(REG_APP, REG_SEC, "W", 0)
 defaultW = Me.Width
 defaultH = Me.Height
+minimumW = defaultW * 1.1
+minimumH = defaultH * 1.1
 
-' The design-time startup size is the minimum size; restored user width may be larger.
-If mMinTrackW = 0 Then mMinTrackW = CLng(defaultW)
-If mMinTrackH = 0 Then mMinTrackH = CLng(defaultH)
+' The design-time startup size plus 10% is the minimum size; restored user width may be larger.
+If mMinTrackW = 0 Then mMinTrackW = CLng(minimumW)
+If mMinTrackH = 0 Then mMinTrackH = CLng(minimumH)
 
 If w > 0 Then
     Me.Width = CSng(w)
-    If Me.Width < defaultW Then Me.Width = defaultW
+    If Me.Width < minimumW Then Me.Width = minimumW
 Else
-    Me.Width = defaultW
+    Me.Width = minimumW
 End If
 If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
+If Me.Height < minimumH Then Me.Height = minimumH
+If Me.Height > FORM_MAX_H Then Me.Height = FORM_MAX_H
 
 btnCancel.Visible = False
 btnCancel.enabled = True
