@@ -187,6 +187,8 @@ Private WithEvents mChkFrameOpenCopiedFolder As MSForms.CheckBox
 Attribute mChkFrameOpenCopiedFolder.VB_VarHelpID = -1
 Private WithEvents mBtnFrameOpenFile As MSForms.CommandButton
 Attribute mBtnFrameOpenFile.VB_VarHelpID = -1
+Private WithEvents mBtnFrameOpenFolder As MSForms.CommandButton
+Attribute mBtnFrameOpenFolder.VB_VarHelpID = -1
 Private WithEvents mBtnFrameOpenAndRefresh As MSForms.CommandButton
 Attribute mBtnFrameOpenAndRefresh.VB_VarHelpID = -1
 Private mSettingsTxtOpen As MSForms.TextBox
@@ -1274,6 +1276,10 @@ Private Sub EnsureFrameHostedControls()
         Set mBtnFrameOpenFile = GetFrameControlIfExists(mFraOpen, "btnFrameOpenFile")
         If mBtnFrameOpenFile Is Nothing Then Set mBtnFrameOpenFile = mFraOpen.Controls.Add("Forms.CommandButton.1", "btnFrameOpenFile", True)
     End If
+    If mBtnFrameOpenFolder Is Nothing Then
+        Set mBtnFrameOpenFolder = GetFrameControlIfExists(mFraOpen, "btnFrameOpenFolder")
+        If mBtnFrameOpenFolder Is Nothing Then Set mBtnFrameOpenFolder = mFraOpen.Controls.Add("Forms.CommandButton.1", "btnFrameOpenFolder", True)
+    End If
     If mBtnFrameOpenAndRefresh Is Nothing Then
         Set mBtnFrameOpenAndRefresh = GetFrameControlIfExists(mFraOpen, "btnFrameOpenAndRefresh")
         If mBtnFrameOpenAndRefresh Is Nothing Then Set mBtnFrameOpenAndRefresh = mFraOpen.Controls.Add("Forms.CommandButton.1", "btnFrameOpenAndRefresh", True)
@@ -1317,6 +1323,8 @@ Private Sub SyncFrameHostedControlState()
 
     mBtnFrameOpenFile.Caption = Me.btnOpenFile.Caption
     mBtnFrameOpenFile.enabled = Me.btnOpenFile.enabled
+    mBtnFrameOpenFolder.Caption = "Open folder"
+    mBtnFrameOpenFolder.enabled = Me.btnOpenCopyFolder.enabled
     mBtnFrameOpenAndRefresh.Caption = Me.btnOpenAndRefresh.Caption
     mBtnFrameOpenAndRefresh.enabled = Me.btnOpenAndRefresh.enabled
 End Sub
@@ -1446,77 +1454,85 @@ Private Sub PositionLayoutMenuControls()
     SyncFrameHostedControlState
 
     With mBtnFrameRefresh
-        .Left = (frameW - Me.btnRefresh.Width) / 2
-        .TOP = 24
+        .Left = INNER_GAP
+        .TOP = INNER_GAP
         .Width = Me.btnRefresh.Width
         .Height = Me.btnRefresh.Height
     End With
     With mBtnFrameSave
         .Left = mBtnFrameRefresh.Left
-        .TOP = mBtnFrameRefresh.TOP + mBtnFrameRefresh.Height + 8
+        .TOP = mBtnFrameRefresh.TOP + mBtnFrameRefresh.Height + INNER_GAP
         .Width = Me.btnSave.Width
         .Height = Me.btnSave.Height
     End With
     With mBtnFrameRefreshSave
         .Left = mBtnFrameRefresh.Left
-        .TOP = mBtnFrameSave.TOP + mBtnFrameSave.Height + 8
+        .TOP = mBtnFrameSave.TOP + mBtnFrameSave.Height + INNER_GAP
         .Width = Me.btnRefreshSave.Width
         .Height = Me.btnRefreshSave.Height
     End With
 
-    With mLblFrameSuffix
-        .Left = INNER_GAP
-        .TOP = 24
-        .Width = Me.Label2.Width
-        .Height = Me.Label2.Height
-    End With
     With mTxtFrameSuffix
-        .Left = mLblFrameSuffix.Left + mLblFrameSuffix.Width + 8
-        .TOP = 20
-        .Width = frameW - .Left - INNER_GAP
-        If .Width < 90 Then .Width = 90
+        .TOP = INNER_GAP
         .Height = Me.txtSuffix.Height
     End With
+    With mLblFrameSuffix
+        .Left = INNER_GAP
+        .Width = Me.Label2.Width * 0.75
+        .Height = Me.Label2.Height
+        .TOP = mTxtFrameSuffix.TOP + mTxtFrameSuffix.Height - .Height
+    End With
+    With mTxtFrameSuffix
+        .Left = mLblFrameSuffix.Left + mLblFrameSuffix.Width + INNER_GAP
+        .Width = frameW - .Left - INNER_GAP
+        If .Width < 90 Then .Width = 90
+    End With
     With mBtnFrameCopyBreakLinks
-        .Left = mTxtFrameSuffix.Left
-        .TOP = mTxtFrameSuffix.TOP + mTxtFrameSuffix.Height + 12
+        .Left = INNER_GAP
+        .TOP = mTxtFrameSuffix.TOP + mTxtFrameSuffix.Height + INNER_GAP
         .Width = Me.btnCopyBreakLinks.Width
         .Height = Me.btnCopyBreakLinks.Height
     End With
     With mBtnFrameCopyWithSuffix
-        .Left = mBtnFrameCopyBreakLinks.Left + mBtnFrameCopyBreakLinks.Width + 8
+        .Left = mBtnFrameCopyBreakLinks.Left + mBtnFrameCopyBreakLinks.Width + INNER_GAP
         .TOP = mBtnFrameCopyBreakLinks.TOP
         .Width = Me.btnCopyWithSuffix.Width
         .Height = Me.btnCopyWithSuffix.Height
     End With
     With mLblFramePostCopyOptions
         .Left = INNER_GAP
-        .TOP = frameH - 36
+        .TOP = mBtnFrameCopyBreakLinks.TOP + mBtnFrameCopyBreakLinks.Height + INNER_GAP
         .Width = 130
         .Height = 12
     End With
     With mChkFrameOpenCopiedFiles
         .Left = INNER_GAP
-        .TOP = frameH - 20
+        .TOP = mLblFramePostCopyOptions.TOP + mLblFramePostCopyOptions.Height + INNER_GAP
         .Width = 96
         .Height = 14
     End With
     With mChkFrameOpenCopiedFolder
-        .Left = 108
-        .TOP = frameH - 20
+        .Left = mChkFrameOpenCopiedFiles.Left + mChkFrameOpenCopiedFiles.Width + INNER_GAP
+        .TOP = mChkFrameOpenCopiedFiles.TOP
         .Width = 120
         .Height = 14
     End With
 
     With mBtnFrameOpenFile
-        .Left = (frameW - Me.btnOpenFile.Width) / 2
-        .TOP = 32
+        .Left = INNER_GAP
+        .TOP = INNER_GAP
+        .Width = Me.btnOpenFile.Width
+        .Height = Me.btnOpenFile.Height
+    End With
+    With mBtnFrameOpenFolder
+        .Left = mBtnFrameOpenFile.Left
+        .TOP = mBtnFrameOpenFile.TOP + mBtnFrameOpenFile.Height + INNER_GAP
         .Width = Me.btnOpenFile.Width
         .Height = Me.btnOpenFile.Height
     End With
     With mBtnFrameOpenAndRefresh
         .Left = mBtnFrameOpenFile.Left
-        .TOP = mBtnFrameOpenFile.TOP + mBtnFrameOpenFile.Height + 12
+        .TOP = mBtnFrameOpenFolder.TOP + mBtnFrameOpenFolder.Height + INNER_GAP
         .Width = Me.btnOpenAndRefresh.Width
         .Height = Me.btnOpenAndRefresh.Height
     End With
@@ -1555,6 +1571,8 @@ Private Sub PositionLayoutMenuControls()
 
     Me.btnOpenFile.Left = frameLeft + mBtnFrameOpenFile.Left
     Me.btnOpenFile.TOP = frameTop + mBtnFrameOpenFile.TOP
+    Me.btnOpenCopyFolder.Left = frameLeft + mBtnFrameOpenFolder.Left
+    Me.btnOpenCopyFolder.TOP = frameTop + mBtnFrameOpenFolder.TOP
     Me.btnOpenAndRefresh.Left = frameLeft + mBtnFrameOpenAndRefresh.Left
     Me.btnOpenAndRefresh.TOP = frameTop + mBtnFrameOpenAndRefresh.TOP
 
@@ -1600,7 +1618,7 @@ Private Sub PositionSwitchScreenControls(ByVal buttonsLeft As Single, ByVal labe
         Exit Sub
     End If
 
-    maximizeWidth = screenButtonWidth * 2
+    maximizeWidth = screenButtonWidth * 3
 
     If Not ctlMax Is Nothing Then
         ctlMax.Left = buttonsLeft
@@ -1852,6 +1870,10 @@ End Sub
 
 Private Sub mBtnFrameOpenFile_Click()
     btnOpenFile_Click
+End Sub
+
+Private Sub mBtnFrameOpenFolder_Click()
+    btnOpenCopyFolder_Click
 End Sub
 
 Private Sub mBtnFrameOpenAndRefresh_Click()
