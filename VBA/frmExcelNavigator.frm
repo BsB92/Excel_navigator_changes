@@ -1412,7 +1412,7 @@ Private Sub PositionLayoutMenuControls()
     Const MENU_GAP As Single = 12
     Const INNER_GAP As Single = 6
     Const FRAME_H As Single = 116
-    Const SUFFIX_TEXT_WIDTH_OFFSET As Single = 25
+    Const SUFFIX_TEXT_WIDTH As Single = 125
     Const OPEN_COPIED_WIDTH As Single = 86.4
     Dim menuLeft As Single, menuTop As Single, menuW As Single, menuH As Single
     Dim frameLeft As Single, frameTop As Single, frameW As Single, frameH As Single
@@ -1490,7 +1490,7 @@ Private Sub PositionLayoutMenuControls()
     End With
     With mTxtFrameSuffix
         .Left = mLblFrameSuffix.Left + mLblFrameSuffix.Width + INNER_GAP
-        .Width = Me.btnCopyBreakLinks.Width + SUFFIX_TEXT_WIDTH_OFFSET
+        .Width = SUFFIX_TEXT_WIDTH
     End With
     With mBtnFrameCopyBreakLinks
         .Left = INNER_GAP
