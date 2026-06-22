@@ -1562,7 +1562,7 @@ Private Sub PositionLayoutMenuControls()
     If screenTop > Me.btnClose.TOP - 32 Then screenTop = Me.btnClose.TOP - 32
     buttonTop = screenTop + 14
 
-    PositionSwitchScreenControls menuLeft, screenTop, buttonTop
+    PositionSwitchScreenControls Me.lstWorkbooks.Left, screenTop, buttonTop
 
     ApplyMenuFrameVisibility
 End Sub
@@ -4018,7 +4018,7 @@ Private Sub ApplyLayout()
     Set ctlPostCopyLabel = mLblPostCopyOptions
     EnsureLayoutMenuControls
 
-    PositionSwitchScreenControls Me.btnCopyWithSuffix.Left, actionTop - 14, actionTop
+    PositionSwitchScreenControls Me.lstWorkbooks.Left, actionTop - 14, actionTop
 
     PositionLayoutMenuControls
 
@@ -4317,7 +4317,7 @@ Private Sub PositionTopButtons()
     Set ctlS3 = GetControlIfExists("btnScreen3")
 
     If Not ctlMax Is Nothing Or Not ctlS1 Is Nothing Or Not ctlS2 Is Nothing Or Not ctlS3 Is Nothing Then
-        PositionSwitchScreenControls Me.btnCopyWithSuffix.Left, btnClose.TOP - 14, btnClose.TOP
+        PositionSwitchScreenControls Me.lstWorkbooks.Left, btnClose.TOP - 14, btnClose.TOP
     End If
 
     EnsureTopLeftButtons
