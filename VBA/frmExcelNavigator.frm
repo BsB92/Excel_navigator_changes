@@ -1562,37 +1562,92 @@ Private Sub PositionLayoutMenuControls()
     If screenTop > Me.btnClose.TOP - 32 Then screenTop = Me.btnClose.TOP - 32
     buttonTop = screenTop + 14
 
-    If Not mLblSwitchScreen Is Nothing Then
-        mLblSwitchScreen.Left = menuLeft
-        mLblSwitchScreen.TOP = screenTop
-        mLblSwitchScreen.Visible = True
-    End If
-    Set ctl = GetControlIfExists("btnMaximize")
-    If Not ctl Is Nothing Then
-        ctl.Left = menuLeft
-        ctl.TOP = buttonTop
-        ctl.Visible = True
-    End If
-    Set ctl = GetControlIfExists("btnScreen1")
-    If Not ctl Is Nothing Then
-        ctl.Left = menuLeft + 86
-        ctl.TOP = buttonTop
-        ctl.Visible = True
-    End If
-    Set ctl = GetControlIfExists("btnScreen2")
-    If Not ctl Is Nothing Then
-        ctl.Left = menuLeft + 172
-        ctl.TOP = buttonTop
-        ctl.Visible = True
-    End If
-    Set ctl = GetControlIfExists("btnScreen3")
-    If Not ctl Is Nothing Then
-        ctl.Left = menuLeft + 258
-        ctl.TOP = buttonTop
-        ctl.Visible = True
-    End If
+    PositionSwitchScreenControls menuLeft, screenTop, buttonTop
 
     ApplyMenuFrameVisibility
+End Sub
+
+Private Sub PositionSwitchScreenControls(ByVal buttonsLeft As Single, ByVal labelTop As Single, ByVal buttonsTop As Single)
+    Const SCREEN_BUTTON_GAP As Single = 6
+    Dim ctlMax As Object
+    Dim ctlS1 As Object
+    Dim ctlS2 As Object
+    Dim ctlS3 As Object
+    Dim screenButtonWidth As Single
+    Dim maximizeWidth As Single
+
+    Set ctlMax = GetControlIfExists("btnMaximize")
+    Set ctlS1 = GetControlIfExists("btnScreen1")
+    Set ctlS2 = GetControlIfExists("btnScreen2")
+    Set ctlS3 = GetControlIfExists("btnScreen3")
+
+    If Not mLblSwitchScreen Is Nothing Then
+        mLblSwitchScreen.Left = buttonsLeft
+        mLblSwitchScreen.TOP = labelTop
+        mLblSwitchScreen.Visible = True
+        mLblSwitchScreen.ZOrder 0
+    End If
+
+    If Not ctlS1 Is Nothing Then
+        screenButtonWidth = ctlS1.Width
+    ElseIf Not ctlS2 Is Nothing Then
+        screenButtonWidth = ctlS2.Width
+    ElseIf Not ctlS3 Is Nothing Then
+        screenButtonWidth = ctlS3.Width
+    ElseIf Not ctlMax Is Nothing Then
+        screenButtonWidth = ctlMax.Width / 2
+    Else
+        Exit Sub
+    End If
+
+    maximizeWidth = screenButtonWidth * 2
+
+    If Not ctlMax Is Nothing Then
+        ctlMax.Left = buttonsLeft
+        ctlMax.TOP = buttonsTop
+        ctlMax.Width = maximizeWidth
+        ctlMax.Visible = True
+        ctlMax.ZOrder 0
+    End If
+
+    If Not ctlS1 Is Nothing Then
+        ctlS1.TOP = buttonsTop
+        If Not ctlMax Is Nothing Then
+            ctlS1.Left = ctlMax.Left + ctlMax.Width + SCREEN_BUTTON_GAP
+        Else
+            ctlS1.Left = buttonsLeft
+        End If
+        ctlS1.Visible = True
+        ctlS1.ZOrder 0
+    End If
+
+    If Not ctlS2 Is Nothing Then
+        ctlS2.TOP = buttonsTop
+        If Not ctlS1 Is Nothing Then
+            ctlS2.Left = ctlS1.Left + ctlS1.Width + SCREEN_BUTTON_GAP
+        ElseIf Not ctlMax Is Nothing Then
+            ctlS2.Left = ctlMax.Left + ctlMax.Width + SCREEN_BUTTON_GAP
+        Else
+            ctlS2.Left = buttonsLeft
+        End If
+        ctlS2.Visible = True
+        ctlS2.ZOrder 0
+    End If
+
+    If Not ctlS3 Is Nothing Then
+        ctlS3.TOP = buttonsTop
+        If Not ctlS2 Is Nothing Then
+            ctlS3.Left = ctlS2.Left + ctlS2.Width + SCREEN_BUTTON_GAP
+        ElseIf Not ctlS1 Is Nothing Then
+            ctlS3.Left = ctlS1.Left + ctlS1.Width + SCREEN_BUTTON_GAP
+        ElseIf Not ctlMax Is Nothing Then
+            ctlS3.Left = ctlMax.Left + ctlMax.Width + SCREEN_BUTTON_GAP
+        Else
+            ctlS3.Left = buttonsLeft
+        End If
+        ctlS3.Visible = True
+        ctlS3.ZOrder 0
+    End If
 End Sub
 
 Private Sub PositionScreenButtonsAfterSwitchLabel(ByVal actionGap As Single)
@@ -3963,35 +4018,7 @@ Private Sub ApplyLayout()
     Set ctlPostCopyLabel = mLblPostCopyOptions
     EnsureLayoutMenuControls
 
-    If Not ctlMax Is Nothing Then
-        ctlMax.TOP = actionTop
-        ctlMax.Left = Me.btnCopyWithSuffix.Left
-    End If
-
-    If Not ctlS1 Is Nothing Then
-        ctlS1.TOP = actionTop
-        If Not ctlMax Is Nothing Then
-            ctlS1.Left = ctlMax.Left + ctlMax.Width + actionGap
-        End If
-    End If
-
-    If Not ctlS2 Is Nothing Then
-        ctlS2.TOP = actionTop
-        If Not ctlS1 Is Nothing Then
-            ctlS2.Left = ctlS1.Left + ctlS1.Width + actionGap
-        End If
-    End If
-
-    If Not ctlS3 Is Nothing Then
-        ctlS3.TOP = actionTop
-        If Not ctlS2 Is Nothing Then
-            ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
-        End If
-    End If
-    If Not mLblSwitchScreen Is Nothing Then
-        mLblSwitchScreen.TOP = actionTop + 3
-        If Not ctlMax Is Nothing Then mLblSwitchScreen.Left = ctlMax.Left + ctlMax.Width + actionGap
-    End If
+    PositionSwitchScreenControls Me.btnCopyWithSuffix.Left, actionTop - 14, actionTop
 
     PositionLayoutMenuControls
 
@@ -4289,30 +4316,8 @@ Private Sub PositionTopButtons()
     Set ctlS2 = GetControlIfExists("btnScreen2")
     Set ctlS3 = GetControlIfExists("btnScreen3")
 
-    If Not ctlMax Is Nothing Then
-        ctlMax.TOP = btnClose.TOP
-        ctlMax.Left = Me.btnCopyWithSuffix.Left
-    End If
-
-    If Not ctlS1 Is Nothing Then
-        ctlS1.TOP = btnClose.TOP
-        If Not ctlMax Is Nothing Then
-            ctlS1.Left = ctlMax.Left + ctlMax.Width + GAP
-        End If
-    End If
-
-    If Not ctlS2 Is Nothing Then
-        ctlS2.TOP = btnClose.TOP
-        If Not ctlS1 Is Nothing Then
-            ctlS2.Left = ctlS1.Left + ctlS1.Width + GAP
-        End If
-    End If
-
-    If Not ctlS3 Is Nothing Then
-        ctlS3.TOP = btnClose.TOP
-        If Not ctlS2 Is Nothing Then
-            ctlS3.Left = ctlS2.Left + ctlS2.Width + GAP
-        End If
+    If Not ctlMax Is Nothing Or Not ctlS1 Is Nothing Or Not ctlS2 Is Nothing Or Not ctlS3 Is Nothing Then
+        PositionSwitchScreenControls Me.btnCopyWithSuffix.Left, btnClose.TOP - 14, btnClose.TOP
     End If
 
     EnsureTopLeftButtons
