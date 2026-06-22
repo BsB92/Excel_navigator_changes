@@ -1412,6 +1412,8 @@ Private Sub PositionLayoutMenuControls()
     Const MENU_GAP As Single = 12
     Const INNER_GAP As Single = 6
     Const FRAME_H As Single = 116
+    Const SUFFIX_TEXT_WIDTH_OFFSET As Single = 25
+    Const OPEN_COPIED_WIDTH As Single = 86.4
     Dim menuLeft As Single, menuTop As Single, menuW As Single, menuH As Single
     Dim frameLeft As Single, frameTop As Single, frameW As Single, frameH As Single
     Dim listRight As Single, screenTop As Single, buttonTop As Single
@@ -1447,7 +1449,7 @@ Private Sub PositionLayoutMenuControls()
     frameTop = menuTop
     listRight = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width
     frameW = listRight - frameLeft
-    If frameW < 210 Then frameW = 210
+    If frameW < 1 Then frameW = 1
     frameH = FRAME_H
     If frameTop + frameH > Me.btnClose.TOP - 48 Then frameH = Me.btnClose.TOP - frameTop - 48
     If frameH < 92 Then frameH = 92
@@ -1482,14 +1484,13 @@ Private Sub PositionLayoutMenuControls()
     End With
     With mLblFrameSuffix
         .Left = INNER_GAP
-        .Width = Me.Label2.Width * 0.75
+        .Width = (Me.Label2.Width * 0.75) + 2
         .Height = Me.Label2.Height
         .TOP = mTxtFrameSuffix.TOP + mTxtFrameSuffix.Height - .Height
     End With
     With mTxtFrameSuffix
         .Left = mLblFrameSuffix.Left + mLblFrameSuffix.Width + INNER_GAP
-        .Width = frameW - .Left - INNER_GAP
-        If .Width < 90 Then .Width = 90
+        .Width = Me.btnCopyBreakLinks.Width + SUFFIX_TEXT_WIDTH_OFFSET
     End With
     With mBtnFrameCopyBreakLinks
         .Left = INNER_GAP
@@ -1500,7 +1501,7 @@ Private Sub PositionLayoutMenuControls()
     With mBtnFrameCopyWithSuffix
         .Left = mBtnFrameCopyBreakLinks.Left + mBtnFrameCopyBreakLinks.Width + INNER_GAP
         .TOP = mBtnFrameCopyBreakLinks.TOP
-        .Width = Me.btnCopyWithSuffix.Width
+        .Width = Me.btnCopyWithSuffix.Width * 0.9
         .Height = Me.btnCopyWithSuffix.Height
     End With
     With mLblFramePostCopyOptions
@@ -1512,7 +1513,7 @@ Private Sub PositionLayoutMenuControls()
     With mChkFrameOpenCopiedFiles
         .Left = INNER_GAP
         .TOP = mLblFramePostCopyOptions.TOP + mLblFramePostCopyOptions.Height + INNER_GAP
-        .Width = 96
+        .Width = OPEN_COPIED_WIDTH
         .Height = 14
     End With
     With mChkFrameOpenCopiedFolder
