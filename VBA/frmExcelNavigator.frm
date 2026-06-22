@@ -1605,18 +1605,15 @@ Private Sub PositionSwitchScreenControls(ByVal buttonsLeft As Single, ByVal labe
     Dim ctlS3 As Object
     Dim screenButtonWidth As Single
     Dim maximizeWidth As Single
+    Dim originalButtonsTop As Single
+    Dim buttonHeight As Single
+
+    originalButtonsTop = buttonsTop
 
     Set ctlMax = GetControlIfExists("btnMaximize")
     Set ctlS1 = GetControlIfExists("btnScreen1")
     Set ctlS2 = GetControlIfExists("btnScreen2")
     Set ctlS3 = GetControlIfExists("btnScreen3")
-
-    If Not mLblSwitchScreen Is Nothing Then
-        mLblSwitchScreen.Left = buttonsLeft
-        mLblSwitchScreen.TOP = labelTop
-        mLblSwitchScreen.Visible = True
-        mLblSwitchScreen.ZOrder 0
-    End If
 
     If Not ctlS1 Is Nothing Then
         screenButtonWidth = ctlS1.Width
@@ -1630,7 +1627,28 @@ Private Sub PositionSwitchScreenControls(ByVal buttonsLeft As Single, ByVal labe
         Exit Sub
     End If
 
+    If Not ctlMax Is Nothing Then
+        buttonHeight = ctlMax.Height
+    ElseIf Not ctlS1 Is Nothing Then
+        buttonHeight = ctlS1.Height
+    ElseIf Not ctlS2 Is Nothing Then
+        buttonHeight = ctlS2.Height
+    ElseIf Not ctlS3 Is Nothing Then
+        buttonHeight = ctlS3.Height
+    End If
+    If buttonHeight > 0 Then
+        buttonsTop = Me.btnClose.TOP + Me.btnClose.Height - buttonHeight
+        labelTop = labelTop + (buttonsTop - originalButtonsTop)
+    End If
+
     maximizeWidth = screenButtonWidth * 3
+
+    If Not mLblSwitchScreen Is Nothing Then
+        mLblSwitchScreen.Left = buttonsLeft
+        mLblSwitchScreen.TOP = labelTop
+        mLblSwitchScreen.Visible = True
+        mLblSwitchScreen.ZOrder 0
+    End If
 
     If Not ctlMax Is Nothing Then
         ctlMax.Left = buttonsLeft
