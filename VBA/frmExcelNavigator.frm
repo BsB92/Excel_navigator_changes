@@ -1507,7 +1507,8 @@ Private Sub PositionLayoutMenuControls()
     With mBtnFrameCopyWithSuffix
         .Left = mBtnFrameCopyBreakLinks.Left + mBtnFrameCopyBreakLinks.Width + INNER_GAP
         .TOP = mBtnFrameCopyBreakLinks.TOP
-        .Width = Me.btnCopyWithSuffix.Width * 0.9
+        .Width = (Me.btnCopyWithSuffix.Width * 0.9) - 6
+        If .Width < 1 Then .Width = 1
         .Height = Me.btnCopyWithSuffix.Height
     End With
     With mLblFramePostCopyOptions
@@ -4099,10 +4100,7 @@ If Not mLstSheets Is Nothing Then
         mLstSheets.TOP = Me.lstWorkbooks.TOP
     End If
     mLstSheets.Width = mPanelWidth
-    sheetBottom = Me.btnOpenFile.TOP + Me.btnOpenFile.Height
-    If Not mBtnTogglePanel Is Nothing Then
-        If mBtnTogglePanel.TOP - mGap < sheetBottom Then sheetBottom = mBtnTogglePanel.TOP - mGap
-    End If
+    sheetBottom = Me.lstWorkbooks.TOP + Me.lstWorkbooks.Height
     If sheetBottom < mLstSheets.TOP + 24 Then sheetBottom = mLstSheets.TOP + 24
     mLstSheets.Height = sheetBottom - mLstSheets.TOP
     mLstSheets.Visible = mIsExpandedView
