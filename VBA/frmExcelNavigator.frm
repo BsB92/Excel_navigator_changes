@@ -72,7 +72,6 @@ Private mCtlTop(1 To 21) As Single
 Private mMinTrackW As Long
 Private mMinTrackH As Long
 Private mHookReady As Boolean
-Private mAdjustingLayoutHeight As Boolean
 Private mOpenCopiedOffsetTop As Single
 Private mOpenCopiedOffsetLeft As Single
 Private mOpenCopiedFolderOffsetLeft As Single
@@ -1841,11 +1840,8 @@ End Function
 Private Sub AlignControlsBelowLayoutMenuFrames()
     Const FRAME_TO_TOGGLE_GAP As Single = 6
     Const CONTROL_GAP As Single = 6
-    Const BOTTOM_MARGIN As Single = 6
     Dim targetToggleTop As Single
     Dim actionTop As Single
-    Dim desiredInsideH As Single
-    Dim desiredFormH As Single
 
     If mBtnTogglePanel Is Nothing Then Exit Sub
     targetToggleTop = GetLayoutMenuFramesBottom() + FRAME_TO_TOGGLE_GAP
@@ -1863,14 +1859,6 @@ Private Sub AlignControlsBelowLayoutMenuFrames()
     Me.btnCancel.TOP = actionTop
     PositionSwitchScreenControls Me.lstWorkbooks.Left, actionTop - 14, actionTop
 
-    desiredInsideH = Me.btnClose.TOP + Me.btnClose.Height + BOTTOM_MARGIN
-    desiredFormH = desiredInsideH + (Me.Height - Me.InsideHeight)
-    If desiredFormH > 0 And Me.Height > desiredFormH + 1 Then
-        mAdjustingLayoutHeight = True
-        mMinTrackH = CLng(desiredFormH)
-        Me.Height = desiredFormH
-        mAdjustingLayoutHeight = False
-    End If
 End Sub
 
 Private Sub ToggleMenuFrame(ByVal frameName As String)
