@@ -72,6 +72,7 @@ Private mCtlTop(1 To 21) As Single
 Private mMinTrackW As Long
 Private mMinTrackH As Long
 Private mHookReady As Boolean
+Private mAdjustingLayoutHeight As Boolean
 Private mOpenCopiedOffsetTop As Single
 Private mOpenCopiedOffsetLeft As Single
 Private mOpenCopiedFolderOffsetLeft As Single
@@ -1507,7 +1508,8 @@ Private Sub PositionLayoutMenuControls()
     With mBtnFrameCopyWithSuffix
         .Left = mBtnFrameCopyBreakLinks.Left + mBtnFrameCopyBreakLinks.Width + INNER_GAP
         .TOP = mBtnFrameCopyBreakLinks.TOP
-        .Width = Me.btnCopyWithSuffix.Width * 0.9
+        .Width = (Me.btnCopyWithSuffix.Width * 0.9) - 6
+        If .Width < 1 Then .Width = 1
         .Height = Me.btnCopyWithSuffix.Height
     End With
     With mLblFramePostCopyOptions
@@ -1604,18 +1606,15 @@ Private Sub PositionSwitchScreenControls(ByVal buttonsLeft As Single, ByVal labe
     Dim ctlS3 As Object
     Dim screenButtonWidth As Single
     Dim maximizeWidth As Single
+    Dim originalButtonsTop As Single
+    Dim buttonHeight As Single
+
+    originalButtonsTop = buttonsTop
 
     Set ctlMax = GetControlIfExists("btnMaximize")
     Set ctlS1 = GetControlIfExists("btnScreen1")
     Set ctlS2 = GetControlIfExists("btnScreen2")
     Set ctlS3 = GetControlIfExists("btnScreen3")
-
-    If Not mLblSwitchScreen Is Nothing Then
-        mLblSwitchScreen.Left = buttonsLeft
-        mLblSwitchScreen.TOP = labelTop
-        mLblSwitchScreen.Visible = True
-        mLblSwitchScreen.ZOrder 0
-    End If
 
     If Not ctlS1 Is Nothing Then
         screenButtonWidth = ctlS1.Width
@@ -1629,7 +1628,28 @@ Private Sub PositionSwitchScreenControls(ByVal buttonsLeft As Single, ByVal labe
         Exit Sub
     End If
 
+    If Not ctlMax Is Nothing Then
+        buttonHeight = ctlMax.Height
+    ElseIf Not ctlS1 Is Nothing Then
+        buttonHeight = ctlS1.Height
+    ElseIf Not ctlS2 Is Nothing Then
+        buttonHeight = ctlS2.Height
+    ElseIf Not ctlS3 Is Nothing Then
+        buttonHeight = ctlS3.Height
+    End If
+    If buttonHeight > 0 Then
+        buttonsTop = Me.btnClose.TOP + Me.btnClose.Height - buttonHeight
+        labelTop = labelTop + (buttonsTop - originalButtonsTop)
+    End If
+
     maximizeWidth = screenButtonWidth * 3
+
+    If Not mLblSwitchScreen Is Nothing Then
+        mLblSwitchScreen.Left = buttonsLeft
+        mLblSwitchScreen.TOP = labelTop
+        mLblSwitchScreen.Visible = True
+        mLblSwitchScreen.ZOrder 0
+    End If
 
     If Not ctlMax Is Nothing Then
         ctlMax.Left = buttonsLeft
@@ -1799,6 +1819,58 @@ Private Sub PositionMenuFrame(ByVal targetFrame As MSForms.Frame, ByVal frameLef
         .Height = frameH
         .ZOrder 1
     End With
+End Sub
+
+
+Private Function GetLayoutMenuFramesBottom() As Single
+    Dim frameBottom As Single
+
+    If mFraActions Is Nothing Or mFraCopy Is Nothing Or mFraOpen Is Nothing Then EnsureLayoutMenuControls
+
+    If Not mFraActions Is Nothing Then frameBottom = mFraActions.TOP + mFraActions.Height
+    If Not mFraCopy Is Nothing Then
+        If mFraCopy.TOP + mFraCopy.Height > frameBottom Then frameBottom = mFraCopy.TOP + mFraCopy.Height
+    End If
+    If Not mFraOpen Is Nothing Then
+        If mFraOpen.TOP + mFraOpen.Height > frameBottom Then frameBottom = mFraOpen.TOP + mFraOpen.Height
+    End If
+
+    GetLayoutMenuFramesBottom = frameBottom
+End Function
+
+Private Sub AlignControlsBelowLayoutMenuFrames()
+    Const FRAME_TO_TOGGLE_GAP As Single = 6
+    Const CONTROL_GAP As Single = 6
+    Const BOTTOM_MARGIN As Single = 6
+    Dim targetToggleTop As Single
+    Dim actionTop As Single
+    Dim desiredInsideH As Single
+    Dim desiredFormH As Single
+
+    If mBtnTogglePanel Is Nothing Then Exit Sub
+    targetToggleTop = GetLayoutMenuFramesBottom() + FRAME_TO_TOGGLE_GAP
+    If targetToggleTop <= FRAME_TO_TOGGLE_GAP Then Exit Sub
+
+    With mBtnTogglePanel
+        .Width = Me.btnClose.Width
+        .Height = Me.btnClose.Height
+        .Left = Me.btnClose.Left
+        .TOP = targetToggleTop
+    End With
+
+    actionTop = mBtnTogglePanel.TOP + mBtnTogglePanel.Height + CONTROL_GAP
+    Me.btnClose.TOP = actionTop
+    Me.btnCancel.TOP = actionTop
+    PositionSwitchScreenControls Me.lstWorkbooks.Left, actionTop - 14, actionTop
+
+    desiredInsideH = Me.btnClose.TOP + Me.btnClose.Height + BOTTOM_MARGIN
+    desiredFormH = desiredInsideH + (Me.Height - Me.InsideHeight)
+    If desiredFormH > 0 And Me.Height > desiredFormH + 1 Then
+        mAdjustingLayoutHeight = True
+        mMinTrackH = CLng(desiredFormH)
+        Me.Height = desiredFormH
+        mAdjustingLayoutHeight = False
+    End If
 End Sub
 
 Private Sub ToggleMenuFrame(ByVal frameName As String)
@@ -4054,6 +4126,7 @@ Private Sub ApplyLayout()
     PositionSwitchScreenControls Me.lstWorkbooks.Left, actionTop - 14, actionTop
 
     PositionLayoutMenuControls
+    AlignControlsBelowLayoutMenuFrames
 
     ' Copy option controls are positioned by PositionLayoutMenuControls so they stay inside fraCopy.
 
@@ -4099,10 +4172,7 @@ If Not mLstSheets Is Nothing Then
         mLstSheets.TOP = Me.lstWorkbooks.TOP
     End If
     mLstSheets.Width = mPanelWidth
-    sheetBottom = Me.btnOpenFile.TOP + Me.btnOpenFile.Height
-    If Not mBtnTogglePanel Is Nothing Then
-        If mBtnTogglePanel.TOP - mGap < sheetBottom Then sheetBottom = mBtnTogglePanel.TOP - mGap
-    End If
+    sheetBottom = Me.lstWorkbooks.TOP + Me.lstWorkbooks.Height
     If sheetBottom < mLstSheets.TOP + 24 Then sheetBottom = mLstSheets.TOP + 24
     mLstSheets.Height = sheetBottom - mLstSheets.TOP
     mLstSheets.Visible = mIsExpandedView
@@ -4352,6 +4422,7 @@ Private Sub PositionTopButtons()
     If Not ctlMax Is Nothing Or Not ctlS1 Is Nothing Or Not ctlS2 Is Nothing Or Not ctlS3 Is Nothing Then
         PositionSwitchScreenControls Me.lstWorkbooks.Left, btnClose.TOP - 14, btnClose.TOP
     End If
+    AlignControlsBelowLayoutMenuFrames
 
     EnsureTopLeftButtons
     EnsureSnapshotOverlay
