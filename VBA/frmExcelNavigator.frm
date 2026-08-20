@@ -180,6 +180,8 @@ Private WithEvents mBtnFrameCopyBreakLinks As MSForms.CommandButton
 Attribute mBtnFrameCopyBreakLinks.VB_VarHelpID = -1
 Private WithEvents mBtnFrameCopyWithSuffix As MSForms.CommandButton
 Attribute mBtnFrameCopyWithSuffix.VB_VarHelpID = -1
+Private WithEvents mBtnFrameCF2Static As MSForms.CommandButton
+Attribute mBtnFrameCF2Static.VB_VarHelpID = -1
 Private mLblFramePostCopyOptions As MSForms.Label
 Private WithEvents mChkFrameOpenCopiedFiles As MSForms.CheckBox
 Attribute mChkFrameOpenCopiedFiles.VB_VarHelpID = -1
@@ -1882,6 +1884,10 @@ Private Sub mBtnFrameCopyWithSuffix_Click()
     SyncFrameHostedControlState
 End Sub
 
+Private Sub mBtnFrameCF2Static_Click()
+    modCF2Static.RunCF2Static Me
+End Sub
+
 Private Sub mChkFrameOpenCopiedFiles_Click()
     Dim ctlOpenCopied As Object
     Set ctlOpenCopied = GetOpenCopiedFilesControl()
@@ -1908,6 +1914,35 @@ End Sub
 
 Private Sub mBtnFrameOpenAndRefresh_Click()
     btnOpenAndRefresh_Click
+End Sub
+
+Public Sub InitializeCF2StaticButton()
+    Const CONTROL_GAP As Single = 6
+    Const TOOLTIP_TEXT As String = "Creates copies of selected files and converts conditional formatting to static formatting in all worksheets while preserving the exact visible appearance."
+
+    EnsureLayoutMenuControls
+    If mFraCopy Is Nothing Or mBtnFrameCopyBreakLinks Is Nothing Or mChkFrameOpenCopiedFiles Is Nothing Then Exit Sub
+
+    If mBtnFrameCF2Static Is Nothing Then
+        Set mBtnFrameCF2Static = GetFrameControlIfExists(mFraCopy, "CF2Static")
+        If mBtnFrameCF2Static Is Nothing Then Set mBtnFrameCF2Static = mFraCopy.Controls.Add("Forms.CommandButton.1", "CF2Static", True)
+    End If
+
+    With mBtnFrameCF2Static
+        .Caption = "CF2Static"
+        .ControlTipText = TOOLTIP_TEXT
+        .Left = mBtnFrameCopyBreakLinks.Left
+        .TOP = mChkFrameOpenCopiedFiles.TOP + mChkFrameOpenCopiedFiles.Height + CONTROL_GAP
+        .Width = mBtnFrameCopyBreakLinks.Width
+        .Height = mBtnFrameCopyBreakLinks.Height
+        .Font.Name = mBtnFrameCopyBreakLinks.Font.Name
+        .Font.Size = mBtnFrameCopyBreakLinks.Font.Size
+        .Font.Bold = mBtnFrameCopyBreakLinks.Font.Bold
+        .Font.Italic = mBtnFrameCopyBreakLinks.Font.Italic
+        .SpecialEffect = mBtnFrameCopyBreakLinks.SpecialEffect
+        .Visible = True
+        .enabled = True
+    End With
 End Sub
 
 Private Sub EnsureCopyOptionsControls()
