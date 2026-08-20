@@ -1,77 +1,19 @@
-Excel Navigator - Changelog (branch: work)
-Date: 2026-05-07
+Excel Navigator - Changelog
 
-Note:
-- Local repository does not contain a `main` branch reference, so this changelog is based on commits available on the current branch history.
+v6.1 - CF2Static
+- Added CF2Static to the Copy frame.
+- CF2Static creates copies of selected workbooks with suffix `_without_conditional_formatting` and converts Conditional Formatting into static formatting using DisplayFormat.
+- Conversion covers every Worksheet, including Hidden and VeryHidden sheets.
+- Added per-cell visual-format validation and workbook-wide verification that no Conditional Formatting remains.
+- Failed conversions are closed without saving and the failed output copy is removed.
+- Added guarded application-state handling for ScreenUpdating, EnableEvents, DisplayAlerts, AskToUpdateLinks and Calculation.
+- Data Bars and Icon Sets are explicitly rejected because Excel VBA cannot reproduce their rendered graphics as ordinary static cell formatting.
+- Updated launcher/interface version to v6.1 and refreshed bilingual Help.
 
-Highlights of recent changes
-
-1) New compare capabilities
-- Added top-bar button: "Compare Files" (next to "Snapshot") to compare any two Excel files.
-- Added compare completion prompt with optional "Open report now?" action.
-- Fixed report output path for "Compare 2 Snapshots" (no misleading nested empty `.snapshot` folders).
-
-2) Snapshot compare modes (Settings)
-- Added persistent compare mode setting:
-  - STRICT
-  - VALUE_ONLY (recommended/default)
-  - HYBRID
-- Added Settings UI section with mode selectors.
-- Compare engine now reads mode from Settings and applies mode-aware diff logic.
-
-3) Snapshot format and metadata
-- Snapshot workflow moved to independent `.xlsx` snapshots.
-- Snapshot creation breaks external links in snapshot copy while preserving resulting values.
-- `_snapshot_meta` is visible and includes:
-  - OriginalPath
-  - OriginalName
-  - SnapshotTimestamp
-  - GeneratedUtc
-  - list of worksheets
-
-4) Compare/report robustness
-- Suppressed link-update prompts and restored app state in compare flows.
-- Report cell sanitization for values beginning with `=`, `+`, `-`, `@` to prevent formula execution in report files.
-- Fixed snapshot stamp extraction from file path.
-
-5) UX and documentation
-- Improved foreground prompt handling for dialogs/messages.
-- Updated bilingual help (PL/EN) to describe current `.xlsx` snapshot behavior, compare modes, and metadata.
-
-Files most impacted
-- VBA/frmExcelNavigator.frm
-- VBA/modSnapshotMain.bas
-- VBA/modSnapshotCompare.bas
-- VBA/modSnapshotReport.bas
-- VBA/modNavigatorSettings.bas
-- ExcelNavigator_Help.txt
-
-7) UI/layout and compare file picker defaults
-- Reduced top-bar button widths for "Snapshot" and "Compare Files" so captions still fit while avoiding overlap with the header image.
-- Compare file-pickers now default to the Settings "open files" folder (same setting used for opening files), including Compare Snapshot, Compare 2 Snapshots, and Compare Files.
-
-- Changed keyboard shortcut on lists: `S` now toggles Selection mode (press once = ON, press again = OFF).
-
-9) v5.2 - hard version bump (no backward compatibility)
-- Updated add-in version identifiers to v5.2 in form caption and registry scope keys.
-- Updated help document headers to v5.2.
-
-8) v5.1 - full path clipboard UX
-- Updated add-in version to v5.1 in navigator caption and settings registry scope.
-- Added double-click action on the full path textbox (`txtFullPath`) to copy full path to clipboard.
-- Replaced modal "copied" popup with a short, non-blocking notification on Excel status bar (about 2 seconds).
-- Updated bilingual help (PL/EN) to document the new double-click copy behavior and non-modal notification.
-
-10) v5.2 - settings overlay regression fixes
-- Removed Settings button SpecialEffect toggling to eliminate runtime 438 risk in the Settings path.
-- Settings active state is now indicated only with bold font (no color/sunken effect and no [ON] caption marker).
-- Added global uniform font-size application across form controls (including nested controls in frames).
-- Preserved "Set active folder directory" action with 4-way prompt (both/copy/open/cancel).
-- Added launcher macro `ExcelNavigator_v5_2` in `modExcelNavigator`.
-
-
-11) Snapshot folder compatibility + formula diff highlight
-- Fixed "Open Snapshot Folder" to support both current `.snapshot\WorkbookName\` and legacy `.snapshots\WorkbookName\` paths.
-- Compare report now visually marks changed formula fragments using bold + red text.
-- Added legend note in the report summary sheet for changed formula fragment styling.
-- Updated bilingual help (PL/EN) with legacy-folder fallback note and formula-fragment highlight behavior.
+Previous highlights
+- Added Compare Files and Snapshot / Compare workflows.
+- Added Strict, Value-only and Hybrid snapshot comparison modes.
+- Added independent `.xlsx` snapshots with `_snapshot_meta` metadata.
+- Added Selection mode keyboard/navigation improvements.
+- Added Settings for default copy/open folders and snapshot compare mode.
+- Added Copy + Break Links and Copy with suffix workflows.
