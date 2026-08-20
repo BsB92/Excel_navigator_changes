@@ -1,306 +1,157 @@
-Excel Navigator - Instrukcja użytkownika (v5.2) [PL]
+Excel Navigator - Instrukcja użytkownika (v6.1) [PL]
 
 1) Ogólny przepływ pracy
-- Kliknij Reload list, aby odświeżyć listę aktualnie otwartych skoroszytów.
-- Użyj Search, aby filtrować po nazwie/ścieżce skoroszytu.
-- Wybierz skoroszyt z listy i użyj akcji poniżej.
+- Reload list odświeża listę aktualnie otwartych skoroszytów.
+- Search filtruje listę po nazwie i ścieżce.
+- Selection mode umożliwia zaznaczenie wielu skoroszytów i wykonanie akcji zbiorczych.
 
-2) Skróty klawiaturowe i myszy
-- Ctrl+A na liście skoroszytów/arkuszy = Zaznacz wszystko (gdy Selection mode jest ON).
-- S = przełącznik Selection mode (1x = ON, 2x = OFF).
-- Strzałka w prawo na liście skoroszytów/arkuszy = rozwiń prawy panel Sheets i przenieś fokus na listę Sheets.
-- Strzałka w lewo na liście skoroszytów/arkuszy = zwiń prawy panel Sheets i przenieś fokus z powrotem na listę skoroszytów.
-- Strzałka góra/dół na liście skoroszytów = przejdź do poprzedniego/następnego wiersza.
-- Enter na liście skoroszytów = aktywuj wybrany skoroszyt.
-- Dwuklik na wierszu skoroszytu = aktywuj wybrany skoroszyt.
-- Prawy klik na liście skoroszytów = przełącz Selection mode ON/OFF.
-- W Selection mode na liście skoroszytów:
-  * A = dodaj bieżący wiersz skoroszytu do zaznaczenia.
-  * D = usuń bieżący wiersz skoroszytu z zaznaczenia.
-- Strzałka góra/dół w panelu Sheets (po prawej) = nawigacja po arkuszach.
-- Enter w panelu Sheets = aktywuj wybrany arkusz.
-- Pole pełnej ścieżki obsługuje prawy klik (kopiuj/zaznacz).
-- Dwuklik w polu pełnej ścieżki kopiuje całą ścieżkę do schowka.
-- Po skopiowaniu ścieżki pojawia się krótka informacja (ok. 2 sek.) na pasku statusu Excel (bez okna z przyciskiem OK).
+2) Skróty i nawigacja
+- S = przełącz Selection mode ON/OFF.
+- Ctrl+A = zaznacz wszystkie skoroszyty.
+- Ctrl+D = wyczyść zaznaczenie.
+- W Selection mode: A dodaje bieżący wiersz do zaznaczenia, D usuwa go z zaznaczenia.
+- Strzałki góra/dół = nawigacja po liście; Enter = aktywacja skoroszytu/arkusza.
+- Strzałka w prawo/lewo = rozwiń/zwiń panel Sheets.
+- Dwuklik w polu pełnej ścieżki kopiuje ścieżkę do schowka.
 
-3) Kontrolki górnego wiersza
-- Settings: przełącza ramkę Settings ON/OFF.
-  * Stan ON jest sygnalizowany pogrubieniem napisu na przycisku (bez zmiany koloru i bez dopisku [ON]).
-  * Skonfiguruj dwa foldery:
-    1) domyślny folder kopiowania
-    2) domyślny folder otwierania
-  * Save settings waliduje obie ścieżki i zapisuje je.
-  * Przyciski "Use active" ustawiają ścieżkę na podstawie aktywnego skoroszytu.
-- ?: otwiera ten plik pomocy.
-- Snapshot: otwiera/zamyka ramkę Snapshot / Compare.
-  * W ramce dostępne są akcje: Create Snapshot, Open Snapshot Folder, Compare Latest 2, Compare with Snapshot.
-- Compare Files: uruchamia porównanie dowolnych dwóch plików Excel.
+3) Settings
+- Default copy folder ustawia folder startowy dla operacji kopiowania.
+- Default open folder ustawia folder startowy dla Open/Open&Refresh oraz pickerów Compare.
+- Use active pobiera ścieżkę z aktywnego skoroszytu.
+- Snapshot compare mode: Strict, Value-only lub Hybrid.
 
-3a) Aktywny vs wybrany skoroszyt (ważne)
-- Aktywny skoroszyt = skoroszyt, który aktualnie ma fokus w Excelu (to na nim działają akcje typu Max, 1/2/3, Snapshot Create).
-- Wybrany skoroszyt = pozycja zaznaczona na liście w add-inie.
-- Gdy Selection mode = OFF, zwykle masz jeden wybrany wiersz.
-- Gdy Selection mode = ON, możesz mieć wiele wybranych wierszy i akcje "... selected" działają na całej tej grupie.
-- "Use active" w Settings korzysta z aktywnego skoroszytu, a nie z listy zaznaczeń.
+4) Selection mode
+- OFF = wybór pojedynczego skoroszytu.
+- ON = wybór wielu skoroszytów i akcje zbiorcze.
+- Akcje Refresh selected, Save selected, Refresh + Save, Close selected oraz funkcje kopiowania działają na zaznaczonych pozycjach zgodnie z ich opisem.
 
-4) Obszar listy skoroszytów
-- Kolumny: File / Dir / Sync.
-- Wiersz nagłówka nie jest możliwy do zaznaczenia jako cel akcji.
-- Aktywny skoroszyt jest wyróżniony wizualnie.
+5) Akcje otwierania i odświeżania
+- Open file = otwarcie jednego lub wielu plików Excel.
+- Open&Refresh = otwarcie plików i uruchomienie odświeżania.
+- Refresh selected = odświeżenie zaznaczonych otwartych skoroszytów.
+- Save selected = zapis zaznaczonych skoroszytów.
+- Refresh + Save = odświeżenie, a następnie zapis.
+- Cancel w trakcie batch zatrzymuje uruchamianie kolejnych pozycji; aktywnego RefreshAll nie można bezpiecznie przerwać.
 
-5) Selection mode i akcje zbiorcze
-- Selection mode OFF: zachowanie jednokrotnego wyboru.
-- Selection mode ON: zachowanie wielokrotnego wyboru i aktywne przyciski akcji zbiorczych.
-- Select All / Clear Selection działają tylko w Selection mode ON.
-
-6) Akcje otwierania i odświeżania
-- Open file: pozwala wybrać jeden lub wiele plików Excel i je otworzyć.
-- Open&Refresh: otwiera wybrane pliki i uruchamia proces odświeżania.
-- Refresh selected: odświeża wybrane otwarte skoroszyty.
-- Save selected: zapisuje wybrane otwarte skoroszyty.
-- Refresh + Save: odświeża, a następnie zapisuje wybrane otwarte skoroszyty.
-- W trakcie batch, Cancel zatrzymuje uruchamianie KOLEJNYCH pozycji (nie da się bezpiecznie przerwać aktywnego RefreshAll).
-
-7) Akcje kopiowania
-- Suffix: sufiks dodawany do operacji kopiowania (używany dokładnie tak, jak wpisano).
+6) Akcje kopiowania - frame Copy
+- Suffix = suffix używany przez istniejące operacje kopiowania.
 - Copy + Break Links:
-  * wybierz folder docelowy
-  * utwórz kopię
-  * zerwij zewnętrzne linki Excel
+  * wybiera folder docelowy,
+  * tworzy kopię,
+  * zrywa zewnętrzne linki Excel/OLE zgodnie z istniejącą logiką.
 - Copy with suffix:
-  * wybierz folder docelowy
-  * utwórz tylko kopię (bez zrywania linków)
-- Open copied checkbox: opcjonalnie automatycznie otwórz skopiowane pliki po operacji.
-- Open folder: otwiera ostatnio użyty folder docelowy kopiowania.
+  * wybiera folder docelowy,
+  * tworzy kopię z podanym suffixem bez zrywania linków.
+- Open copied / Open target folder = istniejące opcje po kopiowaniu.
 
-8) Akcje zamykania
-- Close selected zamyka tylko wybrane skoroszyty.
-- Dodatki i PERSONAL.XLSB są chronione przed zamknięciem.
-- Obsługa niezapisanych zmian wspiera save-all / don't-save-all / ask-each zależnie od promptu.
-- Skoroszyty aktywnie odświeżane są pomijane tam, gdzie to niebezpieczne.
+CF2Static:
+- działa wyłącznie na plikach zaznaczonych w Selection mode,
+- prosi o folder docelowy; okno startuje z domyślnego folderu kopiowania ustawionego w Settings,
+- tworzy kopię każdego zaznaczonego pliku i dodaje suffix `_without_conditional_formatting`,
+- oryginalne pliki nie są modyfikowane,
+- każda kopia jest otwierana programowo bez aktualizacji linków,
+- funkcja przetwarza wszystkie arkusze typu Worksheet, również Hidden i VeryHidden,
+- dla komórek objętych Conditional Formatting odczytuje aktualnie widoczny format przez DisplayFormat i zapisuje go jako zwykłe formatowanie statyczne,
+- zachowywane są m.in. wypełnienie/pattern, font, kolor, NumberFormat i obramowania,
+- po zapisaniu statycznego wyglądu wszystkie reguły Conditional Formatting są usuwane,
+- po konwersji wykonywana jest walidacja wyglądu każdej przetworzonej komórki oraz kontrola, czy w żadnym Worksheet nie pozostały reguły Conditional Formatting,
+- jeśli walidacja nie przejdzie, plik nie jest uznawany za poprawnie przetworzony; nieudana kopia jest zamykana bez zapisu i usuwana,
+- Data Bars i Icon Sets nie mają zwykłego, statycznego odpowiednika formatu komórki dostępnego w Excel VBA. Jeżeli zostaną wykryte, konwersja danego pliku jest zatrzymywana i ograniczenie trafia do podsumowania zamiast tworzyć wizualnie niepełną kopię.
 
-9) Prawy panel Sheets
-- Przycisk przełączania panelu (>>>> / <<<<) pokazuje/ukrywa rozszerzony widok arkuszy.
-- Lista Sheets podąża za aktywnym skoroszytem.
-- Kliknij lub użyj strzałek, aby aktywować wybrany arkusz.
+7) Close selected
+- Zamyka tylko zaznaczone skoroszyty.
+- Dodatki i PERSONAL.XLSB są chronione.
+- Niezapisane pliki obsługują save-all / don't-save-all / ask-each.
 
-10) Przyciski okna i pozycjonowania
-- Max: maksymalizuje okno aktywnego skoroszytu.
-- 1 / 2 / 3: przenosi aktywny skoroszyt do zdefiniowanych pozycji ekranu.
-- Close: zamyka formularz navigatora.
+8) Panel Sheets
+- >>>> / <<<< pokazuje lub ukrywa listę arkuszy.
+- Lista obejmuje arkusze bieżącego skoroszytu i pozwala na nawigację bez ręcznego przełączania kart.
 
-11) Szczegóły Settings
-- Domyślny folder kopiowania jest używany jako folder startowy przy wyborze folderu docelowego kopiowania.
-- Domyślny folder otwierania jest używany jako folder startowy dla Open/Open&Refresh oraz pickerów compare.
-- Jeśli skonfigurowany folder już nie istnieje, navigator wraca do ścieżki skoroszytu dodatku.
+9) Przyciski okna
+- Maximize = maksymalizacja okna.
+- 1 / 2 / 3 = przeniesienie okna na odpowiedni ekran.
+- Close = zamknięcie formularza Excel Navigator.
 
-12) Snapshoty - jak działają (aktualna logika)
-- Snapshot zapisuje niezależny plik `.xlsx` w folderze:
-  `folder_pliku\.snapshot\NazwaPliku\NazwaPliku_snapshot_yymmddhhnnss.xlsx`
-- Tworzenie snapshotu nie modyfikuje oryginalnego skoroszytu.
-- Podczas tworzenia snapshotu zrywane są zewnętrzne linki, a wynikowe wartości zostają zapisane w snapshotcie.
-- Snapshot zawiera arkusz `_snapshot_meta` (widoczny), który przechowuje metadane i listę arkuszy.
-
-- Jak utworzyć snapshot:
-  1) Upewnij się, że aktywny skoroszyt jest zapisany na dysku.
-  2) Kliknij Snapshot -> Create Snapshot.
-  3) Po sukcesie dostaniesz komunikat ze ścieżką do zapisanego pliku `.xlsx`.
-
-- Snapshot menu:
-  A) Open Snapshot Folder = otwiera folder `.snapshot\NazwaPliku\` (fallback: legacy `.snapshots\NazwaPliku\`).
-  B) Compare Latest 2 = automatycznie porównuje dwa najnowsze snapshoty aktywnego skoroszytu.
-  C) Compare Files (przycisk główny) = porównanie dowolnych dwóch plików Excel.
-  D) Raport compare zapisuje się do folderu `.snapshot\NazwaPliku\` i w różnicach formuł pogrubia + koloruje (czerwony) zmieniony fragment.
-
-13) Tryby porównania Snapshot (Settings)
-- W Settings dostępna jest sekcja "Snapshot compare mode".
-- Dostępne tryby:
-  * Strict (Value + Formula): porównuje wartości i formuły.
-  * Value-only (recommended): porównuje tylko wartości (zalecane dla live vs snapshot z zerwanymi linkami).
-  * Hybrid: porównuje wartości, a różnice samych formuł ignoruje, gdy jedna strona to formuła zewnętrzna i wartości są równe.
-- Algorytm porównania:
-  1) Narzędzie otwiera plik A i plik B z `UpdateLinks:=0` (bez odświeżania linków), żeby wynik był stabilny.
-  2) Tworzy mapę arkuszy po nazwach:
-     - arkusz tylko w A => `Removed Sheet`,
-     - arkusz tylko w B => `Added Sheet`,
-     - arkusz w obu plikach => idzie do porównania komórek.
-  3) Dla arkuszy wspólnych wyznacza realny used-range (nie cały milion wierszy), potem dzieli porównanie na bloki dla wydajności.
-  4) W każdym bloku przechodzi komórka po komórce i pobiera: wartość A/B oraz formułę A/B.
-  5) Decyzja o różnicy zależy od trybu:
-     - `Strict`: różnica wartości LUB formuły => wpis do raportu,
-     - `Value-only`: liczy się tylko różnica wartości,
-     - `Hybrid`: jak `Value-only`, ale dodatkowo filtruje część różnic czysto-formułowych przy formułach zewnętrznych.
-  6) Gdy wykryje różnicę, dopisuje wiersz do `Differences`:
-     `Difference Type`, `Worksheet`, `Cell`, `A Value`, `B Value`, `A Formula`, `B Formula`.
-  7) Dla formuł raport dodatkowo podświetla (bold + czerwony) fragment, który się zmienił.
-  8) Po zakończeniu liczy statystyki do `Summary` (m.in. liczba różnic, arkusze z różnicami, added/removed sheets).
-  9) W `Summary` zapisuje też kontekst porównania: `Compare Mode`, `File A name/path`, `File B name/path`, czas wygenerowania.
-  10) Raport zapisuje do pliku `.xlsx` w folderze raportów snapshot i ustawia widok startowy na `Summary!A1`.
-
-14) `_snapshot_meta` - co zawiera
-- Arkusz jest widoczny.
-- Pola:
-  * `OriginalPath` - pełna ścieżka oryginalnego skoroszytu,
-  * `OriginalName` - oryginalna nazwa pliku,
-  * `SnapshotTimestamp` - znacznik czasu snapshotu,
-  * `GeneratedUtc` - czas UTC wygenerowania.
-- Od wiersza 6 zapisuje listę arkuszy ujętych w snapshotcie.
-
-15) Typowe pytania i problemy Snapshot/Compare
-- Okna wyboru plików dla Compare Snapshot / Compare 2 Snapshots / Compare Files startują domyślnie z folderu "default open folder" ustawionego w Settings.
-- Okno "Update Values" nie powinno się pojawiać podczas compare; addin otwiera pliki compare z wyłączoną aktualizacją linków.
-- Jeśli porównujesz live (z linkami) do snapshotu (po zerwaniu linków), wybierz tryb `Value-only` lub `Hybrid`, aby uniknąć nadmiarowych różnic.
-
+10) Snapshot / Compare
+- Snapshot tworzy niezależny plik `.xlsx` w folderze `.snapshot\NazwaPliku\`.
+- Snapshot nie modyfikuje oryginalnego skoroszytu i zawiera `_snapshot_meta`.
+- Dostępne akcje: Create Snapshot, Open Snapshot Folder, Compare Latest 2, Compare with Snapshot oraz główny przycisk Compare Files.
+- Tryby porównania: Strict, Value-only (zalecany) i Hybrid.
+- Raport porównania zawiera Summary i Differences, a zmienione fragmenty formuł są wyróżniane.
 
 ------------------------------------------------------------
-Excel Navigator - User Guide (v5.2) [EN]
+Excel Navigator - User Guide (v6.1) [EN]
 
 1) General workflow
-- Click Reload list to refresh the list of currently open workbooks.
-- Use Search to filter by workbook name/path.
-- Select a workbook from the list and use actions below.
+- Reload list refreshes the list of currently open workbooks.
+- Search filters by workbook name and path.
+- Selection mode enables multi-workbook selection and bulk actions.
 
-2) Keyboard and mouse shortcuts
-- Ctrl+A on workbook/sheets list = Select All (when Selection mode is ON).
-- S = Selection mode toggle (press once = ON, press again = OFF).
-- Arrow Right on workbook/sheets list = expand right-side Sheets panel and move focus to the Sheets list.
-- Arrow Left on workbook/sheets list = collapse right-side Sheets panel and move focus back to workbook list.
-- Arrow Up/Down on workbook list = move current row.
-- Enter on workbook list = activate selected workbook.
-- Double-click workbook row = activate selected workbook.
-- Right-click on workbook list = toggle Selection mode ON/OFF.
-- In Selection mode on workbook list:
-  * A = add current workbook row to selection.
-  * D = remove current workbook row from selection.
-- Arrow Up/Down on Sheets panel (right side) = navigate sheets.
-- Enter on Sheets panel = activate selected sheet.
-- Full path box supports right-click copy/select behavior.
-- Double-clicking the full path box copies the entire path to clipboard.
-- After copying, a short notification (about 2 seconds) appears in Excel status bar (no extra OK popup window).
+2) Shortcuts and navigation
+- S = toggle Selection mode ON/OFF.
+- Ctrl+A = select all workbooks.
+- Ctrl+D = clear selection.
+- In Selection mode: A adds the current row, D removes it.
+- Up/Down = list navigation; Enter = activate workbook/sheet.
+- Right/Left = expand/collapse the Sheets panel.
+- Double-clicking the full-path field copies the path to the clipboard.
 
-3) Top row controls
-- Settings: toggles Settings frame ON/OFF.
-  * ON state is indicated only by bold button caption (no color change and no [ON] suffix).
-  * Configure two folders:
-    1) default copy folder
-    2) default open folder
-  * Save settings validates both paths and stores them.
-  * "Use active" buttons fill paths from the active workbook context.
-- ?: opens this help file.
-- Snapshot: toggles Snapshot / Compare action panel.
-- Compare Files: starts comparison for any two Excel files.
+3) Settings
+- Default copy folder is the initial folder for copy operations.
+- Default open folder is the initial folder for Open/Open&Refresh and Compare pickers.
+- Use active derives the folder from the active workbook.
+- Snapshot compare mode: Strict, Value-only or Hybrid.
 
-3a) Active vs selected workbook (important)
-- Active workbook = the workbook currently focused in Excel (used by actions like Max, 1/2/3, Snapshot Create).
-- Selected workbook = row selected in the add-in workbook list.
-- When Selection mode = OFF, you usually have one selected row.
-- When Selection mode = ON, you can select multiple rows and "... selected" actions run on that group.
-- "Use active" in Settings uses the active workbook context, not the current list selection.
+4) Selection mode
+- OFF = single workbook selection.
+- ON = multiple workbook selection and bulk actions.
+- Refresh selected, Save selected, Refresh + Save, Close selected and copy functions operate on selected items as described for each action.
 
-4) Workbook list area
-- Columns: File / Dir / Sync.
-- Header row is not selectable as a workbook action target.
-- Active workbook is visually marked.
+5) Open and refresh actions
+- Open file = open one or more Excel files.
+- Open&Refresh = open files and run refresh.
+- Refresh selected = refresh selected open workbooks.
+- Save selected = save selected workbooks.
+- Refresh + Save = refresh and then save.
+- During batch, Cancel prevents starting further items; active RefreshAll cannot be safely aborted.
 
-5) Selection mode and bulk actions
-- Selection mode OFF: single-select behavior.
-- Selection mode ON: multi-select behavior and bulk action buttons enabled.
-- Select All / Clear Selection work only in Selection mode ON.
+6) Copy actions - Copy frame
+- Suffix = suffix used by the existing copy actions.
+- Copy + Break Links creates a copy in the selected target folder and breaks external Excel/OLE links using the existing logic.
+- Copy with suffix creates a copy with the entered suffix without breaking links.
+- Open copied / Open target folder are the existing post-copy options.
 
-6) Open and refresh actions
-- Open file: lets you pick one or more Excel files and open them.
-- Open&Refresh: open selected files and run refresh flow.
-- Refresh selected: refreshes selected open workbooks.
-- Save selected: saves selected open workbooks.
-- Refresh + Save: refresh then save selected open workbooks.
-- During batch, Cancel stops starting NEXT items (cannot safely abort active RefreshAll).
+CF2Static:
+- operates only on files selected in Selection mode,
+- asks for a target folder; the picker starts from the default copy folder configured in Settings,
+- creates a copy of every selected file and appends `_without_conditional_formatting`,
+- never modifies the original files,
+- opens each copy programmatically with link updates disabled,
+- processes every Worksheet in the workbook, including Hidden and VeryHidden worksheets,
+- for cells covered by Conditional Formatting, reads the current visible format through DisplayFormat and writes it as ordinary static cell formatting,
+- preserves fill/pattern, font, colors, NumberFormat and borders used for the visible appearance,
+- removes all Conditional Formatting rules after static formatting is written,
+- validates the resulting appearance of every processed cell and checks that no Conditional Formatting remains in any Worksheet,
+- if validation fails, the file is not treated as successfully processed; the failed copy is closed without saving and removed,
+- Excel VBA has no ordinary static-cell-format equivalent for Data Bars or Icon Sets. If either type is detected, conversion of that file is stopped and the limitation is reported instead of producing a visually incomplete copy.
 
-7) Copy actions
-- Suffix: suffix added for copy operations (used exactly as typed).
-- Copy + Break Links:
-  * choose target folder
-  * create copy
-  * break external Excel links
-- Copy with suffix:
-  * choose target folder
-  * create copy only (no link breaking)
-- Open copied checkbox: optionally auto-open copied files after operation.
-- Open folder: opens last used copy target folder.
+7) Close selected
+- Closes only selected workbooks.
+- Add-ins and PERSONAL.XLSB are protected.
+- Unsaved workbooks support save-all / don't-save-all / ask-each handling.
 
-8) Close actions
-- Close selected closes only selected workbooks.
-- Add-ins and PERSONAL.XLSB are protected from closing.
-- Unsaved handling supports save-all / don't-save-all / ask-each depending on prompt.
-- Workbooks actively refreshing are skipped where unsafe.
+8) Sheets panel
+- >>>> / <<<< shows or hides the worksheet list.
+- The list follows the current workbook and supports keyboard navigation.
 
-9) Right-side Sheets panel
-- Toggle panel button (>>>> / <<<<) shows/hides expanded sheets view.
-- Sheets list follows active workbook.
-- Click or use arrows to activate selected sheet.
+9) Window buttons
+- Maximize = maximize workbook window.
+- 1 / 2 / 3 = move workbook window to the selected screen.
+- Close = close Excel Navigator.
 
-10) Window and placement buttons
-- Max: maximize active workbook window.
-- 1 / 2 / 3: move active workbook to predefined screen positions.
-- Close: closes navigator form.
-
-11) Settings details
-- Default copy folder is used as initial folder for copy target selection.
-- Default open folder is used as initial folder for Open/Open&Refresh and compare file pickers.
-- If configured folder no longer exists, navigator falls back to add-in workbook path.
-
-12) Snapshots - current behavior
-- Snapshot stores an independent `.xlsx` file under:
-  `workbook_folder\.snapshot\WorkbookName\WorkbookName_snapshot_yymmddhhnnss.xlsx`
-- Creating a snapshot does not modify the source workbook.
-- During snapshot creation, external links are broken and resulting values are stored in the snapshot.
-- Snapshot contains a visible `_snapshot_meta` worksheet with metadata and included-sheet list.
-
-- How to create a snapshot:
-  1) Ensure the active workbook is saved to disk.
-  2) Click Snapshot -> Create Snapshot.
-  3) On success, a message shows the full path of the saved `.xlsx` snapshot.
-
-- Snapshot menu:
-  A) Open Snapshot Folder = opens `.snapshot\WorkbookName\` (fallback: legacy `.snapshots\WorkbookName\`).
-  B) Compare Latest 2 = automatically compares the two newest snapshots of the active workbook.
-  C) Compare Files (main button) = compare any two Excel files.
-  D) Compare reports are saved to `.snapshot\WorkbookName\`; formula differences highlight changed fragments with bold + red styling.
-
-13) Snapshot compare modes (Settings)
-- Settings contains a "Snapshot compare mode" section.
-- Available modes:
-  * Strict (Value + Formula): compares values and formulas.
-  * Value-only (recommended): compares values only (best for live workbook vs snapshot with broken links).
-  * Hybrid: compares values, and ignores formula-only differences when one side is an external-link formula and values are equal.
-- Comparison algorithm:
-  1) The tool opens file A and file B with `UpdateLinks:=0` (no link refresh) for stable results.
-  2) It builds a worksheet-name map:
-     - sheet only in A => `Removed Sheet`,
-     - sheet only in B => `Added Sheet`,
-     - sheet in both => included in cell-by-cell comparison.
-  3) For shared sheets, it determines the real used range (not full-sheet scan) and compares in blocks for performance.
-  4) Inside each block, it checks each cell and reads: value A/B and formula A/B.
-  5) Difference decision depends on selected mode:
-     - `Strict`: value OR formula change is reported,
-     - `Value-only`: only value change is reported,
-     - `Hybrid`: value-oriented mode that filters selected formula-only noise for external-link formulas.
-  6) Each detected difference is appended to `Differences` with:
-     `Difference Type`, `Worksheet`, `Cell`, `A Value`, `B Value`, `A Formula`, `B Formula`.
-  7) For formula rows, the report additionally highlights changed formula fragments (bold + red).
-  8) After scanning, summary counters are calculated (e.g., total differences, sheets with changes, added/removed sheets).
-  9) `Summary` also stores run context: `Compare Mode`, `File A name/path`, `File B name/path`, and generation timestamp.
-  10) The report is saved as `.xlsx` in the snapshot report folder and opens with `Summary!A1` as the start view.
-
-14) `_snapshot_meta` contents
-- The sheet is visible.
-- Fields:
-  * `OriginalPath` - full source workbook path,
-  * `OriginalName` - original workbook file name,
-  * `SnapshotTimestamp`,
-  * `GeneratedUtc`.
-- Starting from row 6, it lists worksheets included in the snapshot.
-
-15) Common Snapshot/Compare notes
-- File pickers for Compare Snapshot / Compare 2 Snapshots / Compare Files now default to the "default open folder" configured in Settings.
-- "Update Values" dialog should not appear during compare; compare opens files with link updates disabled.
-- For live-vs-snapshot comparisons with many external links, use `Value-only` or `Hybrid` to reduce formula-noise differences.
+10) Snapshot / Compare
+- Snapshot creates an independent `.xlsx` under `.snapshot\WorkbookName\` and does not modify the source workbook.
+- Snapshots contain `_snapshot_meta`.
+- Actions include Create Snapshot, Open Snapshot Folder, Compare Latest 2, Compare with Snapshot and Compare Files.
+- Compare modes: Strict, Value-only (recommended), Hybrid.
+- Reports contain Summary and Differences and highlight changed formula fragments.
