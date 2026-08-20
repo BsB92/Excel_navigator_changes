@@ -1,3 +1,18 @@
+Excel Navigator - Changelog
+
+v6.1 - CF2Static
+- Added CF2Static to the Copy frame.
+- CF2Static creates copies of selected workbooks with suffix `_without_conditional_formatting` and converts Conditional Formatting into static formatting using DisplayFormat.
+- Conversion covers every Worksheet, including Hidden and VeryHidden sheets.
+- Added per-cell visual-format validation and workbook-wide verification that no Conditional Formatting remains.
+- Failed conversions are closed without saving and the failed output copy is removed.
+- Added guarded application-state handling for ScreenUpdating, EnableEvents, DisplayAlerts, AskToUpdateLinks and Calculation.
+- Data Bars and Icon Sets are explicitly rejected because Excel VBA cannot reproduce their rendered graphics as ordinary static cell formatting.
+- Updated launcher/interface version to v6.1 and refreshed bilingual Help.
+
+------------------------------------------------------------
+Previous changelog
+
 Excel Navigator - Changelog (branch: work)
 Date: 2026-05-07
 
@@ -68,7 +83,6 @@ Files most impacted
 - Added global uniform font-size application across form controls (including nested controls in frames).
 - Preserved "Set active folder directory" action with 4-way prompt (both/copy/open/cancel).
 - Added launcher macro `ExcelNavigator_v5_2` in `modExcelNavigator`.
-
 
 11) Snapshot folder compatibility + formula diff highlight
 - Fixed "Open Snapshot Folder" to support both current `.snapshot\WorkbookName\` and legacy `.snapshots\WorkbookName\` paths.
