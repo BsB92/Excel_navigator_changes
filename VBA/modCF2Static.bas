@@ -26,7 +26,6 @@ Public Sub RunCF2Static(ByVal ownerForm As Object)
     Dim automationSecurityChanged As Boolean
     Dim appStateCaptured As Boolean
     Dim summaryText As String
-    Dim i As Long
 
     On Error GoTo FatalError
 
@@ -42,9 +41,7 @@ Public Sub RunCF2Static(ByVal ownerForm As Object)
 
     If selectedWorkbooks.Count = 0 Then
         summaryText = "No valid selected workbooks were found."
-        If errors.Count > 0 Then
-            summaryText = summaryText & vbCrLf & vbCrLf & BuildErrorList(errors)
-        End If
+        If errors.Count > 0 Then summaryText = summaryText & vbCrLf & vbCrLf & BuildErrorList(errors)
         MsgBox summaryText, vbExclamation, "CF2Static"
         Exit Sub
     End If
@@ -115,7 +112,6 @@ CleanExit:
     summaryText = "CF2Static finished." & vbCrLf & _
                   "Processed successfully: " & CStr(okCount) & vbCrLf & _
                   "Failed: " & CStr(failCount)
-
     If Not errors Is Nothing Then
         If errors.Count > 0 Then summaryText = summaryText & vbCrLf & vbCrLf & BuildErrorList(errors)
     End If
@@ -200,7 +196,6 @@ Private Function PickCF2StaticTargetFolder() As String
         On Error Resume Next
         If Len(initialFolder) > 0 Then .InitialFileName = EnsureTrailingSeparator(initialFolder)
         On Error GoTo 0
-
         If .Show = -1 Then PickCF2StaticTargetFolder = CStr(.SelectedItems(1))
     End With
 End Function
@@ -295,7 +290,6 @@ Private Function ConvertWorkbookConditionalFormatting(ByVal wb As Workbook, ByRe
     Dim ws As Worksheet
 
     processedWorksheets = 0
-
     For Each ws In wb.Worksheets
         If Not ConvertWorksheetConditionalFormatting(ws, detail) Then
             detail = ws.Name & ": " & detail
@@ -331,10 +325,9 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
 
     Set snapshots = CreateObject("Scripting.Dictionary")
 
-    ' DisplayFormat is evaluated per cell. Formula-based rules, priorities and color scales can
-    ' produce different visible results in adjacent cells, so exact conversion cannot safely
-    ' batch those cells only by range. Performance is therefore achieved by restricting work
-    ' to xlCellTypeAllFormatConditions instead of scanning/copying the entire UsedRange.
+    ' DisplayFormat is evaluated per cell. Formula rules, priorities and color scales may
+    ' produce different visible results in adjacent cells. For exactness we therefore process
+    ' only CF-covered cells, but intentionally evaluate those cells individually.
     For Each c In cfCells.Cells
         beforeSignature = BuildDisplayFormatSignature(c)
         If IsSignatureError(beforeSignature) Then
@@ -354,7 +347,6 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
             detail = "Could not validate static formatting at " & CStr(addressKey) & "."
             Exit Function
         End If
-
         If StrComp(CStr(snapshots(addressKey)), afterSignature, vbBinaryCompare) <> 0 Then
             detail = "Visual validation failed at " & CStr(addressKey) & "."
             Exit Function
@@ -400,7 +392,6 @@ Private Function HasUnsupportedConditionalFormatting(ByVal cfCells As Range, ByR
             End If
         Next fc
     Next area
-
     Exit Function
 
 EH:
@@ -415,14 +406,12 @@ Private Sub ApplyDisplayFormatAsStatic(ByVal targetCell As Range)
 
     Set visibleFormat = targetCell.DisplayFormat
 
+    ' DisplayFormat.Color/PatternColor already represent the rendered result. Re-applying
+    ' TintAndShade after those final colors would tint the color a second time.
     With targetCell.Interior
         .Pattern = visibleFormat.Interior.Pattern
         .Color = visibleFormat.Interior.Color
         .PatternColor = visibleFormat.Interior.PatternColor
-        On Error Resume Next
-        .TintAndShade = visibleFormat.Interior.TintAndShade
-        .PatternTintAndShade = visibleFormat.Interior.PatternTintAndShade
-        On Error GoTo 0
     End With
 
     With targetCell.Font
@@ -433,9 +422,6 @@ Private Sub ApplyDisplayFormatAsStatic(ByVal targetCell As Range)
         .Underline = visibleFormat.Font.Underline
         .Strikethrough = visibleFormat.Font.Strikethrough
         .Color = visibleFormat.Font.Color
-        On Error Resume Next
-        .TintAndShade = visibleFormat.Font.TintAndShade
-        On Error GoTo 0
     End With
 
     targetCell.NumberFormat = visibleFormat.NumberFormat
@@ -457,7 +443,6 @@ Private Sub CopyVisibleBorder(ByVal visibleFormat As Object, ByVal targetCell As
         .LineStyle = visibleFormat.Borders(borderIndex).LineStyle
         .Weight = visibleFormat.Borders(borderIndex).Weight
         .Color = visibleFormat.Borders(borderIndex).Color
-        .TintAndShade = visibleFormat.Borders(borderIndex).TintAndShade
     End With
     On Error GoTo 0
 End Sub
@@ -502,16 +487,6 @@ Private Function BuildFormatSignature(ByVal formattedObject As Object) As String
              "|FC=" & CStr(formattedObject.Font.Color) & _
              "|NF=" & CStr(formattedObject.NumberFormat)
 
-    On Error Resume Next
-    result = result & "|ITS=" & CStr(formattedObject.Interior.TintAndShade) & _
-             "|IPTS=" & CStr(formattedObject.Interior.PatternTintAndShade) & _
-             "|FTS=" & CStr(formattedObject.Font.TintAndShade)
-    If Err.Number <> 0 Then
-        Err.Clear
-        result = result & "|OPTIONAL_TINT=#NA#"
-    End If
-    On Error GoTo EH
-
     borderIndexes = GetBorderIndexes()
     For Each borderIndex In borderIndexes
         result = result & BorderSignature(formattedObject, CLng(borderIndex))
@@ -531,8 +506,7 @@ Private Function BorderSignature(ByVal formattedObject As Object, ByVal borderIn
     result = "|B" & CStr(borderIndex) & "=" & _
              CStr(formattedObject.Borders(borderIndex).LineStyle) & "," & _
              CStr(formattedObject.Borders(borderIndex).Weight) & "," & _
-             CStr(formattedObject.Borders(borderIndex).Color) & "," & _
-             CStr(formattedObject.Borders(borderIndex).TintAndShade)
+             CStr(formattedObject.Borders(borderIndex).Color)
     If Err.Number <> 0 Then
         Err.Clear
         result = "|B" & CStr(borderIndex) & "=#NA#"
@@ -567,7 +541,6 @@ Private Function DeleteFailedCopy(ByVal filePath As String) As Boolean
         DeleteFailedCopy = True
         Exit Function
     End If
-
     If Not OutputFileExists(filePath) Then
         DeleteFailedCopy = True
         Exit Function
