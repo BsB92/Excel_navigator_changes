@@ -16,7 +16,7 @@ Public Sub InitializeCF2StaticButton(ByVal ownerForm As Object)
     If ownerForm Is Nothing Then Exit Sub
 
     On Error Resume Next
-    ownerForm.Caption = "ExcelNavigator v6.1"
+    ownerForm.Caption = "ExcelNavigator " & modExcelNavigator.EXCEL_NAVIGATOR_VERSION
     Set copyFrame = ownerForm.Controls("fraCopy")
     On Error GoTo 0
     If copyFrame Is Nothing Then Exit Sub
