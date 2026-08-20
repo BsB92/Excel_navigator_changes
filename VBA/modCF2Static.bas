@@ -4,6 +4,7 @@ Option Explicit
 Private Const CF2STATIC_SUFFIX As String = "_without_conditional_formatting"
 Private Const XL_DATABAR_TYPE As Long = 4
 Private Const XL_ICONSET_TYPE As Long = 6
+Private Const SIGNATURE_ERROR_PREFIX As String = "#FORMAT_SIGNATURE_ERROR#"
 
 Public Sub RunCF2Static(ByVal ownerForm As Object)
     Dim selectedWorkbooks As Collection
@@ -20,7 +21,9 @@ Public Sub RunCF2Static(ByVal ownerForm As Object)
     Dim prevDisplayAlerts As Boolean
     Dim prevAskToUpdateLinks As Boolean
     Dim prevCalculation As XlCalculation
+    Dim prevAutomationSecurity As MsoAutomationSecurity
     Dim calculationChanged As Boolean
+    Dim automationSecurityChanged As Boolean
     Dim appStateCaptured As Boolean
     Dim summaryText As String
     Dim i As Long
@@ -35,8 +38,14 @@ Public Sub RunCF2Static(ByVal ownerForm As Object)
 
     Set errors = New Collection
     Set selectedWorkbooks = GetSelectedWorkbooks(ownerForm, errors)
+    failCount = errors.Count
+
     If selectedWorkbooks.Count = 0 Then
-        MsgBox "Nothing selected.", vbExclamation, "CF2Static"
+        summaryText = "No valid selected workbooks were found."
+        If errors.Count > 0 Then
+            summaryText = summaryText & vbCrLf & vbCrLf & BuildErrorList(errors)
+        End If
+        MsgBox summaryText, vbExclamation, "CF2Static"
         Exit Sub
     End If
 
@@ -48,6 +57,7 @@ Public Sub RunCF2Static(ByVal ownerForm As Object)
     prevDisplayAlerts = Application.DisplayAlerts
     prevAskToUpdateLinks = Application.AskToUpdateLinks
     prevCalculation = Application.Calculation
+    prevAutomationSecurity = Application.AutomationSecurity
     appStateCaptured = True
 
     Application.ScreenUpdating = False
@@ -56,8 +66,12 @@ Public Sub RunCF2Static(ByVal ownerForm As Object)
     Application.AskToUpdateLinks = False
 
     On Error Resume Next
+    Err.Clear
     Application.Calculation = xlCalculationManual
     calculationChanged = (Err.Number = 0)
+    Err.Clear
+    Application.AutomationSecurity = msoAutomationSecurityForceDisable
+    automationSecurityChanged = (Err.Number = 0)
     Err.Clear
     On Error GoTo FatalError
 
@@ -94,6 +108,7 @@ CleanExit:
         Application.DisplayAlerts = prevDisplayAlerts
         Application.AskToUpdateLinks = prevAskToUpdateLinks
         If calculationChanged Then Application.Calculation = prevCalculation
+        If automationSecurityChanged Then Application.AutomationSecurity = prevAutomationSecurity
     End If
     On Error GoTo 0
 
@@ -102,12 +117,7 @@ CleanExit:
                   "Failed: " & CStr(failCount)
 
     If Not errors Is Nothing Then
-        If errors.Count > 0 Then
-            summaryText = summaryText & vbCrLf & vbCrLf & "Errors / limitations:"
-            For i = 1 To errors.Count
-                summaryText = summaryText & vbCrLf & "- " & CStr(errors(i))
-            Next i
-        End If
+        If errors.Count > 0 Then summaryText = summaryText & vbCrLf & vbCrLf & BuildErrorList(errors)
     End If
 
     MsgBox summaryText, IIf(failCount > 0, vbExclamation, vbInformation), "CF2Static"
@@ -122,6 +132,17 @@ FatalError:
     errors.Add "Fatal error: " & Err.Description
     Resume CleanExit
 End Sub
+
+Private Function BuildErrorList(ByVal errors As Collection) As String
+    Dim result As String
+    Dim i As Long
+
+    result = "Errors / limitations:"
+    For i = 1 To errors.Count
+        result = result & vbCrLf & "- " & CStr(errors(i))
+    Next i
+    BuildErrorList = result
+End Function
 
 Private Function GetSelectedWorkbooks(ByVal ownerForm As Object, ByVal errors As Collection) As Collection
     Dim result As Collection
@@ -226,6 +247,7 @@ Private Function ConvertCopiedWorkbook(ByVal srcWb As Workbook, ByVal outPath As
     Dim copiedWb As Workbook
     Dim expectedWorksheets As Long
     Dim processedWorksheets As Long
+    Dim failedCopyRemoved As Boolean
 
     On Error GoTo EH
 
@@ -253,8 +275,14 @@ Failed:
     On Error Resume Next
     If Not copiedWb Is Nothing Then copiedWb.Close saveChanges:=False
     Set copiedWb = Nothing
-    DeleteFailedCopy outPath
     On Error GoTo 0
+
+    failedCopyRemoved = DeleteFailedCopy(outPath)
+    If Not failedCopyRemoved And OutputFileExists(outPath) Then
+        If Len(detail) > 0 Then detail = detail & " "
+        detail = detail & "Failed output copy could not be removed: " & outPath
+    End If
+
     ConvertCopiedWorkbook = False
     Exit Function
 
@@ -303,11 +331,17 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
 
     Set snapshots = CreateObject("Scripting.Dictionary")
 
-    ' Exact DisplayFormat can differ cell by cell because formulas, color scales and priorities
-    ' are evaluated per cell. For that reason only cells actually covered by Conditional
-    ' Formatting are processed, but those cells are intentionally handled individually.
+    ' DisplayFormat is evaluated per cell. Formula-based rules, priorities and color scales can
+    ' produce different visible results in adjacent cells, so exact conversion cannot safely
+    ' batch those cells only by range. Performance is therefore achieved by restricting work
+    ' to xlCellTypeAllFormatConditions instead of scanning/copying the entire UsedRange.
     For Each c In cfCells.Cells
         beforeSignature = BuildDisplayFormatSignature(c)
+        If IsSignatureError(beforeSignature) Then
+            detail = "Could not read complete DisplayFormat at " & c.Address(False, False, xlA1) & "."
+            Exit Function
+        End If
+
         snapshots(c.Address(False, False, xlA1)) = beforeSignature
         ApplyDisplayFormatAsStatic c
     Next c
@@ -316,6 +350,11 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
 
     For Each addressKey In snapshots.Keys
         afterSignature = BuildStaticFormatSignature(ws.Range(CStr(addressKey)))
+        If IsSignatureError(afterSignature) Then
+            detail = "Could not validate static formatting at " & CStr(addressKey) & "."
+            Exit Function
+        End If
+
         If StrComp(CStr(snapshots(addressKey)), afterSignature, vbBinaryCompare) <> 0 Then
             detail = "Visual validation failed at " & CStr(addressKey) & "."
             Exit Function
@@ -346,7 +385,8 @@ Private Function HasUnsupportedConditionalFormatting(ByVal cfCells As Range, ByR
     Dim area As Range
     Dim fc As Object
 
-    On Error Resume Next
+    On Error GoTo EH
+
     For Each area In cfCells.Areas
         For Each fc In area.FormatConditions
             If CLng(fc.Type) = XL_DATABAR_TYPE Then
@@ -360,7 +400,12 @@ Private Function HasUnsupportedConditionalFormatting(ByVal cfCells As Range, ByR
             End If
         Next fc
     Next area
-    On Error GoTo 0
+
+    Exit Function
+
+EH:
+    details = "Could not safely inspect all Conditional Formatting rule types: " & Err.Description
+    HasUnsupportedConditionalFormatting = True
 End Function
 
 Private Sub ApplyDisplayFormatAsStatic(ByVal targetCell As Range)
@@ -395,11 +440,16 @@ Private Sub ApplyDisplayFormatAsStatic(ByVal targetCell As Range)
 
     targetCell.NumberFormat = visibleFormat.NumberFormat
 
-    borderIndexes = Array(xlEdgeLeft, xlEdgeTop, xlEdgeBottom, xlEdgeRight, xlDiagonalDown, xlDiagonalUp)
+    borderIndexes = GetBorderIndexes()
     For Each borderIndex In borderIndexes
         CopyVisibleBorder visibleFormat, targetCell, CLng(borderIndex)
     Next borderIndex
 End Sub
+
+Private Function GetBorderIndexes() As Variant
+    GetBorderIndexes = Array(xlEdgeLeft, xlEdgeTop, xlEdgeBottom, xlEdgeRight, _
+                             xlInsideVertical, xlInsideHorizontal, xlDiagonalDown, xlDiagonalUp)
+End Function
 
 Private Sub CopyVisibleBorder(ByVal visibleFormat As Object, ByVal targetCell As Range, ByVal borderIndex As Long)
     On Error Resume Next
@@ -415,12 +465,22 @@ End Sub
 Private Function BuildDisplayFormatSignature(ByVal c As Range) As String
     Dim visibleFormat As Object
 
+    On Error GoTo EH
     Set visibleFormat = c.DisplayFormat
     BuildDisplayFormatSignature = BuildFormatSignature(visibleFormat)
+    Exit Function
+
+EH:
+    BuildDisplayFormatSignature = SIGNATURE_ERROR_PREFIX & CStr(Err.Number) & ":" & Err.Description
 End Function
 
 Private Function BuildStaticFormatSignature(ByVal c As Range) As String
+    On Error GoTo EH
     BuildStaticFormatSignature = BuildFormatSignature(c)
+    Exit Function
+
+EH:
+    BuildStaticFormatSignature = SIGNATURE_ERROR_PREFIX & CStr(Err.Number) & ":" & Err.Description
 End Function
 
 Private Function BuildFormatSignature(ByVal formattedObject As Object) As String
@@ -446,9 +506,13 @@ Private Function BuildFormatSignature(ByVal formattedObject As Object) As String
     result = result & "|ITS=" & CStr(formattedObject.Interior.TintAndShade) & _
              "|IPTS=" & CStr(formattedObject.Interior.PatternTintAndShade) & _
              "|FTS=" & CStr(formattedObject.Font.TintAndShade)
+    If Err.Number <> 0 Then
+        Err.Clear
+        result = result & "|OPTIONAL_TINT=#NA#"
+    End If
     On Error GoTo EH
 
-    borderIndexes = Array(xlEdgeLeft, xlEdgeTop, xlEdgeBottom, xlEdgeRight, xlDiagonalDown, xlDiagonalUp)
+    borderIndexes = GetBorderIndexes()
     For Each borderIndex In borderIndexes
         result = result & BorderSignature(formattedObject, CLng(borderIndex))
     Next borderIndex
@@ -457,7 +521,7 @@ Private Function BuildFormatSignature(ByVal formattedObject As Object) As String
     Exit Function
 
 EH:
-    BuildFormatSignature = "#FORMAT_SIGNATURE_ERROR#" & CStr(Err.Number) & ":" & Err.Description
+    BuildFormatSignature = SIGNATURE_ERROR_PREFIX & CStr(Err.Number) & ":" & Err.Description
 End Function
 
 Private Function BorderSignature(ByVal formattedObject As Object, ByVal borderIndex As Long) As String
@@ -478,6 +542,10 @@ Private Function BorderSignature(ByVal formattedObject As Object, ByVal borderIn
     BorderSignature = result
 End Function
 
+Private Function IsSignatureError(ByVal signature As String) As Boolean
+    IsSignatureError = (Left$(signature, Len(SIGNATURE_ERROR_PREFIX)) = SIGNATURE_ERROR_PREFIX)
+End Function
+
 Private Function WorkbookHasConditionalFormatting(ByVal wb As Workbook, ByRef detail As String) As Boolean
     Dim ws As Worksheet
     Dim cfCells As Range
@@ -492,10 +560,27 @@ Private Function WorkbookHasConditionalFormatting(ByVal wb As Workbook, ByRef de
     Next ws
 End Function
 
-Private Sub DeleteFailedCopy(ByVal filePath As String)
-    On Error Resume Next
-    If Len(filePath) > 0 Then
-        If Len(Dir$(filePath, vbNormal Or vbHidden Or vbSystem Or vbReadOnly)) > 0 Then Kill filePath
+Private Function DeleteFailedCopy(ByVal filePath As String) As Boolean
+    On Error GoTo EH
+
+    If Len(filePath) = 0 Then
+        DeleteFailedCopy = True
+        Exit Function
     End If
-    On Error GoTo 0
-End Sub
+
+    If Not OutputFileExists(filePath) Then
+        DeleteFailedCopy = True
+        Exit Function
+    End If
+
+    On Error Resume Next
+    SetAttr filePath, vbNormal
+    On Error GoTo EH
+    Kill filePath
+
+    DeleteFailedCopy = Not OutputFileExists(filePath)
+    Exit Function
+
+EH:
+    DeleteFailedCopy = False
+End Function
