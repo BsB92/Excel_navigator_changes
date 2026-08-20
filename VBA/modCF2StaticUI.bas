@@ -40,6 +40,11 @@ Public Sub InitializeCF2StaticButton(ByVal ownerForm As Object)
         .TOP = openCopiedCheckBox.TOP + openCopiedCheckBox.Height + CONTROL_GAP
         .Width = copyBreakButton.Width
         .Height = copyBreakButton.Height
+        .Font.Name = copyBreakButton.Font.Name
+        .Font.Size = copyBreakButton.Font.Size
+        .Font.Bold = copyBreakButton.Font.Bold
+        .Font.Italic = copyBreakButton.Font.Italic
+        .SpecialEffect = copyBreakButton.SpecialEffect
         .Visible = True
         .enabled = True
     End With
