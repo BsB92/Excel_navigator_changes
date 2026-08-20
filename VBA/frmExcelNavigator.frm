@@ -157,6 +157,40 @@ Private mSettingsLblTitle As MSForms.Label
 Private mSettingsLblCopy As MSForms.Label
 Private mSettingsTxtCopy As MSForms.TextBox
 Private mSettingsLblOpen As MSForms.Label
+Private WithEvents mBtnActionsMenu As MSForms.CommandButton
+Attribute mBtnActionsMenu.VB_VarHelpID = -1
+Private WithEvents mBtnCopyMenu As MSForms.CommandButton
+Attribute mBtnCopyMenu.VB_VarHelpID = -1
+Private WithEvents mBtnOpenMenu As MSForms.CommandButton
+Attribute mBtnOpenMenu.VB_VarHelpID = -1
+Private mFraActions As MSForms.Frame
+Private mFraCopy As MSForms.Frame
+Private mFraOpen As MSForms.Frame
+Private mLblSwitchScreen As MSForms.Label
+Private WithEvents mBtnFrameRefresh As MSForms.CommandButton
+Attribute mBtnFrameRefresh.VB_VarHelpID = -1
+Private WithEvents mBtnFrameSave As MSForms.CommandButton
+Attribute mBtnFrameSave.VB_VarHelpID = -1
+Private WithEvents mBtnFrameRefreshSave As MSForms.CommandButton
+Attribute mBtnFrameRefreshSave.VB_VarHelpID = -1
+Private mLblFrameSuffix As MSForms.Label
+Private WithEvents mTxtFrameSuffix As MSForms.TextBox
+Attribute mTxtFrameSuffix.VB_VarHelpID = -1
+Private WithEvents mBtnFrameCopyBreakLinks As MSForms.CommandButton
+Attribute mBtnFrameCopyBreakLinks.VB_VarHelpID = -1
+Private WithEvents mBtnFrameCopyWithSuffix As MSForms.CommandButton
+Attribute mBtnFrameCopyWithSuffix.VB_VarHelpID = -1
+Private mLblFramePostCopyOptions As MSForms.Label
+Private WithEvents mChkFrameOpenCopiedFiles As MSForms.CheckBox
+Attribute mChkFrameOpenCopiedFiles.VB_VarHelpID = -1
+Private WithEvents mChkFrameOpenCopiedFolder As MSForms.CheckBox
+Attribute mChkFrameOpenCopiedFolder.VB_VarHelpID = -1
+Private WithEvents mBtnFrameOpenFile As MSForms.CommandButton
+Attribute mBtnFrameOpenFile.VB_VarHelpID = -1
+Private WithEvents mBtnFrameOpenFolder As MSForms.CommandButton
+Attribute mBtnFrameOpenFolder.VB_VarHelpID = -1
+Private WithEvents mBtnFrameOpenAndRefresh As MSForms.CommandButton
+Attribute mBtnFrameOpenAndRefresh.VB_VarHelpID = -1
 Private mSettingsTxtOpen As MSForms.TextBox
 Private mSettingsLblCompareMode As MSForms.Label
 Private mSettingsOptCompareStrict As MSForms.OptionButton
@@ -1138,20 +1172,30 @@ Private Sub UserForm_Initialize()
   
 Dim w As Variant
 Dim defaultW As Single
+Dim defaultH As Single
+Dim minimumW As Single
+Dim minimumH As Single
 
 w = GetSetting(REG_APP, REG_SEC, "W", 0)
 defaultW = Me.Width
+defaultH = Me.Height
+minimumW = defaultW * 1.1
+minimumH = defaultH * 1.1
+
+' The design-time startup size plus 10% is the minimum size; restored user width may be larger.
+If mMinTrackW = 0 Then mMinTrackW = CLng(minimumW)
+If mMinTrackH = 0 Then mMinTrackH = CLng(minimumH)
 
 If w > 0 Then
     Me.Width = CSng(w)
-    If Me.Width < defaultW Then Me.Width = defaultW
+    If Me.Width < minimumW Then Me.Width = minimumW
 Else
-    Me.Width = defaultW
+    Me.Width = minimumW
 End If
 If Me.Width > FORM_MAX_W Then Me.Width = FORM_MAX_W
+If Me.Height < minimumH Then Me.Height = minimumH
+If Me.Height > FORM_MAX_H Then Me.Height = FORM_MAX_H
 
-If mMinTrackW = 0 Then mMinTrackW = CLng(Me.Width)
-If mMinTrackH = 0 Then mMinTrackH = CLng(Me.Height)
 btnCancel.Visible = False
 btnCancel.enabled = True
 EnsureRightPanelControls
@@ -1162,9 +1206,11 @@ SetExpandedView False
 EnsureTopLeftButtons
 EnsureSnapshotOverlay
 EnsureCopyOptionsControls
+EnsureLayoutMenuControls
 LoadPostCopyOptionsState
 ApplySnapshotOverlayVisibility
 PositionTopButtons
+EnsureLayoutMenuControls
 
 ' --- layout only (resize hook will be done in Activate when hwnd exists) ---
 mHookReady = False
@@ -1183,6 +1229,686 @@ End Function
 Private Function GetOpenCopiedFolderControl() As MSForms.CheckBox
     Set GetOpenCopiedFolderControl = GetControlIfExists("chkOpenCopiedFolder")
 End Function
+
+
+Private Function GetFrameControlIfExists(ByVal parentFrame As MSForms.Frame, ByVal controlName As String) As Object
+    On Error Resume Next
+    Set GetFrameControlIfExists = parentFrame.Controls(controlName)
+    On Error GoTo 0
+End Function
+
+Private Sub EnsureFrameHostedControls()
+    If mFraActions Is Nothing Or mFraCopy Is Nothing Or mFraOpen Is Nothing Then Exit Sub
+
+    If mBtnFrameRefresh Is Nothing Then
+        Set mBtnFrameRefresh = GetFrameControlIfExists(mFraActions, "btnFrameRefresh")
+        If mBtnFrameRefresh Is Nothing Then Set mBtnFrameRefresh = mFraActions.Controls.Add("Forms.CommandButton.1", "btnFrameRefresh", True)
+    End If
+    If mBtnFrameSave Is Nothing Then
+        Set mBtnFrameSave = GetFrameControlIfExists(mFraActions, "btnFrameSave")
+        If mBtnFrameSave Is Nothing Then Set mBtnFrameSave = mFraActions.Controls.Add("Forms.CommandButton.1", "btnFrameSave", True)
+    End If
+    If mBtnFrameRefreshSave Is Nothing Then
+        Set mBtnFrameRefreshSave = GetFrameControlIfExists(mFraActions, "btnFrameRefreshSave")
+        If mBtnFrameRefreshSave Is Nothing Then Set mBtnFrameRefreshSave = mFraActions.Controls.Add("Forms.CommandButton.1", "btnFrameRefreshSave", True)
+    End If
+
+    If mLblFrameSuffix Is Nothing Then
+        Set mLblFrameSuffix = GetFrameControlIfExists(mFraCopy, "lblFrameSuffix")
+        If mLblFrameSuffix Is Nothing Then Set mLblFrameSuffix = mFraCopy.Controls.Add("Forms.Label.1", "lblFrameSuffix", True)
+    End If
+    If mTxtFrameSuffix Is Nothing Then
+        Set mTxtFrameSuffix = GetFrameControlIfExists(mFraCopy, "txtFrameSuffix")
+        If mTxtFrameSuffix Is Nothing Then Set mTxtFrameSuffix = mFraCopy.Controls.Add("Forms.TextBox.1", "txtFrameSuffix", True)
+    End If
+    If mBtnFrameCopyBreakLinks Is Nothing Then
+        Set mBtnFrameCopyBreakLinks = GetFrameControlIfExists(mFraCopy, "btnFrameCopyBreakLinks")
+        If mBtnFrameCopyBreakLinks Is Nothing Then Set mBtnFrameCopyBreakLinks = mFraCopy.Controls.Add("Forms.CommandButton.1", "btnFrameCopyBreakLinks", True)
+    End If
+    If mBtnFrameCopyWithSuffix Is Nothing Then
+        Set mBtnFrameCopyWithSuffix = GetFrameControlIfExists(mFraCopy, "btnFrameCopyWithSuffix")
+        If mBtnFrameCopyWithSuffix Is Nothing Then Set mBtnFrameCopyWithSuffix = mFraCopy.Controls.Add("Forms.CommandButton.1", "btnFrameCopyWithSuffix", True)
+    End If
+    If mLblFramePostCopyOptions Is Nothing Then
+        Set mLblFramePostCopyOptions = GetFrameControlIfExists(mFraCopy, "lblFramePostCopyOptions")
+        If mLblFramePostCopyOptions Is Nothing Then Set mLblFramePostCopyOptions = mFraCopy.Controls.Add("Forms.Label.1", "lblFramePostCopyOptions", True)
+    End If
+    If mChkFrameOpenCopiedFiles Is Nothing Then
+        Set mChkFrameOpenCopiedFiles = GetFrameControlIfExists(mFraCopy, "chkFrameOpenCopiedFiles")
+        If mChkFrameOpenCopiedFiles Is Nothing Then Set mChkFrameOpenCopiedFiles = mFraCopy.Controls.Add("Forms.CheckBox.1", "chkFrameOpenCopiedFiles", True)
+    End If
+    If mChkFrameOpenCopiedFolder Is Nothing Then
+        Set mChkFrameOpenCopiedFolder = GetFrameControlIfExists(mFraCopy, "chkFrameOpenCopiedFolder")
+        If mChkFrameOpenCopiedFolder Is Nothing Then Set mChkFrameOpenCopiedFolder = mFraCopy.Controls.Add("Forms.CheckBox.1", "chkFrameOpenCopiedFolder", True)
+    End If
+
+    If mBtnFrameOpenFile Is Nothing Then
+        Set mBtnFrameOpenFile = GetFrameControlIfExists(mFraOpen, "btnFrameOpenFile")
+        If mBtnFrameOpenFile Is Nothing Then Set mBtnFrameOpenFile = mFraOpen.Controls.Add("Forms.CommandButton.1", "btnFrameOpenFile", True)
+    End If
+    If mBtnFrameOpenFolder Is Nothing Then
+        Set mBtnFrameOpenFolder = GetFrameControlIfExists(mFraOpen, "btnFrameOpenFolder")
+        If mBtnFrameOpenFolder Is Nothing Then Set mBtnFrameOpenFolder = mFraOpen.Controls.Add("Forms.CommandButton.1", "btnFrameOpenFolder", True)
+    End If
+    If mBtnFrameOpenAndRefresh Is Nothing Then
+        Set mBtnFrameOpenAndRefresh = GetFrameControlIfExists(mFraOpen, "btnFrameOpenAndRefresh")
+        If mBtnFrameOpenAndRefresh Is Nothing Then Set mBtnFrameOpenAndRefresh = mFraOpen.Controls.Add("Forms.CommandButton.1", "btnFrameOpenAndRefresh", True)
+    End If
+End Sub
+
+Private Sub SyncFrameHostedControlState()
+    Dim ctlOpenCopied As Object
+
+    If mBtnFrameRefresh Is Nothing Then Exit Sub
+
+    mBtnFrameRefresh.Caption = Me.btnRefresh.Caption
+    mBtnFrameRefresh.enabled = Me.btnRefresh.enabled
+    mBtnFrameSave.Caption = Me.btnSave.Caption
+    mBtnFrameSave.enabled = Me.btnSave.enabled
+    mBtnFrameRefreshSave.Caption = Me.btnRefreshSave.Caption
+    mBtnFrameRefreshSave.enabled = Me.btnRefreshSave.enabled
+
+    mLblFrameSuffix.Caption = Me.Label2.Caption
+    mLblFrameSuffix.BackStyle = fmBackStyleTransparent
+    mTxtFrameSuffix.Value = Me.txtSuffix.Value
+    mTxtFrameSuffix.enabled = Me.txtSuffix.enabled
+    mBtnFrameCopyBreakLinks.Caption = Me.btnCopyBreakLinks.Caption
+    mBtnFrameCopyBreakLinks.enabled = Me.btnCopyBreakLinks.enabled
+    mBtnFrameCopyWithSuffix.Caption = Me.btnCopyWithSuffix.Caption
+    mBtnFrameCopyWithSuffix.enabled = Me.btnCopyWithSuffix.enabled
+    mLblFramePostCopyOptions.Caption = "Post-copy options:"
+    mLblFramePostCopyOptions.BackStyle = fmBackStyleTransparent
+
+    Set ctlOpenCopied = GetOpenCopiedFilesControl()
+    If Not ctlOpenCopied Is Nothing Then
+        mChkFrameOpenCopiedFiles.Caption = ctlOpenCopied.Caption
+        mChkFrameOpenCopiedFiles.Value = ctlOpenCopied.Value
+        mChkFrameOpenCopiedFiles.enabled = ctlOpenCopied.enabled
+    End If
+    If Not mChkOpenCopiedFolder Is Nothing Then
+        mChkFrameOpenCopiedFolder.Caption = mChkOpenCopiedFolder.Caption
+        mChkFrameOpenCopiedFolder.Value = mChkOpenCopiedFolder.Value
+        mChkFrameOpenCopiedFolder.enabled = mChkOpenCopiedFolder.enabled
+    End If
+
+    mBtnFrameOpenFile.Caption = Me.btnOpenFile.Caption
+    mBtnFrameOpenFile.enabled = Me.btnOpenFile.enabled
+    mBtnFrameOpenFolder.Caption = "Open folder"
+    mBtnFrameOpenFolder.enabled = Me.btnOpenCopyFolder.enabled
+    mBtnFrameOpenAndRefresh.Caption = Me.btnOpenAndRefresh.Caption
+    mBtnFrameOpenAndRefresh.enabled = Me.btnOpenAndRefresh.enabled
+End Sub
+
+Private Sub EnsureLayoutMenuControls()
+    If mBtnActionsMenu Is Nothing Then
+        Set mBtnActionsMenu = GetControlIfExists("btnActionsMenu")
+        If mBtnActionsMenu Is Nothing Then Set mBtnActionsMenu = Me.Controls.Add("Forms.CommandButton.1", "btnActionsMenu", True)
+    End If
+    If mBtnCopyMenu Is Nothing Then
+        Set mBtnCopyMenu = GetControlIfExists("btnCopyMenu")
+        If mBtnCopyMenu Is Nothing Then Set mBtnCopyMenu = Me.Controls.Add("Forms.CommandButton.1", "btnCopyMenu", True)
+    End If
+    If mBtnOpenMenu Is Nothing Then
+        Set mBtnOpenMenu = GetControlIfExists("btnOpenMenu")
+        If mBtnOpenMenu Is Nothing Then Set mBtnOpenMenu = Me.Controls.Add("Forms.CommandButton.1", "btnOpenMenu", True)
+    End If
+    If mFraActions Is Nothing Then
+        Set mFraActions = GetControlIfExists("fraActions")
+        If mFraActions Is Nothing Then Set mFraActions = Me.Controls.Add("Forms.Frame.1", "fraActions", True)
+    End If
+    If mFraCopy Is Nothing Then
+        Set mFraCopy = GetControlIfExists("fraCopy")
+        If mFraCopy Is Nothing Then Set mFraCopy = Me.Controls.Add("Forms.Frame.1", "fraCopy", True)
+    End If
+    If mFraOpen Is Nothing Then
+        Set mFraOpen = GetControlIfExists("fraOpen")
+        If mFraOpen Is Nothing Then Set mFraOpen = Me.Controls.Add("Forms.Frame.1", "fraOpen", True)
+    End If
+    If mLblSwitchScreen Is Nothing Then
+        Set mLblSwitchScreen = GetControlIfExists("lblSwitchScreen")
+        If mLblSwitchScreen Is Nothing Then Set mLblSwitchScreen = Me.Controls.Add("Forms.Label.1", "lblSwitchScreen", True)
+    End If
+
+    EnsureFrameHostedControls
+    SyncFrameHostedControlState
+
+    With mBtnActionsMenu
+        .Caption = "Actions"
+        .Visible = True
+        .enabled = True
+    End With
+    With mBtnCopyMenu
+        .Caption = "Copy"
+        .Visible = True
+        .enabled = True
+    End With
+    With mBtnOpenMenu
+        .Caption = "Open"
+        .Visible = True
+        .enabled = True
+    End With
+    With mFraActions
+        .Caption = "Actions:"
+        If .Tag <> "LayoutMenu" Then .Visible = False
+        .Tag = "LayoutMenu"
+    End With
+    With mFraCopy
+        .Caption = "Copy:"
+        If .Tag <> "LayoutMenu" Then .Visible = False
+        .Tag = "LayoutMenu"
+    End With
+    With mFraOpen
+        .Caption = "Open:"
+        If .Tag <> "LayoutMenu" Then .Visible = False
+        .Tag = "LayoutMenu"
+    End With
+    With mLblSwitchScreen
+        .Caption = "Switch the screen:"
+        .BackStyle = fmBackStyleTransparent
+        .AutoSize = False
+        .Width = 84
+        .Height = 12
+        .Visible = True
+    End With
+    SetOptionalControlCaption "btnMaximize", "Maximize"
+    PositionLayoutMenuControls
+End Sub
+
+Private Sub PositionLayoutMenuControls()
+    Const MENU_GAP As Single = 12
+    Const INNER_GAP As Single = 6
+    Const FRAME_H As Single = 116
+    Const SUFFIX_TEXT_WIDTH As Single = 125
+    Const OPEN_COPIED_WIDTH As Single = 86.4
+    Dim menuLeft As Single, menuTop As Single, menuW As Single, menuH As Single
+    Dim frameLeft As Single, frameTop As Single, frameW As Single, frameH As Single
+    Dim listRight As Single, screenTop As Single, buttonTop As Single
+    Dim ctl As Object, ctlOpenCopied As Object
+
+    If mBtnActionsMenu Is Nothing Or mFraActions Is Nothing Then Exit Sub
+
+    menuLeft = Me.tglBatchMode.Left
+    menuTop = Me.tglBatchMode.TOP + Me.tglBatchMode.Height + MENU_GAP
+    menuW = Me.tglBatchMode.Width
+    menuH = Me.tglBatchMode.Height
+
+    With mBtnActionsMenu
+        .Left = menuLeft
+        .TOP = menuTop
+        .Width = menuW
+        .Height = menuH
+    End With
+    With mBtnCopyMenu
+        .Left = menuLeft
+        .TOP = mBtnActionsMenu.TOP + mBtnActionsMenu.Height + MENU_GAP
+        .Width = menuW
+        .Height = menuH
+    End With
+    With mBtnOpenMenu
+        .Left = menuLeft
+        .TOP = mBtnCopyMenu.TOP + mBtnCopyMenu.Height + MENU_GAP
+        .Width = menuW
+        .Height = menuH
+    End With
+
+    frameLeft = menuLeft + menuW + MENU_GAP
+    frameTop = menuTop
+    listRight = Me.lstWorkbooks.Left + Me.lstWorkbooks.Width
+    frameW = listRight - frameLeft
+    If frameW < 1 Then frameW = 1
+    frameH = FRAME_H
+    If frameTop + frameH > Me.btnClose.TOP - 48 Then frameH = Me.btnClose.TOP - frameTop - 48
+    If frameH < 92 Then frameH = 92
+
+    PositionMenuFrame mFraActions, frameLeft, frameTop, frameW, frameH
+    PositionMenuFrame mFraCopy, frameLeft, frameTop, frameW, frameH
+    PositionMenuFrame mFraOpen, frameLeft, frameTop, frameW, frameH
+    SyncFrameHostedControlState
+
+    With mBtnFrameRefresh
+        .Left = INNER_GAP
+        .TOP = INNER_GAP
+        .Width = Me.btnRefresh.Width
+        .Height = Me.btnRefresh.Height
+    End With
+    With mBtnFrameSave
+        .Left = mBtnFrameRefresh.Left
+        .TOP = mBtnFrameRefresh.TOP + mBtnFrameRefresh.Height + INNER_GAP
+        .Width = Me.btnSave.Width
+        .Height = Me.btnSave.Height
+    End With
+    With mBtnFrameRefreshSave
+        .Left = mBtnFrameRefresh.Left
+        .TOP = mBtnFrameSave.TOP + mBtnFrameSave.Height + INNER_GAP
+        .Width = Me.btnRefreshSave.Width
+        .Height = Me.btnRefreshSave.Height
+    End With
+
+    With mTxtFrameSuffix
+        .TOP = INNER_GAP
+        .Height = Me.txtSuffix.Height
+    End With
+    With mLblFrameSuffix
+        .Left = INNER_GAP
+        .Width = (Me.Label2.Width * 0.75) + 2
+        .Height = Me.Label2.Height
+        .TOP = mTxtFrameSuffix.TOP + mTxtFrameSuffix.Height - .Height
+    End With
+    With mTxtFrameSuffix
+        .Left = mLblFrameSuffix.Left + mLblFrameSuffix.Width + INNER_GAP
+        .Width = SUFFIX_TEXT_WIDTH
+    End With
+    With mBtnFrameCopyBreakLinks
+        .Left = INNER_GAP
+        .TOP = mTxtFrameSuffix.TOP + mTxtFrameSuffix.Height + INNER_GAP
+        .Width = Me.btnCopyBreakLinks.Width
+        .Height = Me.btnCopyBreakLinks.Height
+    End With
+    With mBtnFrameCopyWithSuffix
+        .Left = mBtnFrameCopyBreakLinks.Left + mBtnFrameCopyBreakLinks.Width + INNER_GAP
+        .TOP = mBtnFrameCopyBreakLinks.TOP
+        .Width = (Me.btnCopyWithSuffix.Width * 0.9) - 6
+        If .Width < 1 Then .Width = 1
+        .Height = Me.btnCopyWithSuffix.Height
+    End With
+    With mLblFramePostCopyOptions
+        .Left = INNER_GAP
+        .TOP = mBtnFrameCopyBreakLinks.TOP + mBtnFrameCopyBreakLinks.Height + INNER_GAP
+        .Width = 130
+        .Height = 12
+    End With
+    With mChkFrameOpenCopiedFiles
+        .Left = INNER_GAP
+        .TOP = mLblFramePostCopyOptions.TOP + mLblFramePostCopyOptions.Height + INNER_GAP
+        .Width = OPEN_COPIED_WIDTH
+        .Height = 14
+    End With
+    With mChkFrameOpenCopiedFolder
+        .Left = mChkFrameOpenCopiedFiles.Left + mChkFrameOpenCopiedFiles.Width + INNER_GAP
+        .TOP = mChkFrameOpenCopiedFiles.TOP
+        .Width = 120
+        .Height = 14
+    End With
+
+    With mBtnFrameOpenFile
+        .Left = INNER_GAP
+        .TOP = INNER_GAP
+        .Width = Me.btnOpenFile.Width
+        .Height = Me.btnOpenFile.Height
+    End With
+    With mBtnFrameOpenFolder
+        .Left = mBtnFrameOpenFile.Left
+        .TOP = mBtnFrameOpenFile.TOP + mBtnFrameOpenFile.Height + INNER_GAP
+        .Width = Me.btnOpenFile.Width
+        .Height = Me.btnOpenFile.Height
+    End With
+    With mBtnFrameOpenAndRefresh
+        .Left = mBtnFrameOpenFile.Left
+        .TOP = mBtnFrameOpenFolder.TOP + mBtnFrameOpenFolder.Height + INNER_GAP
+        .Width = Me.btnOpenAndRefresh.Width
+        .Height = Me.btnOpenAndRefresh.Height
+    End With
+
+    ' Keep original controls aligned for their existing logic, but hide them in ApplyMenuFrameVisibility.
+    Me.btnRefresh.Left = frameLeft + mBtnFrameRefresh.Left
+    Me.btnRefresh.TOP = frameTop + mBtnFrameRefresh.TOP
+    Me.btnSave.Left = frameLeft + mBtnFrameSave.Left
+    Me.btnSave.TOP = frameTop + mBtnFrameSave.TOP
+    Me.btnRefreshSave.Left = frameLeft + mBtnFrameRefreshSave.Left
+    Me.btnRefreshSave.TOP = frameTop + mBtnFrameRefreshSave.TOP
+
+    Me.Label2.Left = frameLeft + mLblFrameSuffix.Left
+    Me.Label2.TOP = frameTop + mLblFrameSuffix.TOP
+    Me.txtSuffix.Left = frameLeft + mTxtFrameSuffix.Left
+    Me.txtSuffix.TOP = frameTop + mTxtFrameSuffix.TOP
+    Me.txtSuffix.Width = mTxtFrameSuffix.Width
+    Me.btnCopyBreakLinks.Left = frameLeft + mBtnFrameCopyBreakLinks.Left
+    Me.btnCopyBreakLinks.TOP = frameTop + mBtnFrameCopyBreakLinks.TOP
+    Me.btnCopyWithSuffix.Left = frameLeft + mBtnFrameCopyWithSuffix.Left
+    Me.btnCopyWithSuffix.TOP = frameTop + mBtnFrameCopyWithSuffix.TOP
+
+    Set ctlOpenCopied = GetOpenCopiedFilesControl()
+    If Not ctlOpenCopied Is Nothing Then
+        ctlOpenCopied.Left = frameLeft + mChkFrameOpenCopiedFiles.Left
+        ctlOpenCopied.TOP = frameTop + mChkFrameOpenCopiedFiles.TOP
+    End If
+    If Not mChkOpenCopiedFolder Is Nothing Then
+        mChkOpenCopiedFolder.Left = frameLeft + mChkFrameOpenCopiedFolder.Left
+        mChkOpenCopiedFolder.TOP = frameTop + mChkFrameOpenCopiedFolder.TOP
+    End If
+    If Not mLblPostCopyOptions Is Nothing Then
+        mLblPostCopyOptions.Left = frameLeft + mLblFramePostCopyOptions.Left
+        mLblPostCopyOptions.TOP = frameTop + mLblFramePostCopyOptions.TOP
+    End If
+
+    Me.btnOpenFile.Left = frameLeft + mBtnFrameOpenFile.Left
+    Me.btnOpenFile.TOP = frameTop + mBtnFrameOpenFile.TOP
+    Me.btnOpenCopyFolder.Left = frameLeft + mBtnFrameOpenFolder.Left
+    Me.btnOpenCopyFolder.TOP = frameTop + mBtnFrameOpenFolder.TOP
+    Me.btnOpenAndRefresh.Left = frameLeft + mBtnFrameOpenAndRefresh.Left
+    Me.btnOpenAndRefresh.TOP = frameTop + mBtnFrameOpenAndRefresh.TOP
+
+    screenTop = frameTop + frameH + 10
+    If screenTop > Me.btnClose.TOP - 32 Then screenTop = Me.btnClose.TOP - 32
+    buttonTop = screenTop + 14
+
+    PositionSwitchScreenControls Me.lstWorkbooks.Left, screenTop, buttonTop
+
+    ApplyMenuFrameVisibility
+End Sub
+
+Private Sub PositionSwitchScreenControls(ByVal buttonsLeft As Single, ByVal labelTop As Single, ByVal buttonsTop As Single)
+    Const SCREEN_BUTTON_GAP As Single = 6
+    Dim ctlMax As Object
+    Dim ctlS1 As Object
+    Dim ctlS2 As Object
+    Dim ctlS3 As Object
+    Dim screenButtonWidth As Single
+    Dim maximizeWidth As Single
+    Dim originalButtonsTop As Single
+    Dim buttonHeight As Single
+
+    originalButtonsTop = buttonsTop
+
+    Set ctlMax = GetControlIfExists("btnMaximize")
+    Set ctlS1 = GetControlIfExists("btnScreen1")
+    Set ctlS2 = GetControlIfExists("btnScreen2")
+    Set ctlS3 = GetControlIfExists("btnScreen3")
+
+    If Not ctlS1 Is Nothing Then
+        screenButtonWidth = ctlS1.Width
+    ElseIf Not ctlS2 Is Nothing Then
+        screenButtonWidth = ctlS2.Width
+    ElseIf Not ctlS3 Is Nothing Then
+        screenButtonWidth = ctlS3.Width
+    ElseIf Not ctlMax Is Nothing Then
+        screenButtonWidth = ctlMax.Width / 2
+    Else
+        Exit Sub
+    End If
+
+    If Not ctlMax Is Nothing Then
+        buttonHeight = ctlMax.Height
+    ElseIf Not ctlS1 Is Nothing Then
+        buttonHeight = ctlS1.Height
+    ElseIf Not ctlS2 Is Nothing Then
+        buttonHeight = ctlS2.Height
+    ElseIf Not ctlS3 Is Nothing Then
+        buttonHeight = ctlS3.Height
+    End If
+    If buttonHeight > 0 Then
+        buttonsTop = Me.btnClose.TOP + Me.btnClose.Height - buttonHeight
+        labelTop = labelTop + (buttonsTop - originalButtonsTop)
+    End If
+
+    maximizeWidth = screenButtonWidth * 3
+
+    If Not mLblSwitchScreen Is Nothing Then
+        mLblSwitchScreen.Left = buttonsLeft
+        mLblSwitchScreen.TOP = labelTop
+        mLblSwitchScreen.Visible = True
+        mLblSwitchScreen.ZOrder 0
+    End If
+
+    If Not ctlMax Is Nothing Then
+        ctlMax.Left = buttonsLeft
+        ctlMax.TOP = buttonsTop
+        ctlMax.Width = maximizeWidth
+        ctlMax.Visible = True
+        ctlMax.ZOrder 0
+    End If
+
+    If Not ctlS1 Is Nothing Then
+        ctlS1.TOP = buttonsTop
+        If Not ctlMax Is Nothing Then
+            ctlS1.Left = ctlMax.Left + ctlMax.Width + SCREEN_BUTTON_GAP
+        Else
+            ctlS1.Left = buttonsLeft
+        End If
+        ctlS1.Visible = True
+        ctlS1.ZOrder 0
+    End If
+
+    If Not ctlS2 Is Nothing Then
+        ctlS2.TOP = buttonsTop
+        If Not ctlS1 Is Nothing Then
+            ctlS2.Left = ctlS1.Left + ctlS1.Width + SCREEN_BUTTON_GAP
+        ElseIf Not ctlMax Is Nothing Then
+            ctlS2.Left = ctlMax.Left + ctlMax.Width + SCREEN_BUTTON_GAP
+        Else
+            ctlS2.Left = buttonsLeft
+        End If
+        ctlS2.Visible = True
+        ctlS2.ZOrder 0
+    End If
+
+    If Not ctlS3 Is Nothing Then
+        ctlS3.TOP = buttonsTop
+        If Not ctlS2 Is Nothing Then
+            ctlS3.Left = ctlS2.Left + ctlS2.Width + SCREEN_BUTTON_GAP
+        ElseIf Not ctlS1 Is Nothing Then
+            ctlS3.Left = ctlS1.Left + ctlS1.Width + SCREEN_BUTTON_GAP
+        ElseIf Not ctlMax Is Nothing Then
+            ctlS3.Left = ctlMax.Left + ctlMax.Width + SCREEN_BUTTON_GAP
+        Else
+            ctlS3.Left = buttonsLeft
+        End If
+        ctlS3.Visible = True
+        ctlS3.ZOrder 0
+    End If
+End Sub
+
+Private Sub PositionScreenButtonsAfterSwitchLabel(ByVal actionGap As Single)
+    Dim ctlS1 As Object, ctlS2 As Object, ctlS3 As Object
+
+    If mLblSwitchScreen Is Nothing Then Exit Sub
+    Set ctlS1 = GetControlIfExists("btnScreen1")
+    Set ctlS2 = GetControlIfExists("btnScreen2")
+    Set ctlS3 = GetControlIfExists("btnScreen3")
+
+    If Not ctlS1 Is Nothing Then
+        ctlS1.Left = mLblSwitchScreen.Left + mLblSwitchScreen.Width + actionGap
+        ctlS1.TOP = mLblSwitchScreen.TOP - 3
+    End If
+    If Not ctlS2 Is Nothing Then
+        If Not ctlS1 Is Nothing Then
+            ctlS2.TOP = ctlS1.TOP
+            ctlS2.Left = ctlS1.Left + ctlS1.Width + actionGap
+        End If
+    End If
+    If Not ctlS3 Is Nothing Then
+        If Not ctlS2 Is Nothing Then
+            ctlS3.TOP = ctlS2.TOP
+            ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
+        End If
+    End If
+End Sub
+
+
+Private Sub ApplyMenuFrameVisibility()
+    Dim showActions As Boolean, showCopy As Boolean, showOpen As Boolean
+    Dim ctl As Object
+
+    If mFraActions Is Nothing Or mFraCopy Is Nothing Or mFraOpen Is Nothing Then Exit Sub
+    showActions = mFraActions.Visible
+    showCopy = mFraCopy.Visible
+    showOpen = mFraOpen.Visible
+
+    Me.btnRefresh.Visible = False
+    Me.btnSave.Visible = False
+    Me.btnRefreshSave.Visible = False
+    Me.btnCloseSelected.Visible = False
+    Set ctl = GetControlIfExists("btnMaximize")
+    If Not ctl Is Nothing Then ctl.Visible = True
+    Set ctl = GetControlIfExists("btnScreen1")
+    If Not ctl Is Nothing Then ctl.Visible = True
+    Set ctl = GetControlIfExists("btnScreen2")
+    If Not ctl Is Nothing Then ctl.Visible = True
+    Set ctl = GetControlIfExists("btnScreen3")
+    If Not ctl Is Nothing Then ctl.Visible = True
+    If Not mLblSwitchScreen Is Nothing Then mLblSwitchScreen.Visible = True
+
+    Me.Label2.Visible = False
+    Me.txtSuffix.Visible = False
+    Me.btnCopyWithSuffix.Visible = False
+    Me.btnCopyBreakLinks.Visible = False
+    Me.btnOpenCopyFolder.Visible = False
+    Set ctl = GetControlIfExists("ChckBox1")
+    If ctl Is Nothing Then Set ctl = GetControlIfExists("CheckBox1")
+    If Not ctl Is Nothing Then ctl.Visible = False
+    If Not mChkOpenCopiedFolder Is Nothing Then mChkOpenCopiedFolder.Visible = False
+    If Not mLblPostCopyOptions Is Nothing Then mLblPostCopyOptions.Visible = False
+
+    Me.btnOpenFile.Visible = False
+    Me.btnOpenAndRefresh.Visible = False
+
+    BringMenuGroupToFront showActions, showCopy, showOpen
+End Sub
+
+Private Sub BringMenuGroupToFront(ByVal showActions As Boolean, ByVal showCopy As Boolean, ByVal showOpen As Boolean)
+    Dim ctl As Object
+    On Error Resume Next
+    If showActions Then
+        mFraActions.ZOrder 1
+        Me.btnRefresh.ZOrder 0
+        Me.btnSave.ZOrder 0
+        Me.btnRefreshSave.ZOrder 0
+        Me.btnCloseSelected.ZOrder 0
+        Set ctl = GetControlIfExists("btnMaximize"): If Not ctl Is Nothing Then ctl.ZOrder 0
+        Set ctl = GetControlIfExists("btnScreen1"): If Not ctl Is Nothing Then ctl.ZOrder 0
+        Set ctl = GetControlIfExists("btnScreen2"): If Not ctl Is Nothing Then ctl.ZOrder 0
+        Set ctl = GetControlIfExists("btnScreen3"): If Not ctl Is Nothing Then ctl.ZOrder 0
+        If Not mLblSwitchScreen Is Nothing Then mLblSwitchScreen.ZOrder 0
+    ElseIf showCopy Then
+        mFraCopy.ZOrder 1
+        Me.Label2.ZOrder 0
+        Me.txtSuffix.ZOrder 0
+        Me.btnCopyWithSuffix.ZOrder 0
+        Me.btnCopyBreakLinks.ZOrder 0
+        Me.btnOpenCopyFolder.ZOrder 0
+        Set ctl = GetControlIfExists("ChckBox1")
+        If ctl Is Nothing Then Set ctl = GetControlIfExists("CheckBox1")
+        If Not ctl Is Nothing Then ctl.ZOrder 0
+        If Not mChkOpenCopiedFolder Is Nothing Then mChkOpenCopiedFolder.ZOrder 0
+        If Not mLblPostCopyOptions Is Nothing Then mLblPostCopyOptions.ZOrder 0
+    ElseIf showOpen Then
+        mFraOpen.ZOrder 1
+        Me.btnOpenFile.ZOrder 0
+        Me.btnOpenAndRefresh.ZOrder 0
+    End If
+    Set ctl = GetControlIfExists("btnMaximize"): If Not ctl Is Nothing Then ctl.ZOrder 0
+    Set ctl = GetControlIfExists("btnScreen1"): If Not ctl Is Nothing Then ctl.ZOrder 0
+    Set ctl = GetControlIfExists("btnScreen2"): If Not ctl Is Nothing Then ctl.ZOrder 0
+    Set ctl = GetControlIfExists("btnScreen3"): If Not ctl Is Nothing Then ctl.ZOrder 0
+    If Not mLblSwitchScreen Is Nothing Then mLblSwitchScreen.ZOrder 0
+    Me.btnCancel.ZOrder 0
+    Me.btnClose.ZOrder 0
+    If Not mBtnTogglePanel Is Nothing Then mBtnTogglePanel.ZOrder 0
+    mBtnActionsMenu.ZOrder 0
+    mBtnCopyMenu.ZOrder 0
+    mBtnOpenMenu.ZOrder 0
+    On Error GoTo 0
+End Sub
+
+Private Sub PositionMenuFrame(ByVal targetFrame As MSForms.Frame, ByVal frameLeft As Single, ByVal frameTop As Single, ByVal frameW As Single, ByVal frameH As Single)
+    With targetFrame
+        .Left = frameLeft
+        .TOP = frameTop
+        .Width = frameW
+        .Height = frameH
+        .ZOrder 1
+    End With
+End Sub
+
+Private Sub ToggleMenuFrame(ByVal frameName As String)
+    Dim showActions As Boolean, showCopy As Boolean, showOpen As Boolean
+    If mFraActions Is Nothing Or mFraCopy Is Nothing Or mFraOpen Is Nothing Then EnsureLayoutMenuControls
+
+    showActions = (frameName = "fraActions" And Not mFraActions.Visible)
+    showCopy = (frameName = "fraCopy" And Not mFraCopy.Visible)
+    showOpen = (frameName = "fraOpen" And Not mFraOpen.Visible)
+
+    mFraActions.Visible = showActions
+    mFraCopy.Visible = showCopy
+    mFraOpen.Visible = showOpen
+    PositionLayoutMenuControls
+    ApplyMenuFrameVisibility
+End Sub
+
+Private Sub HideMenuFrames()
+    If Not mFraActions Is Nothing Then mFraActions.Visible = False
+    If Not mFraCopy Is Nothing Then mFraCopy.Visible = False
+    If Not mFraOpen Is Nothing Then mFraOpen.Visible = False
+    ApplyMenuFrameVisibility
+End Sub
+
+Private Sub mBtnActionsMenu_Click()
+    ToggleMenuFrame "fraActions"
+End Sub
+
+Private Sub mBtnCopyMenu_Click()
+    ToggleMenuFrame "fraCopy"
+End Sub
+
+Private Sub mBtnOpenMenu_Click()
+    ToggleMenuFrame "fraOpen"
+End Sub
+
+Private Sub mTxtFrameSuffix_Change()
+    Me.txtSuffix.Value = mTxtFrameSuffix.Value
+End Sub
+
+Private Sub mBtnFrameRefresh_Click()
+    btnRefresh_Click
+End Sub
+
+Private Sub mBtnFrameSave_Click()
+    btnSave_Click
+End Sub
+
+Private Sub mBtnFrameRefreshSave_Click()
+    btnRefreshSave_Click
+End Sub
+
+Private Sub mBtnFrameCopyBreakLinks_Click()
+    Me.txtSuffix.Value = mTxtFrameSuffix.Value
+    btnCopyBreakLinks_Click
+    SyncFrameHostedControlState
+End Sub
+
+Private Sub mBtnFrameCopyWithSuffix_Click()
+    Me.txtSuffix.Value = mTxtFrameSuffix.Value
+    btnCopyWithSuffix_Click
+    SyncFrameHostedControlState
+End Sub
+
+Private Sub mChkFrameOpenCopiedFiles_Click()
+    Dim ctlOpenCopied As Object
+    Set ctlOpenCopied = GetOpenCopiedFilesControl()
+    If Not ctlOpenCopied Is Nothing Then
+        ctlOpenCopied.Value = mChkFrameOpenCopiedFiles.Value
+        CheckBox1_Click
+    End If
+End Sub
+
+Private Sub mChkFrameOpenCopiedFolder_Click()
+    If Not mChkOpenCopiedFolder Is Nothing Then
+        mChkOpenCopiedFolder.Value = mChkFrameOpenCopiedFolder.Value
+        chkOpenCopiedFolder_Click
+    End If
+End Sub
+
+Private Sub mBtnFrameOpenFile_Click()
+    btnOpenFile_Click
+End Sub
+
+Private Sub mBtnFrameOpenFolder_Click()
+    btnOpenCopyFolder_Click
+End Sub
+
+Private Sub mBtnFrameOpenAndRefresh_Click()
+    btnOpenAndRefresh_Click
+End Sub
 
 Private Sub EnsureCopyOptionsControls()
     If mChkOpenCopiedFiles Is Nothing Then Set mChkOpenCopiedFiles = GetOpenCopiedFilesControl()
@@ -2868,6 +3594,12 @@ Private Sub SetOptionalControlEnabled(ByVal controlName As String, ByVal enabled
     ctl.enabled = enabled
 End Sub
 
+Private Sub SetOptionalControlCaption(ByVal controlName As String, ByVal captionText As String)
+    Dim ctl As Object
+    Set ctl = GetControlIfExists(controlName)
+    If Not ctl Is Nothing Then ctl.Caption = captionText
+End Sub
+
 Private Function GetOptionalControlTop(ByVal controlName As String, ByVal fallbackTop As Single) As Single
     Dim ctl As Object
     Set ctl = GetControlIfExists(controlName)
@@ -3336,62 +4068,13 @@ Private Sub ApplyLayout()
     If ctlOpenCopied Is Nothing Then Set ctlOpenCopied = GetControlIfExists("CheckBox1")
     Set ctlOpenCopiedFolder = mChkOpenCopiedFolder
     Set ctlPostCopyLabel = mLblPostCopyOptions
+    EnsureLayoutMenuControls
 
-    If Not ctlMax Is Nothing Then
-        ctlMax.TOP = actionTop
-        ctlMax.Left = Me.btnCopyWithSuffix.Left
-    End If
+    PositionSwitchScreenControls Me.lstWorkbooks.Left, actionTop - 14, actionTop
 
-    If Not ctlS1 Is Nothing Then
-        ctlS1.TOP = actionTop
-        If Not ctlMax Is Nothing Then
-            ctlS1.Left = ctlMax.Left + ctlMax.Width + actionGap
-        End If
-    End If
+    PositionLayoutMenuControls
 
-    If Not ctlS2 Is Nothing Then
-        ctlS2.TOP = actionTop
-        If Not ctlS1 Is Nothing Then
-            ctlS2.Left = ctlS1.Left + ctlS1.Width + actionGap
-        End If
-    End If
-
-    If Not ctlS3 Is Nothing Then
-        ctlS3.TOP = actionTop
-        If Not ctlS2 Is Nothing Then
-            ctlS3.Left = ctlS2.Left + ctlS2.Width + actionGap
-        End If
-    End If
-
-    Dim postCopyTop As Single
-
-    postCopyTop = Me.btnCopyWithSuffix.TOP + Me.btnCopyWithSuffix.Height + 2
-
-    If Not ctlPostCopyLabel Is Nothing Then
-        ctlPostCopyLabel.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
-        ctlPostCopyLabel.TOP = postCopyTop
-    End If
-
-    If Not ctlOpenCopied Is Nothing Then
-        ctlOpenCopied.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedOffsetLeft
-        If Not ctlPostCopyLabel Is Nothing Then
-            ctlOpenCopied.TOP = ctlPostCopyLabel.TOP + ctlPostCopyLabel.Height + 1
-        Else
-            ctlOpenCopied.TOP = postCopyTop + 1
-        End If
-    End If
-
-    If Not ctlOpenCopiedFolder Is Nothing Then
-        ctlOpenCopiedFolder.Left = Me.btnCopyWithSuffix.Left + mOpenCopiedFolderOffsetLeft
-        If Not ctlOpenCopied Is Nothing Then
-            ctlOpenCopiedFolder.TOP = ctlOpenCopied.TOP
-            ctlOpenCopiedFolder.Height = ctlOpenCopied.Height
-        ElseIf Not ctlPostCopyLabel Is Nothing Then
-            ctlOpenCopiedFolder.TOP = ctlPostCopyLabel.TOP + ctlPostCopyLabel.Height + 1
-        Else
-            ctlOpenCopiedFolder.TOP = postCopyTop + 1
-        End If
-    End If
+    ' Copy option controls are positioned by PositionLayoutMenuControls so they stay inside fraCopy.
 
     ' --- ListBox: stretch to fill between top row and bottom block
     Me.lstWorkbooks.Left = mBaseListLeft
@@ -3435,10 +4118,7 @@ If Not mLstSheets Is Nothing Then
         mLstSheets.TOP = Me.lstWorkbooks.TOP
     End If
     mLstSheets.Width = mPanelWidth
-    sheetBottom = Me.btnOpenFile.TOP + Me.btnOpenFile.Height
-    If Not mBtnTogglePanel Is Nothing Then
-        If mBtnTogglePanel.TOP - mGap < sheetBottom Then sheetBottom = mBtnTogglePanel.TOP - mGap
-    End If
+    sheetBottom = Me.lstWorkbooks.TOP + Me.lstWorkbooks.Height
     If sheetBottom < mLstSheets.TOP + 24 Then sheetBottom = mLstSheets.TOP + 24
     mLstSheets.Height = sheetBottom - mLstSheets.TOP
     mLstSheets.Visible = mIsExpandedView
@@ -3580,6 +4260,7 @@ Private Sub UserForm_Resize()
     ApplyLayout
     On Error GoTo 0
     PositionTopButtons
+    PositionLayoutMenuControls
 End Sub
 
 Private Function WaitForRefreshToFinish(ByVal wb As Workbook, ByVal timeoutSec As Long) As Boolean
@@ -3684,30 +4365,8 @@ Private Sub PositionTopButtons()
     Set ctlS2 = GetControlIfExists("btnScreen2")
     Set ctlS3 = GetControlIfExists("btnScreen3")
 
-    If Not ctlMax Is Nothing Then
-        ctlMax.TOP = btnClose.TOP
-        ctlMax.Left = Me.btnCopyWithSuffix.Left
-    End If
-
-    If Not ctlS1 Is Nothing Then
-        ctlS1.TOP = btnClose.TOP
-        If Not ctlMax Is Nothing Then
-            ctlS1.Left = ctlMax.Left + ctlMax.Width + GAP
-        End If
-    End If
-
-    If Not ctlS2 Is Nothing Then
-        ctlS2.TOP = btnClose.TOP
-        If Not ctlS1 Is Nothing Then
-            ctlS2.Left = ctlS1.Left + ctlS1.Width + GAP
-        End If
-    End If
-
-    If Not ctlS3 Is Nothing Then
-        ctlS3.TOP = btnClose.TOP
-        If Not ctlS2 Is Nothing Then
-            ctlS3.Left = ctlS2.Left + ctlS2.Width + GAP
-        End If
+    If Not ctlMax Is Nothing Or Not ctlS1 Is Nothing Or Not ctlS2 Is Nothing Or Not ctlS3 Is Nothing Then
+        PositionSwitchScreenControls Me.lstWorkbooks.Left, btnClose.TOP - 14, btnClose.TOP
     End If
 
     EnsureTopLeftButtons
