@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmExcelNavigator 
-   Caption         =   "ExcelNavigator v6.0"
+   Caption         =   "ExcelNavigator v6.1"
    ClientHeight    =   10095.001
    ClientLeft      =   120
    ClientTop       =   465
@@ -36,7 +36,7 @@ Option Explicit
 Private mHooked As Boolean
 Private Const FORM_MAX_W As Long = 1200
 Private Const FORM_MAX_H As Long = 900
-Private Const REG_APP As String = "ExcelNavigator_v6.0"
+Private Const REG_APP As String = "ExcelNavigator_v6.1"
 Private Const REG_SEC As String = "FormState"
 Private Const REG_KEY_OPEN_COPIED As String = "OpenCopied"
 Private Const REG_KEY_OPEN_TARGET_FOLDER As String = "OpenTargetFolder"
