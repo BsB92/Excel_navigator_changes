@@ -1209,6 +1209,7 @@ EnsureTopLeftButtons
 EnsureSnapshotOverlay
 EnsureCopyOptionsControls
 EnsureLayoutMenuControls
+InitializeCF2StaticButton
 LoadPostCopyOptionsState
 ApplySnapshotOverlayVisibility
 PositionTopButtons
