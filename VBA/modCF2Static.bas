@@ -310,6 +310,7 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
     Dim beforeSignature As String
     Dim afterSignature As String
     Dim unsupportedDetails As String
+    Dim formatSnapshot As Variant
 
     On Error GoTo EH
 
@@ -337,13 +338,15 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
         End If
 
         snapshots(c.Address(False, False, xlA1)) = beforeSignature
-        capturedFormats(c.Address(False, False, xlA1)) = CaptureDisplayFormat(c)
+        formatSnapshot = CaptureDisplayFormat(c)
+        capturedFormats(c.Address(False, False, xlA1)) = formatSnapshot
     Next c
 
     ' DisplayFormat can differ in every cell (notably for formula rules and color scales),
     ' so write only the CF-covered cells and intentionally apply their formats one by one.
     For Each c In cfCells.Cells
-        ApplyCapturedFormat c, capturedFormats(c.Address(False, False, xlA1))
+        formatSnapshot = capturedFormats(c.Address(False, False, xlA1))
+        ApplyCapturedFormat c, formatSnapshot
     Next c
 
     ws.Cells.FormatConditions.Delete
@@ -410,9 +413,10 @@ Private Function CaptureDisplayFormat(ByVal sourceCell As Range) As Variant
     Dim visibleFormat As Object
     Dim borderIndexes As Variant
     Dim borderIndex As Variant
-    Dim snapshot(0 To 28) As Variant
+    Dim snapshot() As Variant
     Dim i As Long
 
+    ReDim snapshot(0 To 28)
     Set visibleFormat = sourceCell.DisplayFormat
 
     snapshot(0) = visibleFormat.Interior.Pattern
