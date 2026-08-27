@@ -5,21 +5,30 @@ Public Const EXCEL_NAVIGATOR_VERSION As String = "v6.1"
 
 Private Sub ShowExcelNavigatorForm()
     Dim uf As Object
+    Dim launchStage As String
 
-    On Error Resume Next
+    On Error GoTo LaunchError
 
+    launchStage = "checking loaded forms"
     For Each uf In VBA.UserForms
         If TypeName(uf) = "frmExcelNavigator" Then
+            launchStage = "showing the loaded Excel Navigator form"
             uf.Caption = "ExcelNavigator " & EXCEL_NAVIGATOR_VERSION
             uf.Show vbModeless
-            modCF2StaticUI.InitializeCF2StaticButton uf
             Exit Sub
         End If
     Next uf
 
+    launchStage = "initializing the Excel Navigator form"
     frmExcelNavigator.Caption = "ExcelNavigator " & EXCEL_NAVIGATOR_VERSION
+    launchStage = "showing the Excel Navigator form"
     frmExcelNavigator.Show vbModeless
-    modCF2StaticUI.InitializeCF2StaticButton frmExcelNavigator
+    Exit Sub
+
+LaunchError:
+    MsgBox "Excel Navigator could not start while " & launchStage & "." & vbCrLf & vbCrLf & _
+           "Error " & CStr(Err.Number) & ": " & Err.Description, _
+           vbCritical, "ExcelNavigator " & EXCEL_NAVIGATOR_VERSION
 End Sub
 
 Public Sub ExcelNavigator_v6_1()

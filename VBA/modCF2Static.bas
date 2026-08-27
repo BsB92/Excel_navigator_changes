@@ -305,10 +305,12 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
     Dim cfCells As Range
     Dim c As Range
     Dim snapshots As Object
+    Dim capturedFormats As Object
     Dim addressKey As Variant
     Dim beforeSignature As String
     Dim afterSignature As String
     Dim unsupportedDetails As String
+    Dim formatSnapshot As Variant
 
     On Error GoTo EH
 
@@ -324,10 +326,10 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
     End If
 
     Set snapshots = CreateObject("Scripting.Dictionary")
+    Set capturedFormats = CreateObject("Scripting.Dictionary")
 
-    ' DisplayFormat is evaluated per cell. Formula rules, priorities and color scales may
-    ' produce different visible results in adjacent cells. For exactness we therefore process
-    ' only CF-covered cells, but intentionally evaluate those cells individually.
+    ' Capture every rendered format before changing any cell. This prevents a formula-based
+    ' rule from being re-evaluated against static formats already written to an earlier cell.
     For Each c In cfCells.Cells
         beforeSignature = BuildDisplayFormatSignature(c)
         If IsSignatureError(beforeSignature) Then
@@ -336,7 +338,15 @@ Private Function ConvertWorksheetConditionalFormatting(ByVal ws As Worksheet, By
         End If
 
         snapshots(c.Address(False, False, xlA1)) = beforeSignature
-        ApplyDisplayFormatAsStatic c
+        formatSnapshot = CaptureDisplayFormat(c)
+        capturedFormats(c.Address(False, False, xlA1)) = formatSnapshot
+    Next c
+
+    ' DisplayFormat can differ in every cell (notably for formula rules and color scales),
+    ' so write only the CF-covered cells and intentionally apply their formats one by one.
+    For Each c In cfCells.Cells
+        formatSnapshot = capturedFormats(c.Address(False, False, xlA1))
+        ApplyCapturedFormat c, formatSnapshot
     Next c
 
     ws.Cells.FormatConditions.Delete
@@ -399,53 +409,79 @@ EH:
     HasUnsupportedConditionalFormatting = True
 End Function
 
-Private Sub ApplyDisplayFormatAsStatic(ByVal targetCell As Range)
+Private Function CaptureDisplayFormat(ByVal sourceCell As Range) As Variant
     Dim visibleFormat As Object
     Dim borderIndexes As Variant
     Dim borderIndex As Variant
+    Dim snapshot() As Variant
+    Dim i As Long
 
-    Set visibleFormat = targetCell.DisplayFormat
+    ReDim snapshot(0 To 28)
+    Set visibleFormat = sourceCell.DisplayFormat
 
-    ' DisplayFormat.Color/PatternColor already represent the rendered result. Re-applying
-    ' TintAndShade after those final colors would tint the color a second time.
+    snapshot(0) = visibleFormat.Interior.Pattern
+    snapshot(1) = visibleFormat.Interior.Color
+    snapshot(2) = visibleFormat.Interior.PatternColor
+    snapshot(3) = visibleFormat.Font.Name
+    snapshot(4) = visibleFormat.Font.Size
+    snapshot(5) = visibleFormat.Font.Bold
+    snapshot(6) = visibleFormat.Font.Italic
+    snapshot(7) = visibleFormat.Font.Underline
+    snapshot(8) = visibleFormat.Font.Strikethrough
+    snapshot(9) = visibleFormat.Font.Color
+    snapshot(10) = visibleFormat.NumberFormat
+
+    borderIndexes = GetBorderIndexes()
+    i = 11
+    For Each borderIndex In borderIndexes
+        snapshot(i) = visibleFormat.Borders(CLng(borderIndex)).LineStyle
+        snapshot(i + 1) = visibleFormat.Borders(CLng(borderIndex)).Weight
+        snapshot(i + 2) = visibleFormat.Borders(CLng(borderIndex)).Color
+        i = i + 3
+    Next borderIndex
+
+    CaptureDisplayFormat = snapshot
+End Function
+
+Private Sub ApplyCapturedFormat(ByVal targetCell As Range, ByVal snapshot As Variant)
+    Dim borderIndexes As Variant
+    Dim borderIndex As Variant
+    Dim i As Long
+
     With targetCell.Interior
-        .Pattern = visibleFormat.Interior.Pattern
-        .Color = visibleFormat.Interior.Color
-        .PatternColor = visibleFormat.Interior.PatternColor
+        .Pattern = snapshot(0)
+        .Color = snapshot(1)
+        .PatternColor = snapshot(2)
     End With
 
     With targetCell.Font
-        .Name = visibleFormat.Font.Name
-        .Size = visibleFormat.Font.Size
-        .Bold = visibleFormat.Font.Bold
-        .Italic = visibleFormat.Font.Italic
-        .Underline = visibleFormat.Font.Underline
-        .Strikethrough = visibleFormat.Font.Strikethrough
-        .Color = visibleFormat.Font.Color
+        .Name = snapshot(3)
+        .Size = snapshot(4)
+        .Bold = snapshot(5)
+        .Italic = snapshot(6)
+        .Underline = snapshot(7)
+        .Strikethrough = snapshot(8)
+        .Color = snapshot(9)
     End With
 
-    targetCell.NumberFormat = visibleFormat.NumberFormat
+    targetCell.NumberFormat = snapshot(10)
 
     borderIndexes = GetBorderIndexes()
+    i = 11
     For Each borderIndex In borderIndexes
-        CopyVisibleBorder visibleFormat, targetCell, CLng(borderIndex)
+        With targetCell.Borders(CLng(borderIndex))
+            .LineStyle = snapshot(i)
+            .Weight = snapshot(i + 1)
+            .Color = snapshot(i + 2)
+        End With
+        i = i + 3
     Next borderIndex
 End Sub
 
 Private Function GetBorderIndexes() As Variant
     GetBorderIndexes = Array(xlEdgeLeft, xlEdgeTop, xlEdgeBottom, xlEdgeRight, _
-                             xlInsideVertical, xlInsideHorizontal, xlDiagonalDown, xlDiagonalUp)
+                             xlDiagonalDown, xlDiagonalUp)
 End Function
-
-Private Sub CopyVisibleBorder(ByVal visibleFormat As Object, ByVal targetCell As Range, ByVal borderIndex As Long)
-    On Error Resume Next
-    With targetCell.Borders(borderIndex)
-        .LineStyle = visibleFormat.Borders(borderIndex).LineStyle
-        .Weight = visibleFormat.Borders(borderIndex).Weight
-        .Color = visibleFormat.Borders(borderIndex).Color
-    End With
-    On Error GoTo 0
-End Sub
 
 Private Function BuildDisplayFormatSignature(ByVal c As Range) As String
     Dim visibleFormat As Object
