@@ -1209,7 +1209,6 @@ EnsureTopLeftButtons
 EnsureSnapshotOverlay
 EnsureCopyOptionsControls
 EnsureLayoutMenuControls
-InitializeCF2StaticButton
 LoadPostCopyOptionsState
 ApplySnapshotOverlayVisibility
 PositionTopButtons
@@ -1272,6 +1271,10 @@ Private Sub EnsureFrameHostedControls()
         Set mBtnFrameCopyWithSuffix = GetFrameControlIfExists(mFraCopy, "btnFrameCopyWithSuffix")
         If mBtnFrameCopyWithSuffix Is Nothing Then Set mBtnFrameCopyWithSuffix = mFraCopy.Controls.Add("Forms.CommandButton.1", "btnFrameCopyWithSuffix", True)
     End If
+    If mBtnFrameCF2Static Is Nothing Then
+        Set mBtnFrameCF2Static = GetFrameControlIfExists(mFraCopy, "CF2Static")
+        If mBtnFrameCF2Static Is Nothing Then Set mBtnFrameCF2Static = mFraCopy.Controls.Add("Forms.CommandButton.1", "CF2Static", True)
+    End If
     If mLblFramePostCopyOptions Is Nothing Then
         Set mLblFramePostCopyOptions = GetFrameControlIfExists(mFraCopy, "lblFramePostCopyOptions")
         If mLblFramePostCopyOptions Is Nothing Then Set mLblFramePostCopyOptions = mFraCopy.Controls.Add("Forms.Label.1", "lblFramePostCopyOptions", True)
@@ -1319,6 +1322,9 @@ Private Sub SyncFrameHostedControlState()
     mBtnFrameCopyBreakLinks.enabled = Me.btnCopyBreakLinks.enabled
     mBtnFrameCopyWithSuffix.Caption = Me.btnCopyWithSuffix.Caption
     mBtnFrameCopyWithSuffix.enabled = Me.btnCopyWithSuffix.enabled
+    mBtnFrameCF2Static.Caption = "CF2Static"
+    mBtnFrameCF2Static.ControlTipText = "Creates copies of selected files and converts conditional formatting to static formatting in all worksheets while preserving the exact visible appearance."
+    mBtnFrameCF2Static.enabled = True
     mLblFramePostCopyOptions.Caption = "Post-copy options:"
     mLblFramePostCopyOptions.BackStyle = fmBackStyleTransparent
 
@@ -1420,7 +1426,7 @@ End Sub
 Private Sub PositionLayoutMenuControls()
     Const MENU_GAP As Single = 12
     Const INNER_GAP As Single = 6
-    Const FRAME_H As Single = 116
+    Const FRAME_H As Single = 134
     Const SUFFIX_TEXT_WIDTH As Single = 125
     Const OPEN_COPIED_WIDTH As Single = 86.4
     Dim menuLeft As Single, menuTop As Single, menuW As Single, menuH As Single
@@ -1531,6 +1537,18 @@ Private Sub PositionLayoutMenuControls()
         .TOP = mChkFrameOpenCopiedFiles.TOP
         .Width = 120
         .Height = 14
+    End With
+    With mBtnFrameCF2Static
+        .Left = mBtnFrameCopyBreakLinks.Left
+        .TOP = mChkFrameOpenCopiedFiles.TOP + mChkFrameOpenCopiedFiles.Height + INNER_GAP
+        .Width = mBtnFrameCopyBreakLinks.Width
+        .Height = mBtnFrameCopyBreakLinks.Height
+        .Font.Name = mBtnFrameCopyBreakLinks.Font.Name
+        .Font.Size = mBtnFrameCopyBreakLinks.Font.Size
+        .Font.Bold = mBtnFrameCopyBreakLinks.Font.Bold
+        .Font.Italic = mBtnFrameCopyBreakLinks.Font.Italic
+        .SpecialEffect = mBtnFrameCopyBreakLinks.SpecialEffect
+        .Visible = True
     End With
 
     With mBtnFrameOpenFile
@@ -1794,6 +1812,7 @@ Private Sub BringMenuGroupToFront(ByVal showActions As Boolean, ByVal showCopy A
         If Not ctl Is Nothing Then ctl.ZOrder 0
         If Not mChkOpenCopiedFolder Is Nothing Then mChkOpenCopiedFolder.ZOrder 0
         If Not mLblPostCopyOptions Is Nothing Then mLblPostCopyOptions.ZOrder 0
+        If Not mBtnFrameCF2Static Is Nothing Then mBtnFrameCF2Static.ZOrder 0
     ElseIf showOpen Then
         mFraOpen.ZOrder 1
         Me.btnOpenFile.ZOrder 0
@@ -1915,35 +1934,6 @@ End Sub
 
 Private Sub mBtnFrameOpenAndRefresh_Click()
     btnOpenAndRefresh_Click
-End Sub
-
-Public Sub InitializeCF2StaticButton()
-    Const CONTROL_GAP As Single = 6
-    Const TOOLTIP_TEXT As String = "Creates copies of selected files and converts conditional formatting to static formatting in all worksheets while preserving the exact visible appearance."
-
-    EnsureLayoutMenuControls
-    If mFraCopy Is Nothing Or mBtnFrameCopyBreakLinks Is Nothing Or mChkFrameOpenCopiedFiles Is Nothing Then Exit Sub
-
-    If mBtnFrameCF2Static Is Nothing Then
-        Set mBtnFrameCF2Static = GetFrameControlIfExists(mFraCopy, "CF2Static")
-        If mBtnFrameCF2Static Is Nothing Then Set mBtnFrameCF2Static = mFraCopy.Controls.Add("Forms.CommandButton.1", "CF2Static", True)
-    End If
-
-    With mBtnFrameCF2Static
-        .Caption = "CF2Static"
-        .ControlTipText = TOOLTIP_TEXT
-        .Left = mBtnFrameCopyBreakLinks.Left
-        .TOP = mChkFrameOpenCopiedFiles.TOP + mChkFrameOpenCopiedFiles.Height + CONTROL_GAP
-        .Width = mBtnFrameCopyBreakLinks.Width
-        .Height = mBtnFrameCopyBreakLinks.Height
-        .Font.Name = mBtnFrameCopyBreakLinks.Font.Name
-        .Font.Size = mBtnFrameCopyBreakLinks.Font.Size
-        .Font.Bold = mBtnFrameCopyBreakLinks.Font.Bold
-        .Font.Italic = mBtnFrameCopyBreakLinks.Font.Italic
-        .SpecialEffect = mBtnFrameCopyBreakLinks.SpecialEffect
-        .Visible = True
-        .enabled = True
-    End With
 End Sub
 
 Private Sub EnsureCopyOptionsControls()
